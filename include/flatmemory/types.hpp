@@ -5,7 +5,7 @@
 #include <cstdint>
 
 
-namespace mimir 
+namespace flatmemory 
 {
     /**
      * Common data types

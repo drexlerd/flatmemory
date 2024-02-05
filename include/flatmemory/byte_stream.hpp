@@ -9,7 +9,7 @@
 #include <iostream>
 
 
-namespace mimir {
+namespace flatmemory {
 
 
 class ByteStream {
@@ -50,6 +50,6 @@ public:
     [[nodiscard]] size_t get_capacity() const { return m_data.capacity(); }
 };
 
-}  // namespace mimir
+} 
 
-#endif // MIMIR_BUFFER_BYTE_STREAM_HPP_
+#endif

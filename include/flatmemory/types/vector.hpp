@@ -16,7 +16,7 @@
 #include <vector>
 
 
-namespace mimir
+namespace flatmemory
 {
     /**
      * Dispatcher for tuple.

@@ -6,7 +6,7 @@
 #include <vector>
 
 
-namespace mimir
+namespace flatmemory
 {
 
 /// @tparam N the amount of bytes per segments.

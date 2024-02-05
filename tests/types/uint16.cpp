@@ -5,10 +5,10 @@
 #include <string>
 
 
-namespace mimir::tests
+namespace flatmemory::tests
 {
 
-TEST(MimirTests, TypesUint16Test) {
+TEST(FlatmemoryTests, TypesUint16Test) {
 }
 
 

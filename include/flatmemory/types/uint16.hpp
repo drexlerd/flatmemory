@@ -14,7 +14,7 @@
 #include <cassert>
 
 
-namespace mimir
+namespace flatmemory
 {
     /**
      * Dispatcher for tuple.

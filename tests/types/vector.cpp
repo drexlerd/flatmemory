@@ -6,10 +6,10 @@
 #include <string>
 
 
-namespace mimir::tests
+namespace flatmemory::tests
 {
 
-TEST(MimirTests, TypesVectorTest) {
+TEST(FlatmemoryTests, TypesVectorTest) {
     EXPECT_EQ((Layout<VectorTag<Uint16Tag>>::alignment), 4);
 
     auto builder = Builder<VectorTag<Uint16Tag>>();
@@ -27,7 +27,7 @@ TEST(MimirTests, TypesVectorTest) {
 }
 
 
-TEST(MimirTests, TypesVector2Test) {
+TEST(FlatmemoryTests, TypesVector2Test) {
     EXPECT_EQ((Layout<VectorTag<Uint16Tag>>::alignment), 4);
 
     auto builder = Builder<VectorTag<Uint16Tag>>();

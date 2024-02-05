@@ -5,7 +5,7 @@
 #include <type_traits>
 
 
-namespace mimir 
+namespace flatmemory 
 {
     /**
      * Base template assuming all types are static.

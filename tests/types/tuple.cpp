@@ -6,10 +6,10 @@
 #include <string>
 
 
-namespace mimir::tests
+namespace flatmemory::tests
 {
 
-TEST(MimirTests, TypesTupleTest) {
+TEST(FlatmemoryTests, TypesTupleTest) {
     EXPECT_EQ((Layout<TupleTag<Uint16Tag, Uint16Tag, Uint16Tag>>::alignment), 2);
 
     auto builder = Builder<TupleTag<Uint16Tag, Uint16Tag, Uint16Tag>>();

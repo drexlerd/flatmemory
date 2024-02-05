@@ -5,7 +5,7 @@
 #include <type_traits>
 
 
-namespace mimir 
+namespace flatmemory 
 {
     /**
      * Interface class.
