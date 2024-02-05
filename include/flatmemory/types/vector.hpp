@@ -106,7 +106,7 @@ namespace flatmemory
                         nested_builder.finish();
                         m_buffer.write(offset);
                         m_dynamic_buffer.write(nested_builder.get_data(), nested_builder.get_size());     
-                        offset += nested_builder.get_size();
+                        offset += sizeof(offset_type) + nested_builder.get_size();
                     }
                 } else {
                     /* For static type T, we can store the data directly */
