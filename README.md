@@ -21,7 +21,8 @@ cmake --build dependencies/build -j16
 
 ### Including Headers
 
-```cpp
+```cmake
+find_package(flatmemory REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 if(flatmemory_FOUND)
   include_directories(${flatmemory_INCLUDE_DIRS})
   message(STATUS "Found flatmemory: ${flatmemory_DIR} (found version ${flatmemory_VERSION})")
