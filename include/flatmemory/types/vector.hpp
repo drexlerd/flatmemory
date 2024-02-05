@@ -104,6 +104,7 @@ namespace flatmemory
                     for (size_t i = 0; i < m_data.size(); ++i) {
                         auto& nested_builder = m_data[i];
                         nested_builder.finish();
+
                         m_buffer.write(offset);
                         m_dynamic_buffer.write(nested_builder.get_data(), nested_builder.get_size());     
                         offset += sizeof(offset_type) + nested_builder.get_size();
@@ -113,7 +114,9 @@ namespace flatmemory
                     for (size_t i = 0; i < m_data.size(); ++i) {
                         auto& nested_builder = m_data[i];
                         nested_builder.finish();
-                        m_buffer.write(nested_builder.get_data(), nested_builder.get_size());   
+                        
+                        assert(nested_builder.get_size() == Layout<T>::size);  
+                        m_buffer.write(nested_builder.get_data(), nested_builder.get_size()); 
                     }  
                 }
                 // Concatenate all buffers
