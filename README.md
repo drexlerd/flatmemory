@@ -5,9 +5,27 @@ Flatmemory is a header-only C++20 library for serializing nested data types into
 
 ## Getting Started
 
-### Installing the Dependencies
+We recommend the following cmake command to install the headers. No build step required.
 
-Flatmemory depends on [GoogleTest](https://github.com/google/googletest).
+```console
+cmake -S . -B build -DCMAKE_INSTALL_DIR="path/to/install/dir"
+cmake --install build
+```
+
+We recommend the following cmake command to integrate flatmemory to your CMake project where `CMAKE_PREFIX_PATH` is the installation directory
+
+```cmake
+find_package(flatmemory REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+if(flatmemory_FOUND)
+  include_directories(${flatmemory_INCLUDE_DIRS})
+  message(STATUS "Found flatmemory: ${flatmemory_DIR} (found version ${flatmemory_VERSION})")
+endif()
+```
+
+
+## For Developers
+
+Flatmemory's testing framework depends on [GoogleTest](https://github.com/google/googletest).
 
 We provide a CMake Superbuild project that takes care of downloading, building, and installing all dependencies.
 
@@ -16,15 +34,4 @@ We provide a CMake Superbuild project that takes care of downloading, building, 
 cmake -S dependencies -B dependencies/build -DCMAKE_INSTALL_PREFIX=dependencies/installs
 # Build and install dependencies
 cmake --build dependencies/build -j16
-```
-
-
-### Including Headers
-
-```cmake
-find_package(flatmemory REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
-if(flatmemory_FOUND)
-  include_directories(${flatmemory_INCLUDE_DIRS})
-  message(STATUS "Found flatmemory: ${flatmemory_DIR} (found version ${flatmemory_VERSION})")
-endif()
 ```
