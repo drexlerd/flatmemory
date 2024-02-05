@@ -69,9 +69,7 @@ namespace flatmemory
             template<typename>
             friend class IBuilder;
 
-            void finish_impl() {
-                m_buffer.write<uint16_t>(m_value);
-            }
+            void finish_impl() { m_buffer.write<uint16_t>(m_value); }
 
             void clear_impl() {}
 
@@ -79,9 +77,7 @@ namespace flatmemory
             size_t get_size_impl() const { return m_buffer.get_size(); }
 
         public:
-            uint16_t& get_value() {
-                return m_value;
-            }
+            uint16_t& get_value() { return m_value; }
     };
 
 
@@ -96,9 +92,7 @@ namespace flatmemory
     public:
         View(uint8_t* data) : m_data(data) {}
 
-        uint16_t& get_value() const {
-            return read_value<uint16_t>(m_data);
-        }
+        uint16_t& get_value() const { return read_value<uint16_t>(m_data); }
     };
 }
 

@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <flatmemory/types/uint16.hpp>
+#include <flatmemory/types/uint32.hpp>
 
 #include <gtest/gtest.h>
 
@@ -25,16 +25,16 @@
 namespace flatmemory::tests
 {
 
-TEST(FlatmemoryTests, TypesUint16Test) {
-    EXPECT_EQ((Layout<Uint16Tag>::alignment), 2);
+TEST(FlatmemoryTests, TypesUint32Test) {
+    EXPECT_EQ((Layout<Uint32Tag>::alignment), 4);
 
-    auto builder = Builder<Uint16Tag>();
+    auto builder = Builder<Uint32Tag>();
     builder.get_value() = 5;
     builder.finish();
     EXPECT_NE(builder.get_data(), nullptr);
-    EXPECT_EQ(builder.get_size(), 2);
+    EXPECT_EQ(builder.get_size(), 4);
 
-    auto view = View<Uint16Tag>(builder.get_data());
+    auto view = View<Uint32Tag>(builder.get_data());
     EXPECT_EQ(view.get_value(), 5);
 }
 

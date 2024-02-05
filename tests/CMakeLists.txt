@@ -14,6 +14,7 @@ set(TEST_NAME ${CMAKE_PROJECT_NAME}_tests)
 add_executable(${TEST_NAME}
     "types/tuple.cpp"
     "types/uint16.cpp"
+    "types/uint32.cpp"
     "types/vector.cpp"
 )
 
