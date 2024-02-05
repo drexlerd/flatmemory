@@ -1,6 +1,6 @@
 # Flatmemory
 
-Flatmemory is a header-only C++20 library for serializing nested data types into a sequence of bytes and zero cost deserialization.
+Flatmemory is a C++20 header-only library for serializing nested data types into a sequence of bytes and zero cost deserialization.
 
 
 ## Getting Started
