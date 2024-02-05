@@ -5,14 +5,14 @@ Flatmemory is a header-only C++20 library for serializing nested data types into
 
 ## Getting Started
 
-We recommend the following cmake command to install the headers. No build step required.
+We recommend the following sequence of cmake commands to install the headers. No build step required.
 
 ```console
 cmake -S . -B build -DCMAKE_INSTALL_DIR="path/to/install/dir"
 cmake --install build
 ```
 
-We recommend the following cmake command to integrate flatmemory to your CMake project where `CMAKE_PREFIX_PATH` is the installation directory
+We recommend adding the following to your root `CMakeLists.txt` for making the headers available for your CMake project where `CMAKE_PREFIX_PATH` is the installation directory
 
 ```cmake
 find_package(flatmemory REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
