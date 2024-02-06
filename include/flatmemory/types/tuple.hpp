@@ -74,53 +74,45 @@ namespace flatmemory
             }
 
             /**
-             * Compute the padding needed to be added to cur_pos to obtain correct alignment for storing type T
+             * Compute alignmented needed to be added to cur_pos to obtain correct alignment for storing type T
              *   - For trivial type T use alignof(T)
              *   - For dynamic custom type T use alignof(offset_type) since we store the data with an offset
              *   - For static custom type T use Layout<T>::alignment which is computed in the Layout of type T.
             */
             template<typename T>
-            static constexpr size_t compute_padding_size(size_t cur_pos) {
+            static constexpr size_t compute_alignment() {
                 constexpr bool is_dynamic = is_dynamic_type<T>::value;
                 constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
                 if constexpr (is_trivial) {
-                    return compute_amount_padding(cur_pos, alignof(T));
+                    return alignof(T);
                 } else {
                     if constexpr (is_dynamic) {
-                        return compute_amount_padding(cur_pos, alignof(offset_type)); 
+                        return alignof(offset_type); 
                     } else {
-                        return compute_amount_padding(cur_pos, Layout<T>::alignment);
+                        return Layout<T>::alignment;
                     }
                 }
             }
-           
+
+
+            /**
+             * Calculate aligments of all types and append the maximum alignment
+             * to ensure that we correctly pad after all elements.
+            */
             template<size_t... Is>
-            static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_layout_impl(std::index_sequence<Is...>) {
-                std::array<offset_type, sizeof...(Ts) + 1> layout{};
-                size_t cur_pos = 0;
-                layout[0] = cur_pos;
+            static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_alignments(std::index_sequence<Is...>) {
+                std::array<offset_type, sizeof...(Ts) + 1> alignments{};
                 ([&] {
-                    // The size of the i-th element (looks correct)
                     using T = std::tuple_element_t<Is, std::tuple<Ts...>>;
-                    cur_pos += compute_type_size<T>();
-
-                    // The padding dependent on the alignment of the i+1-th element
-                    using T_Next = std::tuple_element_t<Is + 1, std::tuple<Ts...>>;
-                    cur_pos += compute_padding_size<T_Next>(cur_pos);
-
-                    layout[Is + 1] = cur_pos;
+                    alignments[Is] = compute_alignment<T>();
                 }(), ...);
-                using T = std::tuple_element_t<sizeof...(Ts) - 1, std::tuple<Ts...>>;
-                cur_pos += compute_type_size<T>();
-                cur_pos += compute_amount_padding(cur_pos, calculate_alignment());
-                layout[sizeof...(Ts)] = cur_pos;
-                return layout;
+                alignments[sizeof...(Ts)] = calculate_alignment();
+                return alignments;
             }
 
-            static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_layout() {
-                return calculate_layout_impl(std::make_index_sequence<sizeof...(Ts) - 1>{});
-            }
-
+            /**
+             * Compute the maximum alignment to ensure that storing N objects in sequence have correct alignment
+            */
             static constexpr size_t calculate_alignment() {
                 size_t alignment = 0;
                 ([&] {
@@ -132,6 +124,34 @@ namespace flatmemory
                     }
                 }(), ...);
                 return alignment;
+            }
+           
+            /**
+             * Compute the offsets for each type T
+            */
+            template<size_t... Is>
+            static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_layout_impl(std::index_sequence<Is...>) {
+                std::array<offset_type, sizeof...(Ts) + 1> layout{};
+                std::array<offset_type, sizeof...(Ts) + 1> alignments = calculate_alignments(std::index_sequence<Is...>{});
+                size_t cur_pos = 0;
+                layout[0] = cur_pos;
+                ([&] {
+                    // The size of the i-th element (looks correct)
+                    using T = std::tuple_element_t<Is, std::tuple<Ts...>>;
+                    cur_pos += compute_type_size<T>();
+
+                    // The padding dependent on the alignment of the i+1-th element
+                    // or the maximum alignment, when reaching the last element
+                    cur_pos += compute_amount_padding(cur_pos, alignments[Is + 1]);
+
+                    layout[Is + 1] = cur_pos;
+                }(), ...);
+                layout[sizeof...(Ts)] = cur_pos;
+                return layout;
+            }
+
+            static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_layout() {
+                return calculate_layout_impl(std::make_index_sequence<sizeof...(Ts)>{});
             }
 
         public:
@@ -171,36 +191,31 @@ namespace flatmemory
             template<typename>
             friend class IBuilder;
 
-            template<std::size_t I = 0>
+            template<std::size_t I>
             void finish_rec_impl(offset_type offset) {
-                // Write padding to satisfy alignment requirements
-                m_buffer.write_padding(Layout<Tuple<Ts...>>::offsets[I] - m_buffer.get_size());
-
-                assert(m_buffer.get_size() == Layout<Tuple<Ts...>>::offsets[I]);
-
-                // offset is the first position to write the dynamic data
-                constexpr bool is_dynamic = is_dynamic_type<std::tuple_element_t<I, std::tuple<Ts...>>>::value;
-                constexpr bool is_trivial = is_trivial_and_standard_layout_v<std::tuple_element_t<I, std::tuple<Ts...>>>;
-                if constexpr (is_trivial) {
-                    auto& value = std::get<I>(m_data);
-                    m_buffer.write(value);
-                } else {
-                    // Recursively call finish
-                    auto& nested_builder = std::get<I>(m_data);
-                    nested_builder.finish();
-                    
-                    if constexpr (is_dynamic) {
-                        m_buffer.write(offset);
-                        m_dynamic_buffer.write(nested_builder.get_data(), nested_builder.get_size());    
-                        offset += nested_builder.get_size();
+                if constexpr (I < sizeof...(Ts)) {
+                    // Write the data.
+                    constexpr bool is_dynamic = is_dynamic_type<std::tuple_element_t<I, std::tuple<Ts...>>>::value;
+                    constexpr bool is_trivial = is_trivial_and_standard_layout_v<std::tuple_element_t<I, std::tuple<Ts...>>>;
+                    if constexpr (is_trivial) {
+                        auto& value = std::get<I>(m_data);
+                        m_buffer.write(value);
                     } else {
-                        m_buffer.write(nested_builder.get_data(), nested_builder.get_size());
+                        // Recursively call finish
+                        auto& nested_builder = std::get<I>(m_data);
+                        nested_builder.finish();
+                        
+                        if constexpr (is_dynamic) {
+                            m_buffer.write(offset);
+                            m_dynamic_buffer.write(nested_builder.get_data(), nested_builder.get_size());    
+                            offset += nested_builder.get_size();
+                        } else {
+                            m_buffer.write(nested_builder.get_data(), nested_builder.get_size());
+                        }
                     }
-                }
-                
-
-                if constexpr (I < sizeof...(Ts) - 1) {
-                    // Call finish of next data
+                    // Write the padding to satisfy alignment requirements
+                    m_buffer.write_padding(Layout<Tuple<Ts...>>::offsets[I + 1] - m_buffer.get_size());
+                    // Recursive call to next type
                     finish_rec_impl<I + 1>(offset);
                 }
             }
@@ -208,14 +223,9 @@ namespace flatmemory
 
             void finish_impl() {
                 // Build header and dynamic buffer
-                if constexpr (0 < sizeof...(Ts)) {
-                    offset_type offset = Layout<Tuple<Ts...>>::offsets.back();
-                    finish_rec_impl<0>(offset);
-                }
-                // Write padding after last element for correct data alignment
-                m_buffer.write_padding(Layout<Tuple<Ts...>>::offsets[sizeof...(Ts)] - m_buffer.get_size());
+                finish_rec_impl<0>(Layout<Tuple<Ts...>>::offsets.back());
                 // Concatenate all buffers
-                m_buffer.write(m_dynamic_buffer.get_data(), m_dynamic_buffer.get_size());  
+                m_buffer.write(m_dynamic_buffer.get_data(), m_dynamic_buffer.get_size()); 
                 // Write alignment padding
                 m_buffer.write_padding(compute_amount_padding(m_buffer.get_size(), Layout<Tuple<Ts...>>::alignment));
             }
@@ -279,7 +289,6 @@ namespace flatmemory
             } else {
                 Layout<Tuple<Ts...>>().print();
                 offset_type offset = Layout<Tuple<Ts...>>::offsets[I];
-                std::cout << offset << std::endl;
                 if constexpr (is_dynamic_type<element_type<I>>::value) {
                     offset = read_value<offset_type>(m_data + offset);
                 }

@@ -25,6 +25,19 @@
 
 namespace flatmemory::tests
 {
+    TEST(FlatmemoryTests, TypesTupleEmptyTest) {
+        // Test without any padding.
+        //  ______________________
+        // ||  |  ||  |  ||  |  ||
+        // ||  5  ||  6  ||  7  ||
+        // ||__|__||__|__||__|__||
+        EXPECT_EQ((Layout<Tuple<>>::alignment), 0);
+        //static_assert(!is_trivial_and_standard_layout_v<Tuple<uint16_t, uint16_t, uint16_t>>, "Tuple<uint16_t, uint16_t, uint16_t> must not have standard layout.");
+
+        auto builder = Builder<Tuple<>>();
+        builder.finish();
+    }
+
     TEST(FlatmemoryTests, TypesTupleTest) {
         // Test without any padding.
         //  ______________________

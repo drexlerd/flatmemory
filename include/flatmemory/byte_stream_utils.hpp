@@ -84,6 +84,7 @@ T* uint64_t_to_pointer(uint64_t address) {
 */
 
 constexpr inline size_t compute_amount_padding(size_t pos, size_t align_factor) {
+    if (align_factor == 0) return 0;
     return (align_factor - (pos % align_factor)) % align_factor;
 }
 
