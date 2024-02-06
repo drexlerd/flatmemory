@@ -115,17 +115,17 @@ namespace flatmemory::tests
 
 
     TEST(FlatmemoryTests, TypesTupleVectorVectorTest) {
-        EXPECT_EQ((Layout<Tuple<Vector<Vector<uint64_t>>>>::alignment), 8);
-        static_assert(!is_trivial_and_standard_layout_v<Tuple<Vector<Vector<uint64_t>>>>, "Tuple<Vector<Vector<uint64_t>>> must not have standard layout.");
+        EXPECT_EQ((Layout<Tuple<Vector<Vector<uint8_t>>>>::alignment), 4);
+        static_assert(!is_trivial_and_standard_layout_v<Tuple<Vector<Vector<uint8_t>>>>, "Tuple<Vector<Vector<uint8_t>>> must not have standard layout.");
  
-        auto builder = Builder<Tuple<Vector<Vector<uint64_t>>>>();
+        auto builder = Builder<Tuple<Vector<Vector<uint8_t>>>>();
         builder.get_builder<0>().get_builders().resize(3);
         builder.get_builder<0>().get_builders()[0].get_builders().resize(2);
         builder.get_builder<0>().get_builders()[1].get_builders().resize(3);
         builder.get_builder<0>().get_builders()[2].get_builders().resize(4);
         builder.finish();
 
-        auto view = View<Tuple<Vector<Vector<uint64_t>>>>(builder.get_data());
+        auto view = View<Tuple<Vector<Vector<uint8_t>>>>(builder.get_data());
         EXPECT_EQ(view.get<0>().get_size(), 3);
         EXPECT_EQ(view.get<0>()[0].get_size(), 2);
         EXPECT_EQ(view.get<0>()[1].get_size(), 3);
