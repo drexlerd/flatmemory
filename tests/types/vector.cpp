@@ -55,5 +55,25 @@ TEST(FlatmemoryTests, TypesVector2Test) {
 }
 
 
+TEST(FlatmemoryTests, TypesVectorVectorTest) {
+    EXPECT_EQ((Layout<Vector<Vector<uint16_t>>>::final_alignment), 4);
+
+    auto builder = Builder<Vector<Vector<uint16_t>>>();
+    builder.get_builders().resize(2);
+    builder.get_builders()[0].get_builders().push_back(5);
+    builder.get_builders()[1].get_builders().push_back(6);
+    builder.get_builders()[1].get_builders().push_back(7);
+    builder.finish();
+
+    EXPECT_EQ(builder.get_size(), 24);
+
+    auto view = View<Vector<Vector<uint16_t>>>(builder.get_data());
+    EXPECT_EQ(view.get_size(), 2);
+    EXPECT_EQ(view[0][0], 5);
+    EXPECT_EQ(view[1][0], 6);
+    EXPECT_EQ(view[1][1], 7);
+}
+
+
 
 }
