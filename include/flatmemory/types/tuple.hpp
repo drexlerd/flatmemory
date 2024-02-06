@@ -265,21 +265,18 @@ namespace flatmemory
          * 
          * If the I-th type is dynamic we must add the offset to the actual data first.
         */
-        // For trivial types
-        template<std::size_t I, typename = std::enable_if_t<is_trivial_and_standard_layout_v<element_type<I>>>>
-        auto& get() {
-            offset_type offset = Layout<Tuple<Ts...>>::offsets[I];
-            return *reinterpret_cast<element_type<I>*>(m_data + offset);
-        }
-
-        // For non-trivial types
-        template<std::size_t I, typename = std::enable_if_t<!is_trivial_and_standard_layout_v<element_type<I>>>>
-        auto get() {
-            offset_type offset = Layout<Tuple<Ts...>>::offsets[I];
-            if constexpr (is_dynamic_type<element_type<I>>::value) {
-                offset = read_value<offset_type>(m_data + offset);
+        template<std::size_t I>
+        decltype(auto) get() {
+            if constexpr (is_trivial_and_standard_layout_v<element_type<I>>) {
+                offset_type offset = Layout<Tuple<Ts...>>::offsets[I];
+                return *reinterpret_cast<element_type<I>*>(m_data + offset);
+            } else {
+                offset_type offset = Layout<Tuple<Ts...>>::offsets[I];
+                if constexpr (is_dynamic_type<element_type<I>>::value) {
+                    offset = read_value<offset_type>(m_data + offset);
+                }
+                return View<std::tuple_element_t<I, std::tuple<Ts...>>>(m_data + offset);
             }
-            return View<std::tuple_element_t<I, std::tuple<Ts...>>>(m_data + offset);
         }
     };
 }
