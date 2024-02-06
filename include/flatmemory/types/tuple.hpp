@@ -18,6 +18,8 @@
 #ifndef FLATMEMORY_TYPES_TUPLE_HPP_
 #define FLATMEMORY_TYPES_TUPLE_HPP_
  
+#include "utils.hpp"
+
 #include "../byte_stream.hpp"
 #include "../byte_stream_utils.hpp"
 
@@ -25,7 +27,6 @@
 #include "../builder.hpp"
 #include "../view.hpp"
 #include "../type_traits.hpp"
-#include "../types.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -53,86 +54,27 @@ namespace flatmemory
     class Layout<Tuple<Ts...>> {
         private:
             /**
-             * Compute the amount of bytes needed to store the header of type T
-             *   - For trivial type T use sizeof(T)
-             *   - For dynamic custom type T use sizeof(offset_type) since we store the data with an offset
-             *   - For static custom type T use Layout<T>::size which is computed in the Layout of type T.
-            */
-            template<typename T>
-            static constexpr size_t compute_type_size() {
-                constexpr bool is_dynamic = is_dynamic_type<T>::value;
-                constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
-                if constexpr (is_trivial) {
-                    return sizeof(T);
-                } else {
-                    if constexpr (is_dynamic) {
-                        return sizeof(offset_type);
-                    } else {
-                        return Layout<T>::size;
-                    }
-                }
-            }
-
-            /**
-             * Compute alignmented needed to be added to cur_pos to obtain correct alignment for storing type T
-             *   - For trivial type T use alignof(T)
-             *   - For dynamic custom type T use alignof(offset_type) since we store the data with an offset
-             *   - For static custom type T use Layout<T>::alignment which is computed in the Layout of type T.
-            */
-            template<typename T>
-            static constexpr size_t compute_alignment() {
-                constexpr bool is_dynamic = is_dynamic_type<T>::value;
-                constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
-                if constexpr (is_trivial) {
-                    return alignof(T);
-                } else {
-                    if constexpr (is_dynamic) {
-                        return alignof(offset_type); 
-                    } else {
-                        return Layout<T>::alignment;
-                    }
-                }
-            }
-
-
-            /**
-             * Calculate aligments of all types and append the maximum alignment
-             * to ensure that we correctly pad after all elements.
+             * Helper function to calculate array that contains alignment requirements
+             * with additional max overall alignment requirement at the end.
             */
             template<size_t... Is>
-            static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_alignments(std::index_sequence<Is...>) {
+            static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_header_alignments(std::index_sequence<Is...>) {
                 std::array<offset_type, sizeof...(Ts) + 1> alignments{};
                 ([&] {
                     using T = std::tuple_element_t<Is, std::tuple<Ts...>>;
-                    alignments[Is] = compute_alignment<T>();
+                    alignments[Is] = calculate_header_alignment<T>();
                 }(), ...);
-                alignments[sizeof...(Ts)] = calculate_alignment();
+                alignments[sizeof...(Ts)] = calculate_final_alignment<Ts...>();
                 return alignments;
-            }
-
-            /**
-             * Compute the maximum alignment to ensure that storing N objects in sequence have correct alignment
-            */
-            static constexpr size_t calculate_alignment() {
-                size_t alignment = 0;
-                ([&] {
-                    constexpr bool is_trivial = is_trivial_and_standard_layout_v<Ts>;
-                    if constexpr (is_trivial) {
-                        alignment = std::max(alignment, alignof(Ts));
-                    } else {
-                        alignment = std::max(alignment, Layout<Ts>::alignment);
-                    }
-                }(), ...);
-                return alignment;
             }
            
             /**
-             * Compute the offsets for each type T
+             * Compute the header_offsets for each type T
             */
             template<size_t... Is>
-            static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_layout_impl(std::index_sequence<Is...>) {
+            static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_header_offsets_impl(std::index_sequence<Is...>) {
                 std::array<offset_type, sizeof...(Ts) + 1> layout{};
-                std::array<offset_type, sizeof...(Ts) + 1> alignments = calculate_alignments(std::index_sequence<Is...>{});
+                std::array<offset_type, sizeof...(Ts) + 1> alignments = calculate_header_alignments(std::index_sequence<Is...>{});
                 size_t cur_pos = 0;
                 layout[0] = cur_pos;
                 ([&] {
@@ -150,20 +92,20 @@ namespace flatmemory
                 return layout;
             }
 
-            static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_layout() {
-                return calculate_layout_impl(std::make_index_sequence<sizeof...(Ts)>{});
+            static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_header_offsets() {
+                return calculate_header_offsets_impl(std::make_index_sequence<sizeof...(Ts)>{});
             }
 
         public:
-            static constexpr std::array<offset_type, sizeof...(Ts) + 1> offsets = calculate_layout();
+            static constexpr std::array<offset_type, sizeof...(Ts) + 1> header_offsets = calculate_header_offsets();
 
-            static constexpr size_t alignment = calculate_alignment();
+            static constexpr size_t final_alignment = calculate_final_alignment<Ts...>();
 
             void print() const {
-                std::cout << "alignment: " << alignment << std::endl;
-                for (size_t i = 0; i < offsets.size(); ++i) {
-                    std::cout << "i: " << i << " " << offsets[i] << std::endl;
+                for (size_t i = 0; i < header_offsets.size(); ++i) {
+                    std::cout << "i: " << i << " " << header_offsets[i] << std::endl;
                 }
+                std::cout << "final_alignment: " << final_alignment << std::endl;
             }
     };
 
@@ -214,7 +156,7 @@ namespace flatmemory
                         }
                     }
                     // Write the padding to satisfy alignment requirements
-                    m_buffer.write_padding(Layout<Tuple<Ts...>>::offsets[I + 1] - m_buffer.get_size());
+                    m_buffer.write_padding(Layout<Tuple<Ts...>>::header_offsets[I + 1] - m_buffer.get_size());
                     // Recursive call to next type
                     finish_rec_impl<I + 1>(offset);
                 }
@@ -223,11 +165,11 @@ namespace flatmemory
 
             void finish_impl() {
                 // Build header and dynamic buffer
-                finish_rec_impl<0>(Layout<Tuple<Ts...>>::offsets.back());
+                finish_rec_impl<0>(Layout<Tuple<Ts...>>::header_offsets.back());
                 // Concatenate all buffers
                 m_buffer.write(m_dynamic_buffer.get_data(), m_dynamic_buffer.get_size()); 
                 // Write alignment padding
-                m_buffer.write_padding(compute_amount_padding(m_buffer.get_size(), Layout<Tuple<Ts...>>::alignment));
+                m_buffer.write_padding(compute_amount_padding(m_buffer.get_size(), Layout<Tuple<Ts...>>::final_alignment));
             }
 
 
@@ -284,10 +226,10 @@ namespace flatmemory
         template<std::size_t I>
         decltype(auto) get() {
             if constexpr (is_trivial_and_standard_layout_v<element_type<I>>) {
-                offset_type offset = Layout<Tuple<Ts...>>::offsets[I];
+                offset_type offset = Layout<Tuple<Ts...>>::header_offsets[I];
                 return *reinterpret_cast<element_type<I>*>(m_data + offset);
             } else {
-                offset_type offset = Layout<Tuple<Ts...>>::offsets[I];
+                offset_type offset = Layout<Tuple<Ts...>>::header_offsets[I];
                 if constexpr (is_dynamic_type<element_type<I>>::value) {
                     offset = read_value<offset_type>(m_data + offset);
                 }

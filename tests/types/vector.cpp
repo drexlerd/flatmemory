@@ -26,7 +26,7 @@ namespace flatmemory::tests
 {
 
 TEST(FlatmemoryTests, TypesVectorTest) {
-    EXPECT_EQ((Layout<Vector<uint16_t>>::alignment), 4);
+    EXPECT_EQ((Layout<Vector<uint16_t>>::final_alignment), 4);
 
     auto builder = Builder<Vector<uint16_t>>();
     builder.get_builders().resize(2);
@@ -44,7 +44,7 @@ TEST(FlatmemoryTests, TypesVectorTest) {
 
 
 TEST(FlatmemoryTests, TypesVector2Test) {
-    EXPECT_EQ((Layout<Vector<uint16_t>>::alignment), 4);
+    EXPECT_EQ((Layout<Vector<uint16_t>>::final_alignment), 4);
 
     auto builder = Builder<Vector<uint16_t>>();
     builder.get_builders().resize(3);

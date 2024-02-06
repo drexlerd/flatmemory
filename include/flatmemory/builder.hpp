@@ -18,6 +18,8 @@
 #ifndef FLATMEMORY_BUILDER_HPP_
 #define FLATMEMORY_BUILDER_HPP_
 
+#include <cstdint>
+#include <cstddef>
 #include <type_traits>
 
 

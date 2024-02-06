@@ -18,13 +18,14 @@
 #ifndef FLATMEMORY_TYPES_VECTOR_HPP_
 #define FLATMEMORY_TYPES_VECTOR_HPP_
  
+#include "utils.hpp"
+
 #include "../byte_stream.hpp"
 
 #include "../layout.hpp"
 #include "../builder.hpp"
 #include "../view.hpp"
 #include "../type_traits.hpp"
-#include "../types.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -54,45 +55,24 @@ namespace flatmemory
     */
     template<typename T>
     class Layout<Vector<T>> {
-        static constexpr offset_type calculate_data_offset() {
-            size_t cur_pos = 0;
-            cur_pos += sizeof(vector_size_type);
-            constexpr bool is_dynamic = is_dynamic_type<T>::value;
-            constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
-            if constexpr (is_trivial) {
-                cur_pos += compute_amount_padding(cur_pos, alignof(T));
-            } else {
-                if constexpr (is_dynamic) {
-                    cur_pos += compute_amount_padding(cur_pos, sizeof(offset_type));
-                } else {
-                    cur_pos += compute_amount_padding(cur_pos, Layout<T>::alignment);
-                }
+        private:
+            static constexpr offset_type calculate_data_offset() {
+                size_t cur_pos = 0;
+                cur_pos += sizeof(vector_size_type);
+                cur_pos += compute_amount_padding(cur_pos, calculate_header_alignment<T>());
+                return cur_pos;
             }
-            return cur_pos;
-        }
-
-
-        static constexpr size_t calculate_alignment() {
-            size_t alignment = std::max({alignof(offset_type), alignof(vector_size_type)});
-            constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
-            if constexpr (is_trivial) {
-                alignment = std::max(alignment, alignof(T));
-            } else {
-                alignment = std::max(alignment, Layout<T>::alignment);
-            }
-            return alignment;
-        }
 
         public:
             static constexpr offset_type size_offset = 0;
             static constexpr offset_type data_offset = calculate_data_offset();
 
-            static constexpr size_t alignment = calculate_alignment();
+            static constexpr size_t final_alignment = calculate_final_alignment<vector_size_type, T>();
 
             void print() const {
-                std::cout << "alignment: " << alignment << std::endl;
                 std::cout << "size_offset: " << size_offset << std::endl;
                 std::cout << "data_offset: " << data_offset << std::endl;
+                std::cout << "final_alignment: " << final_alignment << std::endl;
             }
     };
 
@@ -135,7 +115,7 @@ namespace flatmemory
                         /* For dynamic type T, we store the offsets first */
                         // offset is the first position to write the dynamic data
                         offset_type offset = m_data.size() * sizeof(offset_type);
-                        offset += compute_amount_padding(offset, Layout<T>::alignment);
+                        offset += compute_amount_padding(offset, Layout<T>::final_alignment);
                         for (size_t i = 0; i < m_data.size(); ++i) {
                             auto& nested_builder = m_data[i];
                             nested_builder.finish();
@@ -156,10 +136,10 @@ namespace flatmemory
                     }
                 }
                 // Write padding after header
-                m_buffer.write_padding(compute_amount_padding(m_buffer.get_size(), Layout<Vector<T>>::alignment));
+                m_buffer.write_padding(compute_amount_padding(m_buffer.get_size(), Layout<Vector<T>>::final_alignment));
                 // Concatenate all buffers
                 m_buffer.write(m_dynamic_buffer.get_data(), m_dynamic_buffer.get_size());  
-                assert(compute_amount_padding(m_buffer.get_size(), Layout<Vector<T>>::alignment) == 0);
+                assert(compute_amount_padding(m_buffer.get_size(), Layout<Vector<T>>::final_alignment) == 0);
             }
 
             void clear_impl() {

@@ -18,6 +18,8 @@
 #ifndef FLATMEMORY_TYPE_TRAITS_HPP_
 #define FLATMEMORY_TYPE_TRAITS_HPP_
 
+#include "builder.hpp"
+
 #include <type_traits>
 
 
