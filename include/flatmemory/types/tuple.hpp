@@ -40,6 +40,38 @@ namespace flatmemory
     template<typename... Ts>
     struct Tuple {};
 
+/*
+    // Assuming is_custom_type is defined elsewhere
+    template<typename T, bool = std::is_trivially_copyable_v<T>>
+    struct maybe_builder {
+        using type = T;
+    };
+
+
+    template<typename... Ts, bool B>
+    struct maybe_builder<Tuple<Ts...>, B> {
+        using type = Builder<Tuple<Ts...>>;
+    };
+
+
+    template<typename... Ts>
+    struct CompositeType {
+        std::tuple<typename maybe_builder<Ts>::type...> m_data;
+    };
+
+    if constexpr (std::is_trivially_copyable_v<T>) {
+        // Directly handle trivially copyable types without a Builder
+        // Example: directly copy memory, perform bitwise operations, etc.
+    } else if constexpr (is_custom_type<T>::value) {
+        // Handle custom types using a Builder
+        // Example: create a Builder instance and invoke custom serialization/deserialization logic
+    } else {
+        // Fail for types that are neither trivially copyable nor custom
+        static_assert(std::is_trivially_copyable_v<T> || is_custom_type<T>::value, "Unsupported type: Type must be either trivially copyable or custom-defined for serialization.");
+    }
+
+
+*/
 
     /**
      * Layout
@@ -99,6 +131,8 @@ namespace flatmemory
             std::tuple<Builder<Ts>...> m_data;
             ByteStream m_buffer;
             ByteStream m_dynamic_buffer;
+
+            // std::tuple<typename maybe_builder<Ts>::type...> m_data_2;
 
             /* Implement IBuilder interface. */
             template<typename>
