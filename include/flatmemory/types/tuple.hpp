@@ -172,14 +172,13 @@ namespace flatmemory
             friend class IBuilder;
 
             template<std::size_t I = 0>
-            void finish_rec_impl() {
+            void finish_rec_impl(offset_type offset) {
                 // Write padding to satisfy alignment requirements
                 m_buffer.write_padding(Layout<Tuple<Ts...>>::offsets[I] - m_buffer.get_size());
 
                 assert(m_buffer.get_size() == Layout<Tuple<Ts...>>::offsets[I]);
 
                 // offset is the first position to write the dynamic data
-                offset_type offset = Layout<Tuple<Ts...>>::offsets.back();
                 constexpr bool is_dynamic = is_dynamic_type<std::tuple_element_t<I, std::tuple<Ts...>>>::value;
                 constexpr bool is_trivial = is_trivial_and_standard_layout_v<std::tuple_element_t<I, std::tuple<Ts...>>>;
                 if constexpr (is_trivial) {
@@ -202,7 +201,7 @@ namespace flatmemory
 
                 if constexpr (I < sizeof...(Ts) - 1) {
                     // Call finish of next data
-                    finish_rec_impl<I + 1>();
+                    finish_rec_impl<I + 1>(offset);
                 }
             }
 
@@ -210,7 +209,8 @@ namespace flatmemory
             void finish_impl() {
                 // Build header and dynamic buffer
                 if constexpr (0 < sizeof...(Ts)) {
-                    finish_rec_impl<0>();
+                    offset_type offset = Layout<Tuple<Ts...>>::offsets.back();
+                    finish_rec_impl<0>(offset);
                 }
                 // Write padding after last element for correct data alignment
                 m_buffer.write_padding(Layout<Tuple<Ts...>>::offsets[sizeof...(Ts)] - m_buffer.get_size());
@@ -277,7 +277,9 @@ namespace flatmemory
                 offset_type offset = Layout<Tuple<Ts...>>::offsets[I];
                 return *reinterpret_cast<element_type<I>*>(m_data + offset);
             } else {
+                Layout<Tuple<Ts...>>().print();
                 offset_type offset = Layout<Tuple<Ts...>>::offsets[I];
+                std::cout << offset << std::endl;
                 if constexpr (is_dynamic_type<element_type<I>>::value) {
                     offset = read_value<offset_type>(m_data + offset);
                 }
