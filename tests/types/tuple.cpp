@@ -76,7 +76,6 @@ namespace flatmemory::tests
         EXPECT_EQ((Layout<Tuple<Vector<uint64_t>>>::alignment), 8);
         static_assert(!is_trivial_and_standard_layout_v<Tuple<Vector<uint64_t>>>, "Tuple<Vector<uint64_t>> must not have standard layout.");
 
-
         auto builder = Builder<Tuple<Vector<uint64_t>>>();
         builder.get_builder<0>().get_builders().resize(3);
         builder.finish();

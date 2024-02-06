@@ -52,68 +52,73 @@ namespace flatmemory
     template<typename... Ts>
     class Layout<Tuple<Ts...>> {
         private:
-            
-            // Utility to apply a function to each type in a parameter pack.
-            template<typename Func, size_t... Is>
-            static constexpr void for_each_type(std::index_sequence<Is...>, Func&& func) {
-                (..., func(std::integral_constant<size_t, Is>{}));
+            /**
+             * Compute the amount of bytes needed to store the header of type T
+             *   - For trivial type T use sizeof(T)
+             *   - For dynamic custom type T use sizeof(offset_type) since we store the data with an offset
+             *   - For static custom type T use Layout<T>::size which is computed in the Layout of type T.
+            */
+            template<typename T>
+            static constexpr size_t compute_type_size() {
+                constexpr bool is_dynamic = is_dynamic_type<T>::value;
+                constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
+                if constexpr (is_trivial) {
+                    return sizeof(T);
+                } else {
+                    if constexpr (is_dynamic) {
+                        return sizeof(offset_type);
+                    } else {
+                        return Layout<T>::size;
+                    }
+                }
             }
 
             /**
-             * For static data types, the offset will point to the actual data.
-             * For dynamic data types, the offset will point to an offset to the actual data.
+             * Compute the padding needed to be added to cur_pos to obtain correct alignment for storing type T
+             *   - For trivial type T use alignof(T)
+             *   - For dynamic custom type T use alignof(offset_type) since we store the data with an offset
+             *   - For static custom type T use Layout<T>::alignment which is computed in the Layout of type T.
             */
-            static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_layout() {
-                std::array<offset_type, sizeof...(Ts) + 1> layout{0};
-                size_t cur_pos = 0;
-
-                for_each_type(std::make_index_sequence<sizeof...(Ts) - 1>{}, [&](auto index) {
-                    constexpr size_t I = index.value;
-                    // Compute required value bytes
-                    using T = std::tuple_element_t<I, std::tuple<Ts...>>;
-                    constexpr bool is_t_dynamic = is_dynamic_type<T>::value;
-                    constexpr bool is_t_trivial = is_trivial_and_standard_layout_v<T>;
-                    if constexpr (is_t_trivial) {
-                        cur_pos += sizeof(T);
-                    } else {
-                        if constexpr (is_t_dynamic) {
-                            cur_pos += sizeof(offset_type);
-                        } else {
-                            cur_pos += Layout<T>::size;
-                        }
-                    }
-                    // Compute required padding bytes
-                    using TNext = std::tuple_element_t<I + 1, std::tuple<Ts...>>;
-                    constexpr bool is_t_next_dynamic = is_dynamic_type<TNext>::value;
-                    constexpr bool is_t_next_trivial = is_trivial_and_standard_layout_v<TNext>;
-                    if constexpr (is_t_next_trivial) {
-                        cur_pos += compute_amount_padding(cur_pos, alignof(TNext));
-                    } else {
-                        if constexpr (is_t_next_dynamic) {
-                            cur_pos += compute_amount_padding(cur_pos, alignof(offset_type)); 
-                        } else {
-                            cur_pos += compute_amount_padding(cur_pos, Layout<T>::alignment);
-                        }
-                    }
-                    layout[I + 1] = cur_pos; // Increment layout position for the next type
-                });
-
-                using T = std::tuple_element_t<sizeof...(Ts) - 1, std::tuple<Ts...>>;
-                constexpr bool is_t_dynamic = is_dynamic_type<T>::value;
-                constexpr bool is_t_trivial = is_trivial_and_standard_layout_v<T>;
-                if constexpr (is_t_trivial) {
-                    cur_pos += sizeof(T);
+            template<typename T>
+            static constexpr size_t compute_padding_size(size_t cur_pos) {
+                constexpr bool is_dynamic = is_dynamic_type<T>::value;
+                constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
+                if constexpr (is_trivial) {
+                    return compute_amount_padding(cur_pos, alignof(T));
                 } else {
-                    if constexpr (is_t_dynamic) {
-                        cur_pos += sizeof(offset_type);
+                    if constexpr (is_dynamic) {
+                        return compute_amount_padding(cur_pos, alignof(offset_type)); 
                     } else {
-                        cur_pos += Layout<T>::size;
+                        return compute_amount_padding(cur_pos, Layout<T>::alignment);
                     }
                 }
+            }
+           
+            template<size_t... Is>
+            static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_layout_impl(std::index_sequence<Is...>) {
+                std::array<offset_type, sizeof...(Ts) + 1> layout{};
+                size_t cur_pos = 0;
+                layout[0] = cur_pos;
+                ([&] {
+                    // The size of the i-th element (looks correct)
+                    using T = std::tuple_element_t<Is, std::tuple<Ts...>>;
+                    cur_pos += compute_type_size<T>();
+
+                    // The padding dependent on the alignment of the i+1-th element
+                    using T_Next = std::tuple_element_t<Is + 1, std::tuple<Ts...>>;
+                    cur_pos += compute_padding_size<T_Next>(cur_pos);
+
+                    layout[Is + 1] = cur_pos;
+                }(), ...);
+                using T = std::tuple_element_t<sizeof...(Ts) - 1, std::tuple<Ts...>>;
+                cur_pos += compute_type_size<T>();
                 cur_pos += compute_amount_padding(cur_pos, calculate_alignment());
                 layout[sizeof...(Ts)] = cur_pos;
-
                 return layout;
+            }
+
+            static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_layout() {
+                return calculate_layout_impl(std::make_index_sequence<sizeof...(Ts) - 1>{});
             }
 
             static constexpr size_t calculate_alignment() {
@@ -193,6 +198,7 @@ namespace flatmemory
                         m_buffer.write(nested_builder.get_data(), nested_builder.get_size());
                     }
                 }
+                
 
                 if constexpr (I < sizeof...(Ts) - 1) {
                     // Call finish of next data
