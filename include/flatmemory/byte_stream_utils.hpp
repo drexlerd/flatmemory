@@ -21,7 +21,8 @@
 #include <cstdint>
 #include <cstddef>
 #include <type_traits>
-
+#include <iostream>
+#include <iomanip>
 
 namespace flatmemory
 {
@@ -89,6 +90,16 @@ constexpr inline size_t compute_amount_padding(size_t pos, size_t align_factor) 
 constexpr inline bool is_correctly_aligned(size_t num_bytes, int max_alignment_factor) {
     return (num_bytes % max_alignment_factor == 0);
 }
+
+
+inline void print(const uint8_t* data, size_t num_bytes) {
+    for (size_t i = 0; i < num_bytes; ++i) {
+        // Print each byte in hexadecimal format with leading zeros
+        std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(data[i]) << " ";
+    }
+    std::cout << std::dec << std::endl; // Reset to decimal output
+}
+
 
 }
 

@@ -31,6 +31,7 @@
 #include <cassert>
 #include <tuple>
 #include <iostream>
+#include <string>
 
 
 namespace flatmemory
@@ -63,7 +64,7 @@ namespace flatmemory
              * For dynamic data types, the offset will point to an offset to the actual data.
             */
             static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_layout() {
-                std::array<offset_type, sizeof...(Ts) + 1> layout{};
+                std::array<offset_type, sizeof...(Ts) + 1> layout{0};
                 size_t cur_pos = 0;
 
                 for_each_type(std::make_index_sequence<sizeof...(Ts) - 1>{}, [&](auto index) {
@@ -97,6 +98,21 @@ namespace flatmemory
                     layout[I + 1] = cur_pos; // Increment layout position for the next type
                 });
 
+                using T = std::tuple_element_t<sizeof...(Ts) - 1, std::tuple<Ts...>>;
+                constexpr bool is_t_dynamic = is_dynamic_type<T>::value;
+                constexpr bool is_t_trivial = is_trivial_and_standard_layout_v<T>;
+                if constexpr (is_t_trivial) {
+                    cur_pos += sizeof(T);
+                } else {
+                    if constexpr (is_t_dynamic) {
+                        cur_pos += sizeof(offset_type);
+                    } else {
+                        cur_pos += Layout<T>::size;
+                    }
+                }
+                cur_pos += compute_amount_padding(cur_pos, calculate_alignment());
+                layout[sizeof...(Ts)] = cur_pos;
+
                 return layout;
             }
 
@@ -117,6 +133,13 @@ namespace flatmemory
             static constexpr std::array<offset_type, sizeof...(Ts) + 1> offsets = calculate_layout();
 
             static constexpr size_t alignment = calculate_alignment();
+
+            void print() const {
+                std::cout << "alignment: " << alignment << std::endl;
+                for (size_t i = 0; i < offsets.size(); ++i) {
+                    std::cout << "i: " << i << " " << offsets[i] << std::endl;
+                }
+            }
     };
 
     
@@ -164,7 +187,7 @@ namespace flatmemory
                     
                     if constexpr (is_dynamic) {
                         m_buffer.write(offset);
-                        m_dynamic_buffer.write(nested_builder.get_data(), nested_builder.get_size());     
+                        m_dynamic_buffer.write(nested_builder.get_data(), nested_builder.get_size());    
                         offset += nested_builder.get_size();
                     } else {
                         m_buffer.write(nested_builder.get_data(), nested_builder.get_size());
@@ -183,6 +206,8 @@ namespace flatmemory
                 if constexpr (0 < sizeof...(Ts)) {
                     finish_rec_impl<0>();
                 }
+                // Write padding after last element for correct data alignment
+                m_buffer.write_padding(Layout<Tuple<Ts...>>::offsets[sizeof...(Ts)] - m_buffer.get_size());
                 // Concatenate all buffers
                 m_buffer.write(m_dynamic_buffer.get_data(), m_dynamic_buffer.get_size());  
                 // Write alignment padding

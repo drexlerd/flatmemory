@@ -16,6 +16,7 @@
  */
 
 #include <flatmemory/types/tuple.hpp>
+#include <flatmemory/types/vector.hpp>
 
 #include <gtest/gtest.h>
 
@@ -69,5 +70,20 @@ namespace flatmemory::tests
         EXPECT_EQ(view.get<0>(), 5);
         EXPECT_EQ(view.get<1>(), 6);
         EXPECT_EQ(view.get<2>(), 7);
+    }
+
+    TEST(FlatmemoryTests, TypesTupleVectorTest) {
+        EXPECT_EQ((Layout<Tuple<Vector<uint64_t>>>::alignment), 8);
+        static_assert(!is_trivial_and_standard_layout_v<Tuple<Vector<uint64_t>>>, "Tuple<Vector<uint64_t>> must not have standard layout.");
+
+
+        auto builder = Builder<Tuple<Vector<uint64_t>>>();
+        builder.get_builder<0>().get_builders().resize(3);
+        builder.finish();
+        EXPECT_NE(builder.get_data(), nullptr);
+        EXPECT_EQ(builder.get_size(), 40);
+
+        auto view = View<Tuple<Vector<uint64_t>>>(builder.get_data());
+        EXPECT_EQ(view.get<0>().get_size(), 3);
     }
 }
