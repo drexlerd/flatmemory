@@ -38,7 +38,10 @@ namespace flatmemory
      * Dispatcher for tuple.
     */
     template<typename T>
-    struct Vector {};
+    struct Vector {
+        Vector() { }  // Non-trivial constructor
+        ~Vector() { } // Non-trivial destructor
+    };
 
 
     /**
@@ -54,7 +57,8 @@ namespace flatmemory
         static constexpr offset_type calculate_data_offset() {
             size_t cur_pos = 0;
             cur_pos += sizeof(vector_size_type);
-            if constexpr (is_dynamic_type<T>::value) {
+            constexpr bool is_dynamic = is_dynamic_type<T>::value;
+            if constexpr (is_dynamic) {
                 cur_pos += compute_amount_padding(cur_pos, Layout<T>::alignment);
             } else {
                 cur_pos += compute_amount_padding(cur_pos, sizeof(offset_type));
@@ -62,11 +66,23 @@ namespace flatmemory
             return cur_pos;
         }
 
+
+        static constexpr size_t calculate_alignment() {
+            size_t alignment = std::max({alignof(offset_type), alignof(vector_size_type)});
+            constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
+            if constexpr (is_trivial) {
+                alignment = std::max(alignment, alignof(T));
+            } else {
+                alignment = std::max(alignment, Layout<T>::alignment);
+            }
+            return alignment;
+        }
+
         public:
             static constexpr offset_type size_offset = 0;
             static constexpr offset_type data_offset = calculate_data_offset();
 
-            static constexpr size_t alignment = std::max({alignof(offset_type), alignof(vector_size_type), Layout<T>::alignment});
+            static constexpr size_t alignment = calculate_alignment();
     };
 
     
@@ -83,7 +99,7 @@ namespace flatmemory
     template<typename T>
     class Builder<Vector<T>> : public IBuilder<Builder<Vector<T>>> {
         private:
-            std::vector<Builder<T>> m_data;
+            std::vector<typename maybe_builder<T>::type> m_data;
             ByteStream m_buffer;
             ByteStream m_dynamic_buffer;
 
@@ -97,27 +113,35 @@ namespace flatmemory
                 m_buffer.write<vector_size_type>(m_data.size());
                 m_buffer.write_padding(Layout<Vector<T>>::data_offset - m_buffer.get_size());
 
-                if constexpr (is_dynamic_type<T>::value) {
-                    /* For dynamic type T, we store the offsets first */
-                    // offset is the first position to write the dynamic data
-                    offset_type offset = Layout<Vector<T>>::data_offset;
+                constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
+                constexpr bool is_dynamic = is_dynamic_type<T>::value;
+                if constexpr (is_trivial) {
                     for (size_t i = 0; i < m_data.size(); ++i) {
-                        auto& nested_builder = m_data[i];
-                        nested_builder.finish();
-
-                        m_buffer.write(offset);
-                        m_dynamic_buffer.write(nested_builder.get_data(), nested_builder.get_size());     
-                        offset += sizeof(offset_type) + nested_builder.get_size();
+                        m_buffer.write(m_data[i]);
                     }
                 } else {
-                    /* For static type T, we can store the data directly */
-                    for (size_t i = 0; i < m_data.size(); ++i) {
-                        auto& nested_builder = m_data[i];
-                        nested_builder.finish();
-                        
-                        assert(nested_builder.get_size() == Layout<T>::size);  
-                        m_buffer.write(nested_builder.get_data(), nested_builder.get_size()); 
-                    }  
+                    if constexpr (is_dynamic) {
+                        /* For dynamic type T, we store the offsets first */
+                        // offset is the first position to write the dynamic data
+                        offset_type offset = Layout<Vector<T>>::data_offset;
+                        for (size_t i = 0; i < m_data.size(); ++i) {
+                            auto& nested_builder = m_data[i];
+                            nested_builder.finish();
+
+                            m_buffer.write(offset);
+                            m_dynamic_buffer.write(nested_builder.get_data(), nested_builder.get_size());     
+                            offset += sizeof(offset_type) + nested_builder.get_size();
+                        }
+                    } else {
+                        /* For static type T, we can store the data directly */
+                        for (size_t i = 0; i < m_data.size(); ++i) {
+                            auto& nested_builder = m_data[i];
+                            nested_builder.finish();
+                            
+                            assert(nested_builder.get_size() == Layout<T>::size);  
+                            m_buffer.write(nested_builder.get_data(), nested_builder.get_size()); 
+                        }  
+                    }
                 }
                 // Concatenate all buffers
                 m_buffer.write(m_dynamic_buffer.get_data(), m_dynamic_buffer.get_size());  
@@ -139,7 +163,7 @@ namespace flatmemory
             size_t get_size_impl() const { return m_buffer.get_size(); }
 
         public:
-            std::vector<Builder<T>>& get_builders() { return m_data; }
+            auto& get_builders() { return m_data; }
     };
 
 
@@ -156,11 +180,15 @@ namespace flatmemory
 
         size_t get_size() const { return read_value<vector_size_type>(m_data + Layout<Vector<T>>::size_offset); }
 
-        View<T> operator[](size_t pos) const {
-            if constexpr (is_dynamic_type<T>::value) {
-                return View<T>(m_data + read_value<offset_type>(m_data + Layout<Vector<T>>::data_offset + pos * sizeof(offset_type)));
+        decltype(auto) operator[](size_t pos) const {
+            if constexpr (is_trivial_and_standard_layout_v<T>) {
+                return read_value<T>(m_data + Layout<Vector<T>>::data_offset + pos * sizeof(T));
             } else {
-                return View<T>(m_data + Layout<Vector<T>>::data_offset + pos * Layout<T>::size);
+                if constexpr (is_dynamic_type<T>::value) {
+                    return View<T>(m_data + read_value<offset_type>(m_data + Layout<Vector<T>>::data_offset + pos * sizeof(offset_type)));
+                } else {
+                    return View<T>(m_data + Layout<Vector<T>>::data_offset + pos * Layout<T>::size);
+                }
             }
         }
     };

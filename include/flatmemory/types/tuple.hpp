@@ -26,7 +26,6 @@
 #include "../view.hpp"
 #include "../type_traits.hpp"
 #include "../types.hpp"
-#include "uint16.hpp"
 
 #include <algorithm>
 #include <cassert>

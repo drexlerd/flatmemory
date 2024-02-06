@@ -16,7 +16,6 @@
  */
 
 #include <flatmemory/types/tuple.hpp>
-#include <flatmemory/types/uint16.hpp>
 
 #include <gtest/gtest.h>
 
