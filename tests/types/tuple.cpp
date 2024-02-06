@@ -26,13 +26,9 @@
 namespace flatmemory::tests
 {
     TEST(FlatmemoryTests, TypesTupleEmptyTest) {
-        // Test without any padding.
-        //  ______________________
-        // ||  |  ||  |  ||  |  ||
-        // ||  5  ||  6  ||  7  ||
-        // ||__|__||__|__||__|__||
+        // Test empty tuple
         EXPECT_EQ((Layout<Tuple<>>::alignment), 0);
-        //static_assert(!is_trivial_and_standard_layout_v<Tuple<uint16_t, uint16_t, uint16_t>>, "Tuple<uint16_t, uint16_t, uint16_t> must not have standard layout.");
+        static_assert(!is_trivial_and_standard_layout_v<Tuple<>>, "Tuple<> must not have standard layout.");
 
         auto builder = Builder<Tuple<>>();
         builder.finish();
@@ -112,10 +108,47 @@ namespace flatmemory::tests
         EXPECT_NE(builder.get_data(), nullptr);
         EXPECT_EQ(builder.get_size(), 56);
 
-        print(builder.get_data(), builder.get_size());
-
         auto view = View<Tuple<Vector<uint64_t>, Vector<uint16_t>>>(builder.get_data());
         EXPECT_EQ(view.get<0>().get_size(), 3);
         EXPECT_EQ(view.get<1>().get_size(), 4);
+    }
+
+
+    TEST(FlatmemoryTests, TypesTupleVectorVectorTest) {
+        EXPECT_EQ((Layout<Tuple<Vector<Vector<uint64_t>>>>::alignment), 8);
+        static_assert(!is_trivial_and_standard_layout_v<Tuple<Vector<Vector<uint64_t>>>>, "Tuple<Vector<Vector<uint64_t>>> must not have standard layout.");
+ 
+        auto builder = Builder<Tuple<Vector<Vector<uint64_t>>>>();
+        builder.get_builder<0>().get_builders().resize(3);
+        builder.get_builder<0>().get_builders()[0].get_builders().resize(2);
+        builder.get_builder<0>().get_builders()[1].get_builders().resize(3);
+        builder.get_builder<0>().get_builders()[2].get_builders().resize(4);
+        builder.finish();
+
+        auto view = View<Tuple<Vector<Vector<uint64_t>>>>(builder.get_data());
+        EXPECT_EQ(view.get<0>().get_size(), 3);
+        EXPECT_EQ(view.get<0>()[0].get_size(), 2);
+        EXPECT_EQ(view.get<0>()[1].get_size(), 3);
+        EXPECT_EQ(view.get<0>()[2].get_size(), 4);
+    }
+
+
+    struct StructTest {
+        uint32_t x;
+        uint64_t y;
+    };
+
+    TEST(FlatmemoryTests, TypesTupleStructTest) {
+        EXPECT_EQ((Layout<Tuple<StructTest>>::alignment), 8);
+        static_assert(!is_trivial_and_standard_layout_v<Tuple<StructTest>>, "Tuple<StructTest> must not have standard layout.");
+    
+        auto builder = Builder<Tuple<StructTest>>();
+        builder.get_builder<0>().x = 5;
+        builder.get_builder<0>().y = 10;
+        builder.finish();
+
+        auto view = View<Tuple<StructTest>>(builder.get_data());
+        EXPECT_EQ(view.get<0>().x, 5);
+        EXPECT_EQ(view.get<0>().y, 10);
     }
 }

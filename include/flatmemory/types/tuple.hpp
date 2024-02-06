@@ -287,7 +287,6 @@ namespace flatmemory
                 offset_type offset = Layout<Tuple<Ts...>>::offsets[I];
                 return *reinterpret_cast<element_type<I>*>(m_data + offset);
             } else {
-                Layout<Tuple<Ts...>>().print();
                 offset_type offset = Layout<Tuple<Ts...>>::offsets[I];
                 if constexpr (is_dynamic_type<element_type<I>>::value) {
                     offset = read_value<offset_type>(m_data + offset);

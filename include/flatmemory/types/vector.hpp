@@ -58,10 +58,15 @@ namespace flatmemory
             size_t cur_pos = 0;
             cur_pos += sizeof(vector_size_type);
             constexpr bool is_dynamic = is_dynamic_type<T>::value;
-            if constexpr (is_dynamic) {
-                cur_pos += compute_amount_padding(cur_pos, Layout<T>::alignment);
+            constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
+            if constexpr (is_trivial) {
+                cur_pos += compute_amount_padding(cur_pos, alignof(T));
             } else {
-                cur_pos += compute_amount_padding(cur_pos, sizeof(offset_type));
+                if constexpr (is_dynamic) {
+                    cur_pos += compute_amount_padding(cur_pos, Layout<T>::alignment);
+                } else {
+                    cur_pos += compute_amount_padding(cur_pos, sizeof(offset_type));
+                }
             }
             return cur_pos;
         }
@@ -83,6 +88,12 @@ namespace flatmemory
             static constexpr offset_type data_offset = calculate_data_offset();
 
             static constexpr size_t alignment = calculate_alignment();
+
+            void print() const {
+                std::cout << "alignment: " << alignment << std::endl;
+                std::cout << "size_offset: " << size_offset << std::endl;
+                std::cout << "data_offset: " << data_offset << std::endl;
+            }
     };
 
     
@@ -130,7 +141,7 @@ namespace flatmemory
 
                             m_buffer.write(offset);
                             m_dynamic_buffer.write(nested_builder.get_data(), nested_builder.get_size());     
-                            offset += sizeof(offset_type) + nested_builder.get_size();
+                            offset += nested_builder.get_size();
                         }
                     } else {
                         /* For static type T, we can store the data directly */
@@ -143,6 +154,7 @@ namespace flatmemory
                         }  
                     }
                 }
+                m_buffer.write_padding(compute_amount_padding(m_buffer.get_size(), Layout<Vector<T>>::alignment));
                 // Concatenate all buffers
                 m_buffer.write(m_dynamic_buffer.get_data(), m_dynamic_buffer.get_size());  
                 // Write alignment padding
@@ -185,7 +197,7 @@ namespace flatmemory
                 return read_value<T>(m_data + Layout<Vector<T>>::data_offset + pos * sizeof(T));
             } else {
                 if constexpr (is_dynamic_type<T>::value) {
-                    return View<T>(m_data + read_value<offset_type>(m_data + Layout<Vector<T>>::data_offset + pos * sizeof(offset_type)));
+                    return View<T>(m_data + Layout<Vector<T>>::data_offset + read_value<offset_type>(m_data + Layout<Vector<T>>::data_offset + pos * sizeof(offset_type)));
                 } else {
                     return View<T>(m_data + Layout<Vector<T>>::data_offset + pos * Layout<T>::size);
                 }
