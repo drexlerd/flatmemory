@@ -32,6 +32,9 @@ namespace flatmemory::tests
 
         auto builder = Builder<Tuple<>>();
         builder.finish();
+
+        EXPECT_NE(builder.get_data(), nullptr);
+        EXPECT_EQ(builder.get_size(), 1);  // minimum alignment requirement is 1
     }
 
     TEST(FlatmemoryTests, TypesTupleTest) {

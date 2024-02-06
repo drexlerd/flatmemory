@@ -80,20 +80,6 @@ T* uint64_t_to_pointer(uint64_t address) {
 }
 
 
-/**
- * Ensure correct memory alignment for efficient processing
-*/
-
-constexpr inline size_t compute_amount_padding(size_t pos, size_t align_factor) {
-    if (align_factor == 0) return 0;
-    return (align_factor - (pos % align_factor)) % align_factor;
-}
-
-constexpr inline bool is_correctly_aligned(size_t num_bytes, int max_alignment_factor) {
-    return (num_bytes % max_alignment_factor == 0);
-}
-
-
 inline void print(const uint8_t* data, size_t num_bytes) {
     for (size_t i = 0; i < num_bytes; ++i) {
         // Print each byte in hexadecimal format with leading zeros
