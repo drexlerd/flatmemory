@@ -26,8 +26,13 @@
 namespace flatmemory::tests
 {
     TEST(FlatmemoryTests, TypesTupleTest) {
+        // Test without any padding.
+        //  ______________________
+        // ||  |  ||  |  ||  |  ||
+        // ||  5  ||  6  ||  7  ||
+        // ||__|__||__|__||__|__||
         EXPECT_EQ((Layout<Tuple<uint16_t, uint16_t, uint16_t>>::alignment), 2);
-        static_assert(!is_trivial_and_standard_layout_v<Tuple<uint16_t, uint16_t, uint16_t>>, "Tuple<Ts...> must not have standard layout.");
+        static_assert(!is_trivial_and_standard_layout_v<Tuple<uint16_t, uint16_t, uint16_t>>, "Tuple<uint16_t, uint16_t, uint16_t> must not have standard layout.");
 
         auto builder = Builder<Tuple<int16_t, uint16_t, uint16_t>>();
         builder.get_builder<0>() = 5;
@@ -46,8 +51,12 @@ namespace flatmemory::tests
 
     TEST(FlatmemoryTests, TypesTuplePaddingTest) {
         // Test with padding in between.
+        //  __________________________________________
+        // ||  |  ||  |  ||  |  |  |  ||  |  ||  |  ||
+        // ||  5  ||  P  ||     6     ||  7  ||  P  ||
+        // ||__|__||__|__||__|__|__|__||__|__||__|__||
         EXPECT_EQ((Layout<Tuple<int16_t, int32_t, uint16_t>>::alignment), 4);
-        static_assert(!is_trivial_and_standard_layout_v<Tuple<int16_t, int32_t, uint16_t>>, "Tuple<Ts...> must not have standard layout.");
+        static_assert(!is_trivial_and_standard_layout_v<Tuple<int16_t, int32_t, uint16_t>>, "Tuple<int16_t, int32_t, uint16_t> must not have standard layout.");
 
         auto builder = Builder<Tuple<int16_t, int32_t, uint16_t>>();
         builder.get_builder<0>() = 5;
