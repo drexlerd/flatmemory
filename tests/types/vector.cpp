@@ -27,9 +27,9 @@ namespace flatmemory::tests
 {
 
 TEST(FlatmemoryTests, TypesVectorTest) {
-    EXPECT_EQ((Layout<VectorTag<Uint16Tag>>::alignment), 4);
+    EXPECT_EQ((Layout<Vector<Uint16>>::alignment), 4);
 
-    auto builder = Builder<VectorTag<Uint16Tag>>();
+    auto builder = Builder<Vector<Uint16>>();
     builder.get_builders().resize(2);
     builder.get_builders()[0].get_value() = 5;
     builder.get_builders()[1].get_value() = 6;
@@ -37,7 +37,7 @@ TEST(FlatmemoryTests, TypesVectorTest) {
 
     EXPECT_EQ(builder.get_size(), 8);
 
-    auto view = View<VectorTag<Uint16Tag>>(builder.get_data());
+    auto view = View<Vector<Uint16>>(builder.get_data());
     EXPECT_EQ(view.get_size(), 2);
     EXPECT_EQ(view[0].get_value(), 5);
     EXPECT_EQ(view[1].get_value(), 6);
@@ -45,9 +45,9 @@ TEST(FlatmemoryTests, TypesVectorTest) {
 
 
 TEST(FlatmemoryTests, TypesVector2Test) {
-    EXPECT_EQ((Layout<VectorTag<Uint16Tag>>::alignment), 4);
+    EXPECT_EQ((Layout<Vector<Uint16>>::alignment), 4);
 
-    auto builder = Builder<VectorTag<Uint16Tag>>();
+    auto builder = Builder<Vector<Uint16>>();
     builder.get_builders().resize(3);
     builder.finish();
 

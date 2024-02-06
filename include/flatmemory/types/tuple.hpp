@@ -38,14 +38,14 @@ namespace flatmemory
      * Dispatcher for tuple.
     */
     template<typename... Ts>
-    struct TupleTag {};
+    struct Tuple {};
 
 
     /**
      * Layout
     */
     template<typename... Ts>
-    class Layout<TupleTag<Ts...>> {
+    class Layout<Tuple<Ts...>> {
         private:
             /**
              * For static data types, the offset will point to the actual data.
@@ -87,14 +87,14 @@ namespace flatmemory
      * A tuple is dynamic if at least one of its nested builders is dynamic.
     */
     template<typename... Ts>
-    struct is_dynamic_type<TupleTag<Ts...>> : std::bool_constant<(is_dynamic_type<Ts>::value || ...)> {};
+    struct is_dynamic_type<Tuple<Ts...>> : std::bool_constant<(is_dynamic_type<Ts>::value || ...)> {};
 
 
     /**
      * Builder
     */
     template<typename... Ts> 
-    class Builder<TupleTag<Ts...>> : public IBuilder<Builder<TupleTag<Ts...>>> {
+    class Builder<Tuple<Ts...>> : public IBuilder<Builder<Tuple<Ts...>>> {
         private:
             std::tuple<Builder<Ts>...> m_data;
             ByteStream m_buffer;
@@ -106,17 +106,17 @@ namespace flatmemory
 
             template<std::size_t I = 0>
             void finish_rec_impl() {
-                assert(m_buffer.get_size() == Layout<TupleTag<Ts...>>::offsets[I]);
+                assert(m_buffer.get_size() == Layout<Tuple<Ts...>>::offsets[I]);
 
                 // offset is the first position to write the dynamic data
-                offset_type offset = Layout<TupleTag<Ts...>>::offsets.back();
+                offset_type offset = Layout<Tuple<Ts...>>::offsets.back();
                 if constexpr (I < sizeof...(Ts)) {
                     // Recursively call finish
                     auto& nested_builder = std::get<I>(m_data);
                     nested_builder.finish();
                     
                     // Write padding to satisfy alignment requirements
-                    m_buffer.write_padding(Layout<TupleTag<Ts...>>::offsets[I] - m_buffer.get_size());
+                    m_buffer.write_padding(Layout<Tuple<Ts...>>::offsets[I] - m_buffer.get_size());
 
                     bool is_dynamic = is_dynamic_type<std::tuple_element_t<I, std::tuple<Ts...>>>::value;
                     if (is_dynamic) {
@@ -139,7 +139,7 @@ namespace flatmemory
                 // Concatenate all buffers
                 m_buffer.write(m_dynamic_buffer.get_data(), m_dynamic_buffer.get_size());  
                 // Write alignment padding
-                m_buffer.write_padding(compute_amount_padding(m_buffer.get_size(), Layout<TupleTag<Ts...>>::alignment));
+                m_buffer.write_padding(compute_amount_padding(m_buffer.get_size(), Layout<Tuple<Ts...>>::alignment));
             }
 
 
@@ -178,7 +178,7 @@ namespace flatmemory
      * View
     */
     template<typename... Ts>
-    class View<TupleTag<Ts...>> {
+    class View<Tuple<Ts...>> {
     private:
         uint8_t* m_data;
 
@@ -192,7 +192,7 @@ namespace flatmemory
         */
         template<std::size_t I>
         auto get() {
-            offset_type offset = Layout<TupleTag<Ts...>>::offsets[I];
+            offset_type offset = Layout<Tuple<Ts...>>::offsets[I];
             if constexpr (is_dynamic_type<std::tuple_element_t<I, std::tuple<Ts...>>>::value) {
                 offset = read_value<offset_type>(m_data + offset);
             }

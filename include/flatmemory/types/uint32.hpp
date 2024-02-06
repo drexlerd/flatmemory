@@ -35,14 +35,14 @@ namespace flatmemory
     /**
      * Dispatcher for tuple.
     */
-    struct Uint32Tag {};
+    struct Uint32 {};
 
 
     /**
      * Layout
     */
     template<>
-    class Layout<Uint32Tag> {
+    class Layout<Uint32> {
         public:
             static constexpr offset_type size = sizeof(uint32_t); 
             static constexpr size_t alignment = alignof(uint32_t);
@@ -53,14 +53,14 @@ namespace flatmemory
      * Type traits
     */
     template<>
-    struct is_dynamic_type<Uint32Tag> : std::false_type{};
+    struct is_dynamic_type<Uint32> : std::false_type{};
 
 
     /**
      * Builder
     */
     template<>
-    class Builder<Uint32Tag> : public IBuilder<Builder<Uint32Tag>> {
+    class Builder<Uint32> : public IBuilder<Builder<Uint32>> {
         private:
             uint32_t m_value;
             ByteStream m_buffer;
@@ -85,7 +85,7 @@ namespace flatmemory
      * View
     */
     template<>
-    class View<Uint32Tag> {
+    class View<Uint32> {
     private:
         uint8_t* m_data;
 

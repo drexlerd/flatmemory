@@ -26,15 +26,15 @@ namespace flatmemory::tests
 {
 
 TEST(FlatmemoryTests, TypesUint16Test) {
-    EXPECT_EQ((Layout<Uint16Tag>::alignment), 2);
+    EXPECT_EQ((Layout<Uint16>::alignment), 2);
 
-    auto builder = Builder<Uint16Tag>();
+    auto builder = Builder<Uint16>();
     builder.get_value() = 5;
     builder.finish();
     EXPECT_NE(builder.get_data(), nullptr);
     EXPECT_EQ(builder.get_size(), 2);
 
-    auto view = View<Uint16Tag>(builder.get_data());
+    auto view = View<Uint16>(builder.get_data());
     EXPECT_EQ(view.get_value(), 5);
 }
 

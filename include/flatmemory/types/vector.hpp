@@ -38,7 +38,7 @@ namespace flatmemory
      * Dispatcher for tuple.
     */
     template<typename T>
-    struct VectorTag {};
+    struct Vector {};
 
 
     /**
@@ -50,7 +50,7 @@ namespace flatmemory
      * Layout
     */
     template<typename T>
-    class Layout<VectorTag<T>> {
+    class Layout<Vector<T>> {
         static constexpr offset_type calculate_data_offset() {
             size_t cur_pos = 0;
             cur_pos += sizeof(vector_size_type);
@@ -74,14 +74,14 @@ namespace flatmemory
      * Type traits
     */
     template<typename T>
-    struct is_dynamic_type<VectorTag<T>> : std::true_type{};
+    struct is_dynamic_type<Vector<T>> : std::true_type{};
 
 
     /**
      * Builder
     */
     template<typename T>
-    class Builder<VectorTag<T>> : public IBuilder<Builder<VectorTag<T>>> {
+    class Builder<Vector<T>> : public IBuilder<Builder<Vector<T>>> {
         private:
             std::vector<Builder<T>> m_data;
             ByteStream m_buffer;
@@ -95,12 +95,12 @@ namespace flatmemory
                 assert(m_data.size() <= std::numeric_limits<vector_size_type>::max());
 
                 m_buffer.write<vector_size_type>(m_data.size());
-                m_buffer.write_padding(Layout<VectorTag<T>>::data_offset - m_buffer.get_size());
+                m_buffer.write_padding(Layout<Vector<T>>::data_offset - m_buffer.get_size());
 
                 if constexpr (is_dynamic_type<T>::value) {
                     /* For dynamic type T, we store the offsets first */
                     // offset is the first position to write the dynamic data
-                    offset_type offset = Layout<VectorTag<T>>::data_offset;
+                    offset_type offset = Layout<Vector<T>>::data_offset;
                     for (size_t i = 0; i < m_data.size(); ++i) {
                         auto& nested_builder = m_data[i];
                         nested_builder.finish();
@@ -122,7 +122,7 @@ namespace flatmemory
                 // Concatenate all buffers
                 m_buffer.write(m_dynamic_buffer.get_data(), m_dynamic_buffer.get_size());  
                 // Write alignment padding
-                m_buffer.write_padding(compute_amount_padding(m_buffer.get_size(), Layout<VectorTag<T>>::alignment));
+                m_buffer.write_padding(compute_amount_padding(m_buffer.get_size(), Layout<Vector<T>>::alignment));
             }
 
             void clear_impl() {
@@ -147,20 +147,20 @@ namespace flatmemory
      * View
     */
     template<typename T>
-    class View<VectorTag<T>> {
+    class View<Vector<T>> {
     private:
         uint8_t* m_data;
 
     public:
         View(uint8_t* data) : m_data(data) {}
 
-        size_t get_size() const { return read_value<vector_size_type>(m_data + Layout<VectorTag<T>>::size_offset); }
+        size_t get_size() const { return read_value<vector_size_type>(m_data + Layout<Vector<T>>::size_offset); }
 
         View<T> operator[](size_t pos) const {
             if constexpr (is_dynamic_type<T>::value) {
-                return View<T>(m_data + read_value<offset_type>(m_data + Layout<VectorTag<T>>::data_offset + pos * sizeof(offset_type)));
+                return View<T>(m_data + read_value<offset_type>(m_data + Layout<Vector<T>>::data_offset + pos * sizeof(offset_type)));
             } else {
-                return View<T>(m_data + Layout<VectorTag<T>>::data_offset + pos * Layout<T>::size);
+                return View<T>(m_data + Layout<Vector<T>>::data_offset + pos * Layout<T>::size);
             }
         }
     };
