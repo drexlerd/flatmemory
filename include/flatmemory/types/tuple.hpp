@@ -26,10 +26,12 @@
 #include "../view.hpp"
 #include "../type_traits.hpp"
 #include "../types.hpp"
+#include "uint16.hpp"
 
 #include <algorithm>
 #include <cassert>
 #include <tuple>
+#include <iostream>
 
 
 namespace flatmemory
@@ -38,40 +40,11 @@ namespace flatmemory
      * Dispatcher for tuple.
     */
     template<typename... Ts>
-    struct Tuple {};
-
-/*
-    // Assuming is_custom_type is defined elsewhere
-    template<typename T, bool = std::is_trivially_copyable_v<T>>
-    struct maybe_builder {
-        using type = T;
+    struct Tuple {
+        Tuple() { }  // Non-trivial constructor
+        ~Tuple() { } // Non-trivial destructor
     };
 
-
-    template<typename... Ts, bool B>
-    struct maybe_builder<Tuple<Ts...>, B> {
-        using type = Builder<Tuple<Ts...>>;
-    };
-
-
-    template<typename... Ts>
-    struct CompositeType {
-        std::tuple<typename maybe_builder<Ts>::type...> m_data;
-    };
-
-    if constexpr (std::is_trivially_copyable_v<T>) {
-        // Directly handle trivially copyable types without a Builder
-        // Example: directly copy memory, perform bitwise operations, etc.
-    } else if constexpr (is_custom_type<T>::value) {
-        // Handle custom types using a Builder
-        // Example: create a Builder instance and invoke custom serialization/deserialization logic
-    } else {
-        // Fail for types that are neither trivially copyable nor custom
-        static_assert(std::is_trivially_copyable_v<T> || is_custom_type<T>::value, "Unsupported type: Type must be either trivially copyable or custom-defined for serialization.");
-    }
-
-
-*/
 
     /**
      * Layout
@@ -79,12 +52,43 @@ namespace flatmemory
     template<typename... Ts>
     class Layout<Tuple<Ts...>> {
         private:
+        /*
+        template<size_t I>
+            static constexpr void calculate_layout_impl(std::array<offset_type, sizeof...(Ts) + 1>& layout, size_t cur_pos) {
+                if constexpr (I < sizeof...(Ts)) {
+                    using T = std::tuple_element_t<I, std::tuple<Ts...>>;
+                    constexpr bool is_dynamic = is_dynamic_type<T>::value;
+                    constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
+                    if constexpr (is_trivial) {
+                        cur_pos += compute_amount_padding(cur_pos, alignof(T));
+                        cur_pos += sizeof(T);
+                    } else {
+                        if constexpr (is_dynamic) {
+                            cur_pos += compute_amount_padding(cur_pos, alignof(offset_type));
+                            cur_pos += sizeof(offset_type);
+                        } else {
+                            cur_pos += compute_amount_padding(cur_pos, Layout<T>::alignment);
+                            cur_pos += Layout<T>::size;
+                        }
+                    }
+                    //layout[I] = cur_pos;
+                    calculate_layout_impl<I + 1>(layout, cur_pos);
+                }
+            }
+            static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_layout() {
+                std::array<offset_type, sizeof...(Ts) + 1> layout;
+                layout[0] = 0;
+                calculate_layout_impl<0>(layout, 0);
+                return layout;
+            }
+
+        */
             /**
              * For static data types, the offset will point to the actual data.
              * For dynamic data types, the offset will point to an offset to the actual data.
             */
             static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_layout() {
-                std::array<offset_type, sizeof...(Ts) + 1> layout{};
+                std::array<offset_type, sizeof...(Ts) + 1> layout{0};
                 size_t index = 0;
                 offset_type cur_pos = 0;
 
@@ -92,13 +96,20 @@ namespace flatmemory
                 layout[0] = cur_pos;
 
                 ([&] {
-                    bool is_dynamic = is_dynamic_type<Ts>::value;
-                    if (is_dynamic) {
-                        cur_pos += compute_amount_padding(cur_pos, alignof(offset_type));
-                        cur_pos += sizeof(offset_type);
+                    // TODO need access to I-th type
+                    constexpr bool is_dynamic = is_dynamic_type<Ts>::value;
+                    constexpr bool is_trivial = is_trivial_and_standard_layout_v<Ts>;
+                    if constexpr (is_trivial) {
+                        cur_pos += compute_amount_padding(cur_pos, alignof(Ts));
+                        cur_pos += sizeof(Ts);
                     } else {
-                        cur_pos += compute_amount_padding(cur_pos, Layout<Ts>::alignment);
-                        cur_pos += Layout<Ts>::size;
+                        if constexpr (is_dynamic) {
+                            cur_pos += compute_amount_padding(cur_pos, alignof(offset_type));
+                            cur_pos += sizeof(offset_type);
+                        } else {
+                            cur_pos += compute_amount_padding(cur_pos, Layout<Ts>::alignment);
+                            cur_pos += Layout<Ts>::size;
+                        }
                     }
                     layout[++index] = cur_pos;
                 }(), ...);
@@ -106,10 +117,23 @@ namespace flatmemory
                 return layout;
             }
 
+            static constexpr size_t calculate_alignment() {
+                size_t alignment = 0;
+                ([&] {
+                    constexpr bool is_trivial = is_trivial_and_standard_layout_v<Ts>;
+                    if constexpr (is_trivial) {
+                        alignment = std::max(alignment, alignof(Ts));
+                    } else {
+                        alignment = std::max(alignment, Layout<Ts>::alignment);
+                    }
+                }(), ...);
+                return alignment;
+            }
+
         public:
             static constexpr std::array<offset_type, sizeof...(Ts) + 1> offsets = calculate_layout();
 
-            static constexpr size_t alignment = std::max({Layout<Ts>::alignment...});
+            static constexpr size_t alignment = calculate_alignment();
     };
 
     
@@ -128,11 +152,9 @@ namespace flatmemory
     template<typename... Ts> 
     class Builder<Tuple<Ts...>> : public IBuilder<Builder<Tuple<Ts...>>> {
         private:
-            std::tuple<Builder<Ts>...> m_data;
+            std::tuple<typename maybe_builder<Ts>::type...> m_data;
             ByteStream m_buffer;
             ByteStream m_dynamic_buffer;
-
-            // std::tuple<typename maybe_builder<Ts>::type...> m_data_2;
 
             /* Implement IBuilder interface. */
             template<typename>
@@ -140,25 +162,32 @@ namespace flatmemory
 
             template<std::size_t I = 0>
             void finish_rec_impl() {
+                // Write padding to satisfy alignment requirements
+                m_buffer.write_padding(Layout<Tuple<Ts...>>::offsets[I] - m_buffer.get_size());
+
+                std::cout << m_buffer.get_size() << " " << Layout<Tuple<Ts...>>::offsets[I] << std::endl;
                 assert(m_buffer.get_size() == Layout<Tuple<Ts...>>::offsets[I]);
 
                 // offset is the first position to write the dynamic data
                 offset_type offset = Layout<Tuple<Ts...>>::offsets.back();
                 if constexpr (I < sizeof...(Ts)) {
-                    // Recursively call finish
-                    auto& nested_builder = std::get<I>(m_data);
-                    nested_builder.finish();
-                    
-                    // Write padding to satisfy alignment requirements
-                    m_buffer.write_padding(Layout<Tuple<Ts...>>::offsets[I] - m_buffer.get_size());
-
-                    bool is_dynamic = is_dynamic_type<std::tuple_element_t<I, std::tuple<Ts...>>>::value;
-                    if (is_dynamic) {
-                        m_buffer.write(offset);
-                        m_dynamic_buffer.write(nested_builder.get_data(), nested_builder.get_size());     
-                        offset += nested_builder.get_size();
+                    constexpr bool is_dynamic = is_dynamic_type<std::tuple_element_t<I, std::tuple<Ts...>>>::value;
+                    constexpr bool is_trivial = is_trivial_and_standard_layout_v<std::tuple_element_t<I, std::tuple<Ts...>>>;
+                    if constexpr (is_trivial) {
+                        auto& value = std::get<I>(m_data);
+                        m_buffer.write(value);
                     } else {
-                        m_buffer.write(nested_builder.get_data(), nested_builder.get_size());
+                        // Recursively call finish
+                        auto& nested_builder = std::get<I>(m_data);
+                        nested_builder.finish();
+                        
+                        if constexpr (is_dynamic) {
+                            m_buffer.write(offset);
+                            m_dynamic_buffer.write(nested_builder.get_data(), nested_builder.get_size());     
+                            offset += nested_builder.get_size();
+                        } else {
+                            m_buffer.write(nested_builder.get_data(), nested_builder.get_size());
+                        }
                     }
 
                     // Call finish of next data
@@ -214,6 +243,9 @@ namespace flatmemory
     template<typename... Ts>
     class View<Tuple<Ts...>> {
     private:
+        template<size_t I>
+        using element_type = std::tuple_element_t<I, std::tuple<Ts...>>;
+
         uint8_t* m_data;
 
     public:
@@ -224,10 +256,18 @@ namespace flatmemory
          * 
          * If the I-th type is dynamic we must add the offset to the actual data first.
         */
-        template<std::size_t I>
+        // For trivial types
+        template<std::size_t I, typename = std::enable_if_t<is_trivial_and_standard_layout_v<element_type<I>>>>
+        auto& get() {
+            offset_type offset = Layout<Tuple<Ts...>>::offsets[I];
+            return *reinterpret_cast<element_type<I>*>(m_data + offset);
+        }
+
+        // For non-trivial types
+        template<std::size_t I, typename = std::enable_if_t<!is_trivial_and_standard_layout_v<element_type<I>>>>
         auto get() {
             offset_type offset = Layout<Tuple<Ts...>>::offsets[I];
-            if constexpr (is_dynamic_type<std::tuple_element_t<I, std::tuple<Ts...>>>::value) {
+            if constexpr (is_dynamic_type<element_type<I>>::value) {
                 offset = read_value<offset_type>(m_data + offset);
             }
             return View<std::tuple_element_t<I, std::tuple<Ts...>>>(m_data + offset);

@@ -30,6 +30,23 @@ namespace flatmemory
      */
     template<typename T>
     struct is_dynamic_type : std::false_type {};
+
+
+    /**
+     * Distinguish between types that do not require a layout/builder/view and those that do.
+    */
+    template<typename T>
+    inline constexpr bool is_trivial_and_standard_layout_v = std::is_trivial_v<T> && std::is_standard_layout_v<T>;
+
+    template<typename T, bool = is_trivial_and_standard_layout_v<T>>
+    struct maybe_builder {
+        using type = T;
+    };
+
+    template<typename T>
+    struct maybe_builder<T, false> {
+        using type = Builder<T>;
+    };
 }
 
 #endif 

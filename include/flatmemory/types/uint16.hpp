@@ -35,7 +35,10 @@ namespace flatmemory
     /**
      * Dispatcher for tuple.
     */
-    struct Uint16 {};
+    struct Uint16 {
+        Uint16() { }  // Non-trivial constructor
+        ~Uint16() { } // Non-trivial destructor
+    };
 
 
     /**
