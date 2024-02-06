@@ -174,6 +174,7 @@ namespace flatmemory
         size_t get_size() const { return read_value<vector_size_type>(m_data + Layout<Vector<T>>::size_offset); }
 
         decltype(auto) operator[](size_t pos) const {
+            assert(pos < get_size());
             if constexpr (is_trivial_and_standard_layout_v<T>) {
                 return read_value<T>(m_data + Layout<Vector<T>>::data_offset + pos * sizeof(T));
             } else {
