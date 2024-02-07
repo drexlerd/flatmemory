@@ -197,6 +197,7 @@ namespace flatmemory
             }
 
             uint8_t* get_data_impl() { return m_buffer.get_data(); }
+            const uint8_t* get_data_impl() const { return m_buffer.get_data(); }
             size_t get_size_impl() const { return m_buffer.get_size(); }
 
         public:

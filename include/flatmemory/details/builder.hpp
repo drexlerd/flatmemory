@@ -44,6 +44,7 @@ namespace flatmemory
 
             /// @brief Access the serialized buffer
             uint8_t* get_data() { return self().get_data_impl(); }
+            const uint8_t* get_data() const { return self().get_data_impl(); }
             size_t get_size() const { return self().get_size_impl(); }
     };
 
