@@ -56,7 +56,7 @@ namespace flatmemory
     template<typename T>
     class Layout<Vector<T>> {
         private:
-            static constexpr offset_type calculate_data_offset() {
+            static consteval offset_type calculate_data_offset() {
                 size_t cur_pos = 0;
                 cur_pos += sizeof(vector_size_type);
                 cur_pos += compute_amount_padding(cur_pos, calculate_header_alignment<T>());
@@ -105,12 +105,12 @@ namespace flatmemory
                 m_buffer.write_padding(Layout<Vector<T>>::data_offset - m_buffer.get_size());
 
                 constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
-                constexpr bool is_dynamic = is_dynamic_type<T>::value;
                 if constexpr (is_trivial) {
                     for (size_t i = 0; i < m_data.size(); ++i) {
                         m_buffer.write(m_data[i]);
                     }
                 } else {
+                    constexpr bool is_dynamic = is_dynamic_type<T>::value;
                     if constexpr (is_dynamic) {
                         /* For dynamic type T, we store the offsets first */
                         // offset is the first position to write the dynamic data
@@ -175,10 +175,12 @@ namespace flatmemory
 
         decltype(auto) operator[](size_t pos) const {
             assert(pos < get_size());
-            if constexpr (is_trivial_and_standard_layout_v<T>) {
+            constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
+            if constexpr (is_trivial) {
                 return read_value<T>(m_data + Layout<Vector<T>>::data_offset + pos * sizeof(T));
             } else {
-                if constexpr (is_dynamic_type<T>::value) {
+                constexpr bool is_dynamic = is_dynamic_type<T>::value;
+                if constexpr (is_dynamic) {
                     return View<T>(m_data + Layout<Vector<T>>::data_offset + read_value<offset_type>(m_data + Layout<Vector<T>>::data_offset + pos * sizeof(offset_type)));
                 } else {
                     return View<T>(m_data + Layout<Vector<T>>::data_offset + pos * Layout<T>::size);

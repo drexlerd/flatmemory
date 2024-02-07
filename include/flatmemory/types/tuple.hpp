@@ -58,7 +58,7 @@ namespace flatmemory
              * with additional max overall alignment requirement at the end.
             */
             template<size_t... Is>
-            static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_header_alignments(std::index_sequence<Is...>) {
+            static consteval std::array<offset_type, sizeof...(Ts) + 1> calculate_header_alignments(std::index_sequence<Is...>) {
                 std::array<offset_type, sizeof...(Ts) + 1> alignments{};
                 ([&] {
                     using T = std::tuple_element_t<Is, std::tuple<Ts...>>;
@@ -72,7 +72,7 @@ namespace flatmemory
              * Compute the header_offsets for each type T
             */
             template<size_t... Is>
-            static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_header_offsets_impl(std::index_sequence<Is...>) {
+            static consteval std::array<offset_type, sizeof...(Ts) + 1> calculate_header_offsets_impl(std::index_sequence<Is...>) {
                 std::array<offset_type, sizeof...(Ts) + 1> layout{};
                 std::array<offset_type, sizeof...(Ts) + 1> alignments = calculate_header_alignments(std::index_sequence<Is...>{});
                 size_t cur_pos = 0;
@@ -92,7 +92,7 @@ namespace flatmemory
                 return layout;
             }
 
-            static constexpr std::array<offset_type, sizeof...(Ts) + 1> calculate_header_offsets() {
+            static consteval std::array<offset_type, sizeof...(Ts) + 1> calculate_header_offsets() {
                 return calculate_header_offsets_impl(std::make_index_sequence<sizeof...(Ts)>{});
             }
 
@@ -137,7 +137,6 @@ namespace flatmemory
             void finish_rec_impl(offset_type offset) {
                 if constexpr (I < sizeof...(Ts)) {
                     // Write the data.
-                    constexpr bool is_dynamic = is_dynamic_type<std::tuple_element_t<I, std::tuple<Ts...>>>::value;
                     constexpr bool is_trivial = is_trivial_and_standard_layout_v<std::tuple_element_t<I, std::tuple<Ts...>>>;
                     if constexpr (is_trivial) {
                         auto& value = std::get<I>(m_data);
@@ -147,6 +146,7 @@ namespace flatmemory
                         auto& nested_builder = std::get<I>(m_data);
                         nested_builder.finish();
                         
+                        constexpr bool is_dynamic = is_dynamic_type<std::tuple_element_t<I, std::tuple<Ts...>>>::value;
                         if constexpr (is_dynamic) {
                             m_buffer.write(offset);
                             m_dynamic_buffer.write(nested_builder.get_data(), nested_builder.get_size());    

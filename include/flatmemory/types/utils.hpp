@@ -44,12 +44,12 @@ using offset_type = uint16_t;
  *   - For static custom type T use Layout<T>::size which is computed in the Layout of type T.
 */
 template<typename T>
-static constexpr size_t compute_type_size() {
-    constexpr bool is_dynamic = is_dynamic_type<T>::value;
+inline consteval size_t compute_type_size() {
     constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
     if constexpr (is_trivial) {
         return sizeof(T);
     } else {
+        constexpr bool is_dynamic = is_dynamic_type<T>::value;
         if constexpr (is_dynamic) {
             return sizeof(offset_type);
         } else {
@@ -66,12 +66,12 @@ static constexpr size_t compute_type_size() {
  *   - For static custom type T use Layout<T>::final_alignment which is computed in the Layout of type T.
 */
 template<typename T>
-static constexpr size_t calculate_header_alignment() {
-    constexpr bool is_dynamic = is_dynamic_type<T>::value;
+inline consteval size_t calculate_header_alignment() {
     constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
     if constexpr (is_trivial) {
         return alignof(T);
     } else {
+        constexpr bool is_dynamic = is_dynamic_type<T>::value;
         if constexpr (is_dynamic) {
             return alignof(offset_type); 
         } else {
@@ -85,12 +85,12 @@ static constexpr size_t calculate_header_alignment() {
  * Compute alignment needed to be added to cur_pos to obtain correct alignment for storing information of type T. 
 */
 template<typename T>
-static constexpr size_t calculate_overall_alignment() {
-    constexpr bool is_dynamic = is_dynamic_type<T>::value;
+inline consteval size_t calculate_overall_alignment() {
     constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
     if constexpr (is_trivial) {
         return alignof(T);
     } else {
+        constexpr bool is_dynamic = is_dynamic_type<T>::value;
         if constexpr (is_dynamic) {
             return std::max(Layout<T>::final_alignment, alignof(offset_type)); 
         } else {
@@ -104,7 +104,7 @@ static constexpr size_t calculate_overall_alignment() {
  * Compute alignment needed for a collection of types.
 */
 template<typename... Ts>
-static constexpr size_t calculate_final_alignment() {
+inline consteval size_t calculate_final_alignment() {
     size_t max_alignment = 0;
     ((max_alignment = std::max(max_alignment, calculate_overall_alignment<Ts>())), ...);
     return max_alignment;
@@ -114,7 +114,7 @@ static constexpr size_t calculate_final_alignment() {
 /**
  * Compute padding needed to store an object with given alignment factor from the given position.
 */
-constexpr inline size_t compute_amount_padding(size_t pos, size_t align_factor) {
+inline constexpr size_t compute_amount_padding(size_t pos, size_t align_factor) {
     if (align_factor == 0) return 1;
     return (align_factor - (pos % align_factor)) % align_factor;
 }
