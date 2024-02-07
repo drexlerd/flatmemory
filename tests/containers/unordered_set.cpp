@@ -15,9 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <flatmemory/containers/unordered_set.hpp>
-#include <flatmemory/types/bitset.hpp>
-#include <flatmemory/types/tuple.hpp>
+#include <flatmemory/flatmemory.hpp>
 
 #include <gtest/gtest.h>
 

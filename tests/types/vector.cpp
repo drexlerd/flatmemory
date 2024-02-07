@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <flatmemory/types/vector.hpp>
+#include <flatmemory/flatmemory.hpp>
 
 #include <gtest/gtest.h>
 

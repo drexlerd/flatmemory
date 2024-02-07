@@ -15,33 +15,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <flatmemory/flatmemory.hpp>
+#ifndef FLATMEMORY_FLATMEMORY_HPP_
+#define FLATMEMORY_FLATMEMORY_HPP_
 
-#include <gtest/gtest.h>
+#include "details/byte_stream_segmented.hpp"
 
-#include <string>
+#include "details/containers/unordered_set.hpp"
+#include "details/containers/vector.hpp"
 
+#include "details/types/bitset.hpp"
+#include "details/types/tuple.hpp"
+#include "details/types/vector.hpp" 
 
-namespace flatmemory::tests
-{
-
-TEST(FlatmemoryTests, TypesBitsetTest) {
-    EXPECT_EQ((Layout<Bitset<uint64_t>>::final_alignment), 8);
-
-    auto builder = Builder<Bitset<uint64_t>>();
-    builder.get_default_bit_value() = true;
-    builder.get_blocks_builer().get_builders().resize(5); 
-    builder.finish();
-
-    EXPECT_EQ(builder.get_size(), 56);
-
-    auto view = View<Bitset<uint64_t>>(builder.get_data());
-    EXPECT_EQ(view.get_default_bit_value(), true);
-    EXPECT_EQ(view.get_blocks().get_size(), 5);
-}
-
-
-
-
-
-}
+#endif 
