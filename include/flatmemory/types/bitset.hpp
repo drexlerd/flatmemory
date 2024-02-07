@@ -18,12 +18,11 @@
 #ifndef FLATMEMORY_TYPES_BITSET_HPP_
 #define FLATMEMORY_TYPES_BITSET_HPP_
  
-#include "utils.hpp"
 #include "vector.hpp"
 
 #include "../byte_stream.hpp"
 #include "../byte_stream_utils.hpp"
-
+#include "../layout_utils.hpp"
 #include "../layout.hpp"
 #include "../builder.hpp"
 #include "../view.hpp"

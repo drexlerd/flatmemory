@@ -17,11 +17,9 @@
 
 #ifndef FLATMEMORY_TYPES_VECTOR_HPP_
 #define FLATMEMORY_TYPES_VECTOR_HPP_
- 
-#include "utils.hpp"
 
 #include "../byte_stream.hpp"
-
+#include "../layout_utils.hpp"
 #include "../layout.hpp"
 #include "../builder.hpp"
 #include "../view.hpp"
