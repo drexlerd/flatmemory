@@ -56,7 +56,7 @@ namespace flatmemory
             static consteval offset_type calculate_blocks_offset() {
                 size_t cur_pos = 0;
                 cur_pos += sizeof(bool);
-                cur_pos += compute_amount_padding(cur_pos, calculate_header_alignment<Vector<Block>>());
+                cur_pos += calculate_amoung_padding(cur_pos, calculate_header_alignment<Vector<Block>>());
                 return cur_pos;
             }
             
@@ -96,7 +96,7 @@ namespace flatmemory
                 m_buffer.write_padding(Layout<Bitset<Block>>::blocks_offset - m_buffer.get_size());
                 m_blocks_builder.finish();
                 m_buffer.write(m_blocks_builder.get_data(), m_blocks_builder.get_size());
-                m_buffer.write_padding(compute_amount_padding(m_buffer.get_size(), Layout<Bitset<Block>>::final_alignment));
+                m_buffer.write_padding(calculate_amoung_padding(m_buffer.get_size(), Layout<Bitset<Block>>::final_alignment));
             }
 
             void clear_impl() {

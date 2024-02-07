@@ -43,7 +43,7 @@ namespace flatmemory
      *   - For static custom type T use Layout<T>::size which is computed in the Layout of type T.
     */
     template<typename T>
-    inline consteval size_t compute_type_size() {
+    inline consteval size_t calculate_header_type_size() {
         constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
         if constexpr (is_trivial) {
             return sizeof(T);
@@ -113,7 +113,7 @@ namespace flatmemory
     /**
      * Compute padding needed to store an object with given alignment factor from the given position.
     */
-    inline constexpr size_t compute_amount_padding(size_t pos, size_t align_factor) {
+    inline constexpr size_t calculate_amoung_padding(size_t pos, size_t align_factor) {
         if (align_factor == 0) return 1;
         return (align_factor - (pos % align_factor)) % align_factor;
     }

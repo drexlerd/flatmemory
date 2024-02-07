@@ -78,11 +78,11 @@ namespace flatmemory
                 ([&] {
                     // The size of the i-th element (looks correct)
                     using T = std::tuple_element_t<Is, std::tuple<Ts...>>;
-                    cur_pos += compute_type_size<T>();
+                    cur_pos += calculate_header_type_size<T>();
 
                     // The padding dependent on the alignment of the i+1-th element
                     // or the maximum alignment, when reaching the last element
-                    cur_pos += compute_amount_padding(cur_pos, alignments[Is + 1]);
+                    cur_pos += calculate_amoung_padding(cur_pos, alignments[Is + 1]);
 
                     layout[Is + 1] = cur_pos;
                 }(), ...);
@@ -169,7 +169,7 @@ namespace flatmemory
                 // Concatenate all buffers
                 m_buffer.write(m_dynamic_buffer.get_data(), m_dynamic_buffer.get_size()); 
                 // Write alignment padding
-                m_buffer.write_padding(compute_amount_padding(m_buffer.get_size(), Layout<Tuple<Ts...>>::final_alignment));
+                m_buffer.write_padding(calculate_amoung_padding(m_buffer.get_size(), Layout<Tuple<Ts...>>::final_alignment));
             }
 
 

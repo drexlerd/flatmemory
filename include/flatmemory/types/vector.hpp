@@ -57,7 +57,7 @@ namespace flatmemory
             static consteval offset_type calculate_data_offset() {
                 size_t cur_pos = 0;
                 cur_pos += sizeof(vector_size_type);
-                cur_pos += compute_amount_padding(cur_pos, calculate_header_alignment<T>());
+                cur_pos += calculate_amoung_padding(cur_pos, calculate_header_alignment<T>());
                 return cur_pos;
             }
 
@@ -113,7 +113,7 @@ namespace flatmemory
                         /* For dynamic type T, we store the offsets first */
                         // offset is the first position to write the dynamic data
                         offset_type offset = m_data.size() * sizeof(offset_type);
-                        offset += compute_amount_padding(offset, Layout<T>::final_alignment);
+                        offset += calculate_amoung_padding(offset, Layout<T>::final_alignment);
                         for (size_t i = 0; i < m_data.size(); ++i) {
                             auto& nested_builder = m_data[i];
                             nested_builder.finish();
@@ -134,10 +134,10 @@ namespace flatmemory
                     }
                 }
                 // Write padding after header
-                m_buffer.write_padding(compute_amount_padding(m_buffer.get_size(), Layout<Vector<T>>::final_alignment));
+                m_buffer.write_padding(calculate_amoung_padding(m_buffer.get_size(), Layout<Vector<T>>::final_alignment));
                 // Concatenate all buffers
                 m_buffer.write(m_dynamic_buffer.get_data(), m_dynamic_buffer.get_size());  
-                assert(compute_amount_padding(m_buffer.get_size(), Layout<Vector<T>>::final_alignment) == 0);
+                assert(calculate_amoung_padding(m_buffer.get_size(), Layout<Vector<T>>::final_alignment) == 0);
             }
 
             void clear_impl() {
