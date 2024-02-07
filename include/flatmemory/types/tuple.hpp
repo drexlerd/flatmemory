@@ -95,6 +95,8 @@ namespace flatmemory
             }
 
         public:
+            static constexpr size_t size = sizeof...(Ts);
+
             static constexpr std::array<offset_type, sizeof...(Ts) + 1> header_offsets = calculate_header_offsets();
 
             static constexpr size_t final_alignment = calculate_final_alignment<Ts...>();
@@ -225,6 +227,7 @@ namespace flatmemory
         */
         template<std::size_t I>
         decltype(auto) get() {
+            assert(I < Layout<Tuple<Ts...>>::size);
             constexpr bool is_trivial = is_trivial_and_standard_layout_v<element_type<I>>;
             if constexpr (is_trivial) {
                 return read_value<element_type<I>>(m_data + Layout<Tuple<Ts...>>::header_offsets[I]);
