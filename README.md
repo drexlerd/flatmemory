@@ -15,6 +15,8 @@ All composite types support all types `T` that satisfy `std::is_trivial_v<T>` an
 In this example, we use a `Builder`to serialize a 2-dimensional `Vector` of `uint16_t` into a sequence of bytes. A respective `View` can interpret the data.
 
 ```cpp
+#include <flatmemory/flatmemory.hpp>
+
 // 1. Construct a builder, feed it with data, and finish the byte sequence.
 auto builder = Builder<Vector<Vector<uint16_t>>>();
 builder.get_builders().resize(2);
