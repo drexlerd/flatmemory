@@ -91,7 +91,7 @@ public:
     FixedSizedTypeVector& operator=(FixedSizedTypeVector&& other) = default;
 
     void push_back(const Builder<T>& builder) {
-        m_data.push_back(View<T>(m_storage.write(builder.get_buffer_pointer(), builder.get_size()), builder.get_size()));
+        m_data.push_back(View<T>(m_storage.write(builder.get_data(), builder.get_size()), builder.get_size()));
     }
 
     [[nodiscard]] View<T> back() {
@@ -117,7 +117,7 @@ public:
     }
 
     void resize(size_t size) {
-        const uint8_t* default_data = m_default_builder.get_buffer_pointer();
+        const uint8_t* default_data = m_default_builder.get_data();
         size_t default_size = m_default_builder.get_size();
         while (get_size() <= size) {
             uint8_t* written_data = m_storage.write(default_data, default_size);
