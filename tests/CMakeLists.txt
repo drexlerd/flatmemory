@@ -12,6 +12,8 @@ file(GLOB_RECURSE FLATMEMORY_TEST_SOURCE_FILES
 set(TEST_NAME ${CMAKE_PROJECT_NAME}_tests)
 
 add_executable(${TEST_NAME}
+    "containers/unordered_set.cpp"
+    "containers/vector.cpp"
     "types/bitset.cpp"
     "types/tuple.cpp"
     "types/vector.cpp"
