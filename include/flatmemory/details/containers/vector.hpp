@@ -117,7 +117,7 @@ public:
     }
 
     void resize(size_t size) {
-        const uint8_t* default_data = m_default_builder.get_data();
+        uint8_t* default_data = m_default_builder.get_data();
         size_t default_size = m_default_builder.get_size();
         while (get_size() <= size) {
             uint8_t* written_data = m_storage.write(default_data, default_size);
