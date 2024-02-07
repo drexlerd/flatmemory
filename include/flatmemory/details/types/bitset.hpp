@@ -127,11 +127,6 @@ namespace flatmemory
     public:
         View(uint8_t* data) : m_data(data) {}
 
-        /**
-         * Returns a View to the I-th element.
-         * 
-         * If the I-th type is dynamic we must add the offset to the actual data first.
-        */
         bool& get_default_bit_value() {
             return read_value<bool>(m_data);
         }

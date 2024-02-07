@@ -176,8 +176,11 @@ namespace flatmemory
             template<std::size_t I = 0>
             void clear_rec_impl() {
                 if constexpr (I < sizeof...(Ts)) {
-                    auto& builder = std::get<I>(m_data);
-                    builder.clear();
+                    constexpr bool is_trivial = is_trivial_and_standard_layout_v<std::tuple_element_t<I, std::tuple<Ts...>>>;
+                    if constexpr (!is_trivial) {
+                        auto& builder = std::get<I>(m_data);
+                        builder.clear();
+                    }
 
                     // Call clear of next data
                     clear_rec_impl<I + 1>();
