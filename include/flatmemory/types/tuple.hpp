@@ -210,6 +210,8 @@ namespace flatmemory
     private:
         template<size_t I>
         using element_type = std::tuple_element_t<I, std::tuple<Ts...>>;
+        template<size_t I>
+        using element_view_type = View<std::tuple_element_t<I, std::tuple<Ts...>>>;
 
         uint8_t* m_data;
 
@@ -223,15 +225,17 @@ namespace flatmemory
         */
         template<std::size_t I>
         decltype(auto) get() {
-            if constexpr (is_trivial_and_standard_layout_v<element_type<I>>) {
-                offset_type offset = Layout<Tuple<Ts...>>::header_offsets[I];
-                return *reinterpret_cast<element_type<I>*>(m_data + offset);
+            constexpr bool is_trivial = is_trivial_and_standard_layout_v<element_type<I>>;
+            if constexpr (is_trivial) {
+                return read_value<element_type<I>>(m_data + Layout<Tuple<Ts...>>::header_offsets[I]);
             } else {
-                offset_type offset = Layout<Tuple<Ts...>>::header_offsets[I];
-                if constexpr (is_dynamic_type<element_type<I>>::value) {
-                    offset = read_value<offset_type>(m_data + offset);
+                constexpr bool is_dynamic = is_dynamic_type<element_type<I>>::value;
+                if constexpr (is_dynamic) {
+                    return element_view_type<I>(m_data + read_value<offset_type>(m_data + Layout<Tuple<Ts...>>::header_offsets[I]));
+                } else {
+                    return element_view_type<I>(m_data + Layout<Tuple<Ts...>>::header_offsets[I]);
                 }
-                return View<std::tuple_element_t<I, std::tuple<Ts...>>>(m_data + offset);
+
             }
         }
     };
