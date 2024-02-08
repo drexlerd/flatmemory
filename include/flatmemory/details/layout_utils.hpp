@@ -48,12 +48,7 @@ namespace flatmemory
         if constexpr (is_trivial) {
             return sizeof(T);
         } else {
-            constexpr bool is_dynamic = is_dynamic_type<T>::value;
-            if constexpr (is_dynamic) {
-                return sizeof(offset_type);
-            } else {
-                return Layout<T>::size;
-            }
+            return sizeof(offset_type);
         }
     }
 
@@ -70,12 +65,7 @@ namespace flatmemory
         if constexpr (is_trivial) {
             return alignof(T);
         } else {
-            constexpr bool is_dynamic = is_dynamic_type<T>::value;
-            if constexpr (is_dynamic) {
-                return alignof(offset_type); 
-            } else {
-                return Layout<T>::final_alignment;
-            }
+            return alignof(offset_type); 
         }
     }
 
@@ -89,12 +79,7 @@ namespace flatmemory
         if constexpr (is_trivial) {
             return alignof(T);
         } else {
-            constexpr bool is_dynamic = is_dynamic_type<T>::value;
-            if constexpr (is_dynamic) {
-                return std::max(Layout<T>::final_alignment, alignof(offset_type)); 
-            } else {
-                return Layout<T>::final_alignment;
-            }
+            return std::max(Layout<T>::final_alignment, alignof(offset_type)); 
         }
     }
 

@@ -29,15 +29,15 @@ TEST(FlatmemoryTests, TypesVectorTest) {
     EXPECT_EQ((Layout<Vector<uint16_t>>::final_alignment), 4);
 
     auto builder = Builder<Vector<uint16_t>>();
-    builder.get_builders().resize(2);
-    builder.get_builders()[0] = 5;
-    builder.get_builders()[1] = 6;
+    builder.resize(2);
+    builder[0] = 5;
+    builder[1] = 6;
     builder.finish();
 
-    EXPECT_EQ(builder.get_size(), 8);
+    EXPECT_EQ(builder.buffer().size(), 8);
 
-    auto view = View<Vector<uint16_t>>(builder.get_data());
-    EXPECT_EQ(view.get_size(), 2);
+    auto view = View<Vector<uint16_t>>(builder.buffer().data());
+    EXPECT_EQ(view.size(), 2);
     EXPECT_EQ(view[0], 5);
     EXPECT_EQ(view[1], 6);
 }
@@ -47,11 +47,11 @@ TEST(FlatmemoryTests, TypesVector2Test) {
     EXPECT_EQ((Layout<Vector<uint16_t>>::final_alignment), 4);
 
     auto builder = Builder<Vector<uint16_t>>();
-    builder.get_builders().resize(3);
+    builder.resize(3);
     builder.finish();
 
     // 2 additional padding are added from 10 to 12
-    EXPECT_EQ(builder.get_size(), 12);
+    EXPECT_EQ(builder.buffer().size(), 12);
 }
 
 
@@ -59,16 +59,16 @@ TEST(FlatmemoryTests, TypesVectorVectorTest) {
     EXPECT_EQ((Layout<Vector<Vector<uint16_t>>>::final_alignment), 4);
 
     auto builder = Builder<Vector<Vector<uint16_t>>>();
-    builder.get_builders().resize(2);
-    builder.get_builders()[0].get_builders().push_back(5);
-    builder.get_builders()[1].get_builders().push_back(6);
-    builder.get_builders()[1].get_builders().push_back(7);
+    builder.resize(2);
+    builder[0].push_back(5);
+    builder[1].push_back(6);
+    builder[1].push_back(7);
     builder.finish();
 
-    EXPECT_EQ(builder.get_size(), 24);
+    EXPECT_EQ(builder.buffer().size(), 24);
 
-    auto view = View<Vector<Vector<uint16_t>>>(builder.get_data());
-    EXPECT_EQ(view.get_size(), 2);
+    auto view = View<Vector<Vector<uint16_t>>>(builder.buffer().data());
+    EXPECT_EQ(view.size(), 2);
     EXPECT_EQ(view[0][0], 5);
     EXPECT_EQ(view[1][0], 6);
     EXPECT_EQ(view[1][1], 7);

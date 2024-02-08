@@ -41,7 +41,6 @@ namespace flatmemory
     template<IsTrivialOrCustom... Ts>
     struct Tuple : public Custom {
         Tuple() { }  // Non-trivial constructor
-        ~Tuple() { } // Non-trivial destructor
     };
 
 
@@ -109,15 +108,6 @@ namespace flatmemory
             }
     };
 
-    
-    /**
-     * Type traits
-     * 
-     * A tuple is dynamic if at least one of its nested builders is dynamic.
-    */
-    template<IsTrivialOrCustom... Ts>
-    struct is_dynamic_type<Tuple<Ts...>> : std::bool_constant<(is_dynamic_type<Ts>::value || ...)> {};
-
 
     /**
      * Builder
@@ -145,18 +135,13 @@ namespace flatmemory
                         // Recursively call finish
                         auto& nested_builder = std::get<I>(m_data);
                         nested_builder.finish();
-                        
-                        constexpr bool is_dynamic = is_dynamic_type<std::tuple_element_t<I, std::tuple<Ts...>>>::value;
-                        if constexpr (is_dynamic) {
-                            m_buffer.write(offset);
-                            m_dynamic_buffer.write(nested_builder.get_data(), nested_builder.get_size());    
-                            offset += nested_builder.get_size();
-                        } else {
-                            m_buffer.write(nested_builder.get_data(), nested_builder.get_size());
-                        }
+                        m_buffer.write(offset);
+                        m_dynamic_buffer.write(nested_builder.buffer().data(), nested_builder.buffer().size());    
+                        offset += nested_builder.buffer().size();
+  
                     }
                     // Write the padding to satisfy alignment requirements
-                    m_buffer.write_padding(Layout<Tuple<Ts...>>::header_offsets[I + 1] - m_buffer.get_size());
+                    m_buffer.write_padding(Layout<Tuple<Ts...>>::header_offsets[I + 1] - m_buffer.size());
                     // Recursive call to next type
                     finish_rec_impl<I + 1>(offset);
                 }
@@ -167,9 +152,9 @@ namespace flatmemory
                 // Build header and dynamic buffer
                 finish_rec_impl<0>(Layout<Tuple<Ts...>>::header_offsets.back());
                 // Concatenate all buffers
-                m_buffer.write(m_dynamic_buffer.get_data(), m_dynamic_buffer.get_size()); 
+                m_buffer.write(m_dynamic_buffer.data(), m_dynamic_buffer.size()); 
                 // Write alignment padding
-                m_buffer.write_padding(calculate_amoung_padding(m_buffer.get_size(), Layout<Tuple<Ts...>>::final_alignment));
+                m_buffer.write_padding(calculate_amoung_padding(m_buffer.size(), Layout<Tuple<Ts...>>::final_alignment));
             }
 
 
@@ -196,13 +181,12 @@ namespace flatmemory
                 m_dynamic_buffer.clear();
             }
 
-            uint8_t* get_data_impl() { return m_buffer.get_data(); }
-            const uint8_t* get_data_impl() const { return m_buffer.get_data(); }
-            size_t get_size_impl() const { return m_buffer.get_size(); }
+            ByteStream& get_buffer_impl() { return m_buffer; }
+            const ByteStream& get_buffer_impl() const { return m_buffer; }
 
         public:
             template<std::size_t I>
-            auto& get_builder() {
+            auto& get() {
                 return std::get<I>(m_data);
             }
     };
@@ -236,13 +220,7 @@ namespace flatmemory
             if constexpr (is_trivial) {
                 return read_value<element_type<I>>(m_data + Layout<Tuple<Ts...>>::header_offsets[I]);
             } else {
-                constexpr bool is_dynamic = is_dynamic_type<element_type<I>>::value;
-                if constexpr (is_dynamic) {
-                    return element_view_type<I>(m_data + read_value<offset_type>(m_data + Layout<Tuple<Ts...>>::header_offsets[I]));
-                } else {
-                    return element_view_type<I>(m_data + Layout<Tuple<Ts...>>::header_offsets[I]);
-                }
-
+                return element_view_type<I>(m_data + read_value<offset_type>(m_data + Layout<Tuple<Ts...>>::header_offsets[I]));
             }
         }
     };

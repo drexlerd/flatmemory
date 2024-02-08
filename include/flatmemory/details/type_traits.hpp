@@ -37,15 +37,6 @@ namespace flatmemory
     template<typename T>
     concept IsTrivial = std::is_trivial_v<T>;
 
-    /**
-     * Base template assuming all types are static.
-     * 
-     * For dynamic types we need to write an offset instead of the data directly.
-     */
-    template<IsCustom T>
-    struct is_dynamic_type : std::false_type {};
-
-
     template<typename T>
     concept IsTrivialOrCustom = (IsTrivial<T> || IsCustom<T>);
 

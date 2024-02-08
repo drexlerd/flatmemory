@@ -30,14 +30,14 @@ TEST(FlatmemoryTests, TypesBitsetTest) {
 
     auto builder = Builder<Bitset<uint64_t>>();
     builder.get_default_bit_value() = true;
-    builder.get_blocks_builer().get_builders().resize(5); 
+    builder.get_blocks().resize(5); 
     builder.finish();
 
-    EXPECT_EQ(builder.get_size(), 56);
+    EXPECT_EQ(builder.buffer().size(), 56);
 
-    auto view = View<Bitset<uint64_t>>(builder.get_data());
+    auto view = View<Bitset<uint64_t>>(builder.buffer().data());
     EXPECT_EQ(view.get_default_bit_value(), true);
-    EXPECT_EQ(view.get_blocks().get_size(), 5);
+    EXPECT_EQ(view.get_blocks().size(), 5);
 }
 
 

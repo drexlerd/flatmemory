@@ -43,7 +43,6 @@ namespace flatmemory
     template<typename Block>
     struct Bitset : public Custom {
         Bitset() { }  // Non-trivial constructor
-        ~Bitset() { } // Non-trivial destructor
     };
 
 
@@ -66,15 +65,6 @@ namespace flatmemory
             static constexpr size_t final_alignment = calculate_final_alignment<bool, Vector<Block>>();
     };
 
-    
-    /**
-     * Type traits
-     * 
-     * A bitset is dynamic because vector is dynamic
-    */
-    template<typename Block>
-    struct is_dynamic_type<Bitset<Block>> : std::true_type{};
-
 
     /**
      * Builder
@@ -93,10 +83,10 @@ namespace flatmemory
 
             void finish_impl() {
                 m_buffer.write(m_default_bit_value);
-                m_buffer.write_padding(Layout<Bitset<Block>>::blocks_offset - m_buffer.get_size());
+                m_buffer.write_padding(Layout<Bitset<Block>>::blocks_offset - m_buffer.size());
                 m_blocks_builder.finish();
-                m_buffer.write(m_blocks_builder.get_data(), m_blocks_builder.get_size());
-                m_buffer.write_padding(calculate_amoung_padding(m_buffer.get_size(), Layout<Bitset<Block>>::final_alignment));
+                m_buffer.write(m_blocks_builder.buffer().data(), m_blocks_builder.buffer().size());
+                m_buffer.write_padding(calculate_amoung_padding(m_buffer.size(), Layout<Bitset<Block>>::final_alignment));
             }
 
             void clear_impl() {
@@ -106,14 +96,13 @@ namespace flatmemory
                 m_buffer.clear();
             }
 
-            uint8_t* get_data_impl() { return m_buffer.get_data(); }
-            const uint8_t* get_data_impl() const { return m_buffer.get_data(); }
-            size_t get_size_impl() const { return m_buffer.get_size(); }
+            ByteStream& get_buffer_impl() { return m_buffer; }
+            const ByteStream& get_buffer_impl() const { return m_buffer; }
 
         public:
             bool& get_default_bit_value() { return m_default_bit_value; }
 
-            auto& get_blocks_builer() { return m_blocks_builder; }
+            auto& get_blocks() { return m_blocks_builder; }
     };
 
 

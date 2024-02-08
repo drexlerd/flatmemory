@@ -15,17 +15,32 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef FLATMEMORY_FLATMEMORY_HPP_
-#define FLATMEMORY_FLATMEMORY_HPP_
+#include <flatmemory/flatmemory.hpp>
 
-#include "details/byte_stream_segmented.hpp"
+#include <gtest/gtest.h>
 
-#include "details/containers/unordered_set.hpp"
-#include "details/containers/vector.hpp"
+#include <string>
 
-#include "details/types/bitset.hpp"
-#include "details/types/trivial.hpp"
-#include "details/types/tuple.hpp"
-#include "details/types/vector.hpp" 
 
-#endif 
+namespace flatmemory::tests
+{
+    struct TrivialType {
+        bool x;
+        uint64_t y;
+    };
+
+    TEST(FlatmemoryTests, TypesTrivialTest) {
+        EXPECT_EQ((Layout<Trivial<TrivialType>>::final_alignment), 16);
+
+        auto builder = Builder<Trivial<TrivialType>>();
+        builder->x = true;
+        builder->y = 4;
+        builder.finish();
+
+        EXPECT_EQ(builder.buffer().size(), 16);
+
+        auto view = View<Trivial<TrivialType>>(builder.buffer().data());
+        EXPECT_EQ(view->x, true);
+        EXPECT_EQ(view->y, 4);
+    }
+}

@@ -32,8 +32,8 @@ namespace flatmemory::tests
         auto builder = Builder<Tuple<>>();
         builder.finish();
 
-        EXPECT_NE(builder.get_data(), nullptr);
-        EXPECT_EQ(builder.get_size(), 1);  // minimum alignment requirement is 1
+        EXPECT_NE(builder.buffer().data(), nullptr);
+        EXPECT_EQ(builder.buffer().size(), 1);  // minimum alignment requirement is 1
     }
 
     TEST(FlatmemoryTests, TypesTupleTest) {
@@ -46,14 +46,14 @@ namespace flatmemory::tests
         static_assert(!IsTrivial<Tuple<uint16_t, uint16_t, uint16_t>>, "Tuple<uint16_t, uint16_t, uint16_t> must not have standard layout.");
 
         auto builder = Builder<Tuple<int16_t, uint16_t, uint16_t>>();
-        builder.get_builder<0>() = 5;
-        builder.get_builder<1>() = 6;
-        builder.get_builder<2>() = 7;
+        builder.get<0>() = 5;
+        builder.get<1>() = 6;
+        builder.get<2>() = 7;
         builder.finish();
-        EXPECT_NE(builder.get_data(), nullptr);
-        EXPECT_EQ(builder.get_size(), 6);
+        EXPECT_NE(builder.buffer().data(), nullptr);
+        EXPECT_EQ(builder.buffer().size(), 6);
 
-        auto view = View<Tuple<int16_t, uint16_t, uint16_t>>(builder.get_data());
+        auto view = View<Tuple<int16_t, uint16_t, uint16_t>>(builder.buffer().data());
         EXPECT_EQ(view.get<0>(), 5);
         EXPECT_EQ(view.get<1>(), 6);
         EXPECT_EQ(view.get<2>(), 7);
@@ -70,14 +70,14 @@ namespace flatmemory::tests
         static_assert(!IsTrivial<Tuple<int16_t, int32_t, uint16_t>>, "Tuple<int16_t, int32_t, uint16_t> must not have standard layout.");
 
         auto builder = Builder<Tuple<int16_t, int32_t, uint16_t>>();
-        builder.get_builder<0>() = 5;
-        builder.get_builder<1>() = 6;
-        builder.get_builder<2>() = 7;
+        builder.get<0>() = 5;
+        builder.get<1>() = 6;
+        builder.get<2>() = 7;
         builder.finish();
-        EXPECT_NE(builder.get_data(), nullptr);
-        EXPECT_EQ(builder.get_size(), 12);
+        EXPECT_NE(builder.buffer().data(), nullptr);
+        EXPECT_EQ(builder.buffer().size(), 12);
 
-        auto view = View<Tuple<int16_t, int32_t, uint16_t>>(builder.get_data());
+        auto view = View<Tuple<int16_t, int32_t, uint16_t>>(builder.buffer().data());
         EXPECT_EQ(view.get<0>(), 5);
         EXPECT_EQ(view.get<1>(), 6);
         EXPECT_EQ(view.get<2>(), 7);
@@ -89,13 +89,13 @@ namespace flatmemory::tests
         static_assert(!IsTrivial<Tuple<Vector<uint64_t>>>, "Tuple<Vector<uint64_t>> must not have standard layout.");
 
         auto builder = Builder<Tuple<Vector<uint64_t>>>();
-        builder.get_builder<0>().get_builders().resize(3);
+        builder.get<0>().resize(3);
         builder.finish();
-        EXPECT_NE(builder.get_data(), nullptr);
-        EXPECT_EQ(builder.get_size(), 40);
+        EXPECT_NE(builder.buffer().data(), nullptr);
+        EXPECT_EQ(builder.buffer().size(), 40);
 
-        auto view = View<Tuple<Vector<uint64_t>>>(builder.get_data());
-        EXPECT_EQ(view.get<0>().get_size(), 3);
+        auto view = View<Tuple<Vector<uint64_t>>>(builder.buffer().data());
+        EXPECT_EQ(view.get<0>().size(), 3);
     }
 
 
@@ -104,15 +104,15 @@ namespace flatmemory::tests
         static_assert(!IsTrivial<Tuple<Vector<uint64_t>, Vector<uint16_t>>>, "Tuple<Vector<uint64_t>, Vector<uint16_t>> must not have standard layout.");
 
         auto builder = Builder<Tuple<Vector<uint64_t>, Vector<uint16_t>>>();
-        builder.get_builder<0>().get_builders().resize(3);
-        builder.get_builder<1>().get_builders().resize(4);
+        builder.get<0>().resize(3);
+        builder.get<1>().resize(4);
         builder.finish();
-        EXPECT_NE(builder.get_data(), nullptr);
-        EXPECT_EQ(builder.get_size(), 56);
+        EXPECT_NE(builder.buffer().data(), nullptr);
+        EXPECT_EQ(builder.buffer().size(), 56);
 
-        auto view = View<Tuple<Vector<uint64_t>, Vector<uint16_t>>>(builder.get_data());
-        EXPECT_EQ(view.get<0>().get_size(), 3);
-        EXPECT_EQ(view.get<1>().get_size(), 4);
+        auto view = View<Tuple<Vector<uint64_t>, Vector<uint16_t>>>(builder.buffer().data());
+        EXPECT_EQ(view.get<0>().size(), 3);
+        EXPECT_EQ(view.get<1>().size(), 4);
     }
 
 
@@ -121,17 +121,17 @@ namespace flatmemory::tests
         static_assert(!IsTrivial<Tuple<Vector<Vector<uint8_t>>>>, "Tuple<Vector<Vector<uint8_t>>> must not have standard layout.");
  
         auto builder = Builder<Tuple<Vector<Vector<uint8_t>>>>();
-        builder.get_builder<0>().get_builders().resize(3);
-        builder.get_builder<0>().get_builders()[0].get_builders().resize(2);
-        builder.get_builder<0>().get_builders()[1].get_builders().resize(3);
-        builder.get_builder<0>().get_builders()[2].get_builders().resize(4);
+        builder.get<0>().resize(3);
+        builder.get<0>()[0].resize(2);
+        builder.get<0>()[1].resize(3);
+        builder.get<0>()[2].resize(4);
         builder.finish();
 
-        auto view = View<Tuple<Vector<Vector<uint8_t>>>>(builder.get_data());
-        EXPECT_EQ(view.get<0>().get_size(), 3);
-        EXPECT_EQ(view.get<0>()[0].get_size(), 2);
-        EXPECT_EQ(view.get<0>()[1].get_size(), 3);
-        EXPECT_EQ(view.get<0>()[2].get_size(), 4);
+        auto view = View<Tuple<Vector<Vector<uint8_t>>>>(builder.buffer().data());
+        EXPECT_EQ(view.get<0>().size(), 3);
+        EXPECT_EQ(view.get<0>()[0].size(), 2);
+        EXPECT_EQ(view.get<0>()[1].size(), 3);
+        EXPECT_EQ(view.get<0>()[2].size(), 4);
     }
 
 
@@ -145,11 +145,11 @@ namespace flatmemory::tests
         static_assert(!IsTrivial<Tuple<StructTest>>, "Tuple<StructTest> must not have standard layout.");
     
         auto builder = Builder<Tuple<StructTest>>();
-        builder.get_builder<0>().x = 5;
-        builder.get_builder<0>().y = 10;
+        builder.get<0>().x = 5;
+        builder.get<0>().y = 10;
         builder.finish();
 
-        auto view = View<Tuple<StructTest>>(builder.get_data());
+        auto view = View<Tuple<StructTest>>(builder.buffer().data());
         EXPECT_EQ(view.get<0>().x, 5);
         EXPECT_EQ(view.get<0>().y, 10);
     }

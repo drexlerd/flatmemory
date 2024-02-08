@@ -39,7 +39,6 @@ namespace flatmemory
     template<IsTrivialOrCustom T>
     struct Vector : public Custom {
         Vector() { }  // Non-trivial constructor
-        ~Vector() { } // Non-trivial destructor
     };
 
 
@@ -74,13 +73,6 @@ namespace flatmemory
             }
     };
 
-    
-    /**
-     * Type traits
-    */
-    template<IsTrivialOrCustom T>
-    struct is_dynamic_type<Vector<T>> : std::true_type{};
-
 
     /**
      * Builder
@@ -88,7 +80,9 @@ namespace flatmemory
     template<IsTrivialOrCustom T>
     class Builder<Vector<T>> : public IBuilder<Builder<Vector<T>>> {
         private:
-            std::vector<typename maybe_builder<T>::type> m_data;
+            using T_ = typename maybe_builder<T>::type;
+
+            std::vector<T_> m_data;
             ByteStream m_buffer;
             ByteStream m_dynamic_buffer;
 
@@ -100,7 +94,7 @@ namespace flatmemory
                 assert(m_data.size() <= std::numeric_limits<vector_size_type>::max());
 
                 m_buffer.write<vector_size_type>(m_data.size());
-                m_buffer.write_padding(Layout<Vector<T>>::data_offset - m_buffer.get_size());
+                m_buffer.write_padding(Layout<Vector<T>>::data_offset - m_buffer.size());
 
                 constexpr bool is_trivial = IsTrivial<T>;
                 if constexpr (is_trivial) {
@@ -108,36 +102,24 @@ namespace flatmemory
                         m_buffer.write(m_data[i]);
                     }
                 } else {
-                    constexpr bool is_dynamic = is_dynamic_type<T>::value;
-                    if constexpr (is_dynamic) {
-                        /* For dynamic type T, we store the offsets first */
-                        // offset is the first position to write the dynamic data
-                        offset_type offset = m_data.size() * sizeof(offset_type);
-                        offset += calculate_amoung_padding(offset, Layout<T>::final_alignment);
-                        for (size_t i = 0; i < m_data.size(); ++i) {
-                            auto& nested_builder = m_data[i];
-                            nested_builder.finish();
+                    /* For dynamic type T, we store the offsets first */
+                    // offset is the first position to write the dynamic data
+                    offset_type offset = m_data.size() * sizeof(offset_type);
+                    offset += calculate_amoung_padding(offset, Layout<T>::final_alignment);
+                    for (size_t i = 0; i < m_data.size(); ++i) {
+                        auto& nested_builder = m_data[i];
+                        nested_builder.finish();
 
-                            m_buffer.write(offset);
-                            m_dynamic_buffer.write(nested_builder.get_data(), nested_builder.get_size());     
-                            offset += nested_builder.get_size();
-                        }
-                    } else {
-                        /* For static type T, we can store the data directly */
-                        for (size_t i = 0; i < m_data.size(); ++i) {
-                            auto& nested_builder = m_data[i];
-                            nested_builder.finish();
-                            
-                            assert(nested_builder.get_size() == Layout<T>::size);  
-                            m_buffer.write(nested_builder.get_data(), nested_builder.get_size()); 
-                        }  
+                        m_buffer.write(offset);
+                        m_dynamic_buffer.write(nested_builder.buffer().data(), nested_builder.buffer().size());     
+                        offset += nested_builder.buffer().size();
                     }
                 }
                 // Write padding after header
-                m_buffer.write_padding(calculate_amoung_padding(m_buffer.get_size(), Layout<Vector<T>>::final_alignment));
+                m_buffer.write_padding(calculate_amoung_padding(m_buffer.size(), Layout<Vector<T>>::final_alignment));
                 // Concatenate all buffers
-                m_buffer.write(m_dynamic_buffer.get_data(), m_dynamic_buffer.get_size());  
-                assert(calculate_amoung_padding(m_buffer.get_size(), Layout<Vector<T>>::final_alignment) == 0);
+                m_buffer.write(m_dynamic_buffer.data(), m_dynamic_buffer.size());  
+                assert(calculate_amoung_padding(m_buffer.size(), Layout<Vector<T>>::final_alignment) == 0);
             }
 
             void clear_impl() {
@@ -150,12 +132,18 @@ namespace flatmemory
                 m_dynamic_buffer.clear();
             }
 
-            uint8_t* get_data_impl() { return m_buffer.get_data(); }
-            const uint8_t* get_data_impl() const { return m_buffer.get_data(); }
-            size_t get_size_impl() const { return m_buffer.get_size(); }
+            ByteStream& get_buffer_impl() { return m_buffer; }
+            const ByteStream& get_buffer_impl() const { return m_buffer; }
 
         public:
-            auto& get_builders() { return m_data; }
+            T_& operator[](size_t pos) {
+                assert(pos < m_data.size());
+                return m_data[pos];
+            }
+
+            void resize(size_t num) { m_data.resize(num); }
+
+            void push_back(T_&& element) { m_data.push_back(std::move(element)) ;}
     };
 
 
@@ -170,20 +158,15 @@ namespace flatmemory
     public:
         View(uint8_t* data) : m_data(data) {}
 
-        size_t get_size() const { return read_value<vector_size_type>(m_data + Layout<Vector<T>>::size_offset); }
+        size_t size() const { return read_value<vector_size_type>(m_data + Layout<Vector<T>>::size_offset); }
 
         decltype(auto) operator[](size_t pos) const {
-            assert(pos < get_size());
+            assert(pos < size());
             constexpr bool is_trivial = IsTrivial<T>;
             if constexpr (is_trivial) {
                 return read_value<T>(m_data + Layout<Vector<T>>::data_offset + pos * sizeof(T));
             } else {
-                constexpr bool is_dynamic = is_dynamic_type<T>::value;
-                if constexpr (is_dynamic) {
-                    return View<T>(m_data + Layout<Vector<T>>::data_offset + read_value<offset_type>(m_data + Layout<Vector<T>>::data_offset + pos * sizeof(offset_type)));
-                } else {
-                    return View<T>(m_data + Layout<Vector<T>>::data_offset + pos * Layout<T>::size);
-                }
+                return View<T>(m_data + Layout<Vector<T>>::data_offset + read_value<offset_type>(m_data + Layout<Vector<T>>::data_offset + pos * sizeof(offset_type)));
             }
         }
     };

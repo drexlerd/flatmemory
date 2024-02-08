@@ -60,11 +60,11 @@ public:
 
     void clear() { m_data.clear(); }
 
-    [[nodiscard]] uint8_t* get_data() { return m_data.data(); }
-    [[nodiscard]] const uint8_t* get_data() const { return m_data.data(); }
+    [[nodiscard]] uint8_t* data() { return m_data.data(); }
+    [[nodiscard]] const uint8_t* data() const { return m_data.data(); }
 
-    [[nodiscard]] size_t get_size() const { return m_data.size(); }
-    [[nodiscard]] size_t get_capacity() const { return m_data.capacity(); }
+    [[nodiscard]] size_t size() const { return m_data.size(); }
+    [[nodiscard]] size_t capacity() const { return m_data.capacity(); }
 };
 
 } 
