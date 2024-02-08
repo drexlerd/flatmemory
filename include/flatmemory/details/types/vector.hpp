@@ -122,6 +122,7 @@ namespace flatmemory
                 assert(calculate_amoung_padding(m_buffer.size(), Layout<Vector<T>>::final_alignment) == 0);
             }
 
+            /* clear stl */
             void clear_impl() {
                 // Clear all nested builders.
                 for (auto& builder : m_data) {
@@ -137,14 +138,19 @@ namespace flatmemory
             const ByteStream& get_buffer_impl() const { return m_buffer; }
 
         public:
+            /* operator[] stl */
             T_& operator[](size_t pos) {
                 assert(pos < m_data.size());
                 return m_data[pos];
             }
 
-            void resize(size_t num) { m_data.resize(num); }
-
+            /* push back stl */
             void push_back(T_&& element) { m_data.push_back(std::move(element)) ;}
+            void push_back(const T_& element) { m_data.push_back(element) ;}
+ 
+            /* resize stl*/
+            void resize(size_t count) { m_data.resize(count); }
+            void resize(size_t count, const T_& value) { m_data.resize(count, value); }
     };
 
 
@@ -164,11 +170,13 @@ namespace flatmemory
         View(View&& other) = default;
         View& operator=(View&& other) = default; 
 
+        /* size stl */
         size_t size() const { 
             assert(m_data);
             return read_value<vector_size_type>(m_data + Layout<Vector<T>>::size_offset); 
         }
 
+        /* operator[] stl */
         decltype(auto) operator[](size_t pos) const {
             assert(m_data);
             assert(pos < size());
