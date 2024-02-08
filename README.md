@@ -17,7 +17,10 @@ In this example, we use a `Builder`to serialize a 2-dimensional `Vector` of `uin
 ```cpp
 #include <flatmemory/flatmemory.hpp>
 
-// 1. Construct a builder, feed it with data, and finish the byte sequence.
+// 1. Layout requirement 
+EXPECT_EQ((Layout<Vector<Vector<uint16_t>>>::final_alignment), 4);
+
+// 2. Construct a builder, feed it with data, and finish the byte sequence.
 auto builder = Builder<Vector<Vector<uint16_t>>>();
 builder.resize(2);
 builder[0].push_back(5);
@@ -27,9 +30,9 @@ builder.finish();
 assert(builder.get_data() != nullptr);
 assert(builder.get_size() == 36);
 
-// 2. Construct a view to interpret the byte sequence.
+// 3. Construct a view to interpret the byte sequence.
 auto view = View<Vector<Vector<uint16_t>>>(builder.get_data());
-EXPECT_EQ(view.buffer_size(), 36);
+EXPECT_EQ(view.buffer_size(), 36);  // storing views contiguously satisfies alignment requirements
 EXPECT_EQ(view.size(), 2);
 EXPECT_EQ(view[0][0], 5);
 EXPECT_EQ(view[1][0], 6);
