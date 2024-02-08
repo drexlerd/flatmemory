@@ -17,7 +17,7 @@ In this example, we use a `Builder`to serialize a 2-dimensional `Vector` of `uin
 ```cpp
 #include <flatmemory/flatmemory.hpp>
 
-// 1. Layout requirement 
+// 1. Layout alignment requirement 
 EXPECT_EQ((Layout<Vector<Vector<uint16_t>>>::final_alignment), 4);
 
 // 2. Construct a builder, feed it with data, and finish the byte sequence.
