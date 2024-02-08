@@ -132,6 +132,12 @@ namespace flatmemory
                 m_dynamic_buffer.clear();
             }
 
+
+            /* Allow serialization of Views by giving access to private default constructor. */
+            template<typename>
+            friend class View;
+
+
             ByteStream& get_buffer_impl() { return m_buffer; }
             const ByteStream& get_buffer_impl() const { return m_buffer; }
 
@@ -154,6 +160,8 @@ namespace flatmemory
     class View<Vector<T>> {
     private:
         uint8_t* m_data;
+
+        View() = default;  // trivial constructor
 
     public:
         View(uint8_t* data) : m_data(data) {}
