@@ -27,7 +27,8 @@ namespace flatmemory::tests
     TEST(FlatmemoryTests, TypesTupleEmptyTest) {
         // Test empty tuple
         EXPECT_EQ((Layout<Tuple<>>::final_alignment), 0);
-        static_assert(!IsTrivial<Tuple<>>, "Tuple<> must not have standard layout.");
+        EXPECT_EQ(IsTrivial<View<Tuple<>>>, true);
+        EXPECT_EQ(IsTrivial<Tuple<>>, false);
 
         auto builder = Builder<Tuple<>>();
         builder.finish();
@@ -43,7 +44,8 @@ namespace flatmemory::tests
         // ||  5  ||  6  ||  7  ||
         // ||__|__||__|__||__|__||
         EXPECT_EQ((Layout<Tuple<uint16_t, uint16_t, uint16_t>>::final_alignment), 2);
-        static_assert(!IsTrivial<Tuple<uint16_t, uint16_t, uint16_t>>, "Tuple<uint16_t, uint16_t, uint16_t> must not have standard layout.");
+        EXPECT_EQ((IsTrivial<View<Tuple<uint16_t, uint16_t, uint16_t>>>), true);
+        EXPECT_EQ((IsTrivial<Tuple<uint16_t, uint16_t, uint16_t>>), false);
 
         auto builder = Builder<Tuple<int16_t, uint16_t, uint16_t>>();
         builder.get<0>() = 5;
@@ -67,7 +69,8 @@ namespace flatmemory::tests
         // ||  5  ||  P  ||     6     ||  7  ||  P  ||
         // ||__|__||__|__||__|__|__|__||__|__||__|__||
         EXPECT_EQ((Layout<Tuple<int16_t, int32_t, uint16_t>>::final_alignment), 4);
-        static_assert(!IsTrivial<Tuple<int16_t, int32_t, uint16_t>>, "Tuple<int16_t, int32_t, uint16_t> must not have standard layout.");
+        EXPECT_EQ((IsTrivial<View<Tuple<int16_t, int32_t, uint16_t>>>), true);
+        EXPECT_EQ((IsTrivial<Tuple<int16_t, int32_t, uint16_t>>), false);
 
         auto builder = Builder<Tuple<int16_t, int32_t, uint16_t>>();
         builder.get<0>() = 5;
@@ -86,7 +89,8 @@ namespace flatmemory::tests
 
     TEST(FlatmemoryTests, TypesTupleVectorTest) {
         EXPECT_EQ((Layout<Tuple<Vector<uint64_t>>>::final_alignment), 8);
-        static_assert(!IsTrivial<Tuple<Vector<uint64_t>>>, "Tuple<Vector<uint64_t>> must not have standard layout.");
+        EXPECT_EQ((IsTrivial<View<Tuple<Vector<uint64_t>>>>), true);
+        EXPECT_EQ((IsTrivial<Tuple<Vector<uint64_t>>>), false);
 
         auto builder = Builder<Tuple<Vector<uint64_t>>>();
         builder.get<0>().resize(3);
@@ -101,7 +105,8 @@ namespace flatmemory::tests
 
     TEST(FlatmemoryTests, TypesTupleVector2Test) {
         EXPECT_EQ((Layout<Tuple<Vector<uint64_t>, Vector<uint16_t>>>::final_alignment), 8);
-        static_assert(!IsTrivial<Tuple<Vector<uint64_t>, Vector<uint16_t>>>, "Tuple<Vector<uint64_t>, Vector<uint16_t>> must not have standard layout.");
+        EXPECT_EQ((IsTrivial<View<Tuple<Vector<uint64_t>, Vector<uint16_t>>>>), true);
+        EXPECT_EQ((IsTrivial<Tuple<Vector<uint64_t>, Vector<uint16_t>>>), false);
 
         auto builder = Builder<Tuple<Vector<uint64_t>, Vector<uint16_t>>>();
         builder.get<0>().resize(3);
@@ -118,8 +123,9 @@ namespace flatmemory::tests
 
     TEST(FlatmemoryTests, TypesTupleVectorVectorTest) {
         EXPECT_EQ((Layout<Tuple<Vector<Vector<uint8_t>>>>::final_alignment), 4);
-        static_assert(!IsTrivial<Tuple<Vector<Vector<uint8_t>>>>, "Tuple<Vector<Vector<uint8_t>>> must not have standard layout.");
- 
+        EXPECT_EQ((IsTrivial<View<Tuple<Vector<Vector<uint8_t>>>>>), true);
+        EXPECT_EQ((IsTrivial<Tuple<Vector<Vector<uint8_t>>>>), false);
+
         auto builder = Builder<Tuple<Vector<Vector<uint8_t>>>>();
         builder.get<0>().resize(3);
         builder.get<0>()[0].resize(2);
@@ -142,8 +148,9 @@ namespace flatmemory::tests
 
     TEST(FlatmemoryTests, TypesTupleStructTest) {
         EXPECT_EQ((Layout<Tuple<StructTest>>::final_alignment), 8);
-        static_assert(!IsTrivial<Tuple<StructTest>>, "Tuple<StructTest> must not have standard layout.");
-    
+        EXPECT_EQ((IsTrivial<View<Tuple<StructTest>>>), true);
+        EXPECT_EQ((IsTrivial<Tuple<StructTest>>), false);
+
         auto builder = Builder<Tuple<StructTest>>();
         builder.get<0>().x = 5;
         builder.get<0>().y = 10;
