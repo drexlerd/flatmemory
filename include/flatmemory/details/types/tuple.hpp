@@ -38,8 +38,8 @@ namespace flatmemory
     /**
      * Dispatcher for tuple.
     */
-    template<typename... Ts>
-    struct Tuple {
+    template<IsTrivialOrCustom... Ts>
+    struct Tuple : public Custom {
         Tuple() { }  // Non-trivial constructor
         ~Tuple() { } // Non-trivial destructor
     };
@@ -48,7 +48,7 @@ namespace flatmemory
     /**
      * Layout
     */
-    template<typename... Ts>
+    template<IsTrivialOrCustom... Ts>
     class Layout<Tuple<Ts...>> {
         private:
             /**
@@ -115,14 +115,14 @@ namespace flatmemory
      * 
      * A tuple is dynamic if at least one of its nested builders is dynamic.
     */
-    template<typename... Ts>
+    template<IsTrivialOrCustom... Ts>
     struct is_dynamic_type<Tuple<Ts...>> : std::bool_constant<(is_dynamic_type<Ts>::value || ...)> {};
 
 
     /**
      * Builder
     */
-    template<typename... Ts> 
+    template<IsTrivialOrCustom... Ts> 
     class Builder<Tuple<Ts...>> : public IBuilder<Builder<Tuple<Ts...>>> {
         private:
             std::tuple<typename maybe_builder<Ts>::type...> m_data;
@@ -137,7 +137,7 @@ namespace flatmemory
             void finish_rec_impl(offset_type offset) {
                 if constexpr (I < sizeof...(Ts)) {
                     // Write the data.
-                    constexpr bool is_trivial = is_trivial_and_standard_layout_v<std::tuple_element_t<I, std::tuple<Ts...>>>;
+                    constexpr bool is_trivial = IsTrivial<std::tuple_element_t<I, std::tuple<Ts...>>>;
                     if constexpr (is_trivial) {
                         auto& value = std::get<I>(m_data);
                         m_buffer.write(value);
@@ -176,7 +176,7 @@ namespace flatmemory
             template<std::size_t I = 0>
             void clear_rec_impl() {
                 if constexpr (I < sizeof...(Ts)) {
-                    constexpr bool is_trivial = is_trivial_and_standard_layout_v<std::tuple_element_t<I, std::tuple<Ts...>>>;
+                    constexpr bool is_trivial = IsTrivial<std::tuple_element_t<I, std::tuple<Ts...>>>;
                     if constexpr (!is_trivial) {
                         auto& builder = std::get<I>(m_data);
                         builder.clear();
@@ -211,7 +211,7 @@ namespace flatmemory
     /**
      * View
     */
-    template<typename... Ts>
+    template<IsTrivialOrCustom... Ts>
     class View<Tuple<Ts...>> {
     private:
         template<size_t I>
@@ -232,7 +232,7 @@ namespace flatmemory
         template<std::size_t I>
         decltype(auto) get() {
             assert(I < Layout<Tuple<Ts...>>::size);
-            constexpr bool is_trivial = is_trivial_and_standard_layout_v<element_type<I>>;
+            constexpr bool is_trivial = IsTrivial<element_type<I>>;
             if constexpr (is_trivial) {
                 return read_value<element_type<I>>(m_data + Layout<Tuple<Ts...>>::header_offsets[I]);
             } else {

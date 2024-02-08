@@ -41,7 +41,7 @@ namespace flatmemory
      * Dispatcher for tuple.
     */
     template<typename Block>
-    struct Bitset {
+    struct Bitset : public Custom {
         Bitset() { }  // Non-trivial constructor
         ~Bitset() { } // Non-trivial destructor
     };

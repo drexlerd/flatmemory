@@ -44,7 +44,7 @@ namespace flatmemory
     */
     template<typename T>
     inline consteval size_t calculate_header_type_size() {
-        constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
+        constexpr bool is_trivial = IsTrivial<T>;
         if constexpr (is_trivial) {
             return sizeof(T);
         } else {
@@ -66,7 +66,7 @@ namespace flatmemory
     */
     template<typename T>
     inline consteval size_t calculate_header_alignment() {
-        constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
+        constexpr bool is_trivial = IsTrivial<T>;
         if constexpr (is_trivial) {
             return alignof(T);
         } else {
@@ -85,7 +85,7 @@ namespace flatmemory
     */
     template<typename T>
     inline consteval size_t calculate_overall_alignment() {
-        constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
+        constexpr bool is_trivial = IsTrivial<T>;
         if constexpr (is_trivial) {
             return alignof(T);
         } else {

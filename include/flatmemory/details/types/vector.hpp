@@ -36,8 +36,8 @@ namespace flatmemory
     /**
      * Dispatcher for tuple.
     */
-    template<typename T>
-    struct Vector {
+    template<IsTrivialOrCustom T>
+    struct Vector : public Custom {
         Vector() { }  // Non-trivial constructor
         ~Vector() { } // Non-trivial destructor
     };
@@ -51,7 +51,7 @@ namespace flatmemory
     /**
      * Layout
     */
-    template<typename T>
+    template<IsTrivialOrCustom T>
     class Layout<Vector<T>> {
         private:
             static consteval offset_type calculate_data_offset() {
@@ -78,14 +78,14 @@ namespace flatmemory
     /**
      * Type traits
     */
-    template<typename T>
+    template<IsTrivialOrCustom T>
     struct is_dynamic_type<Vector<T>> : std::true_type{};
 
 
     /**
      * Builder
     */
-    template<typename T>
+    template<IsTrivialOrCustom T>
     class Builder<Vector<T>> : public IBuilder<Builder<Vector<T>>> {
         private:
             std::vector<typename maybe_builder<T>::type> m_data;
@@ -102,7 +102,7 @@ namespace flatmemory
                 m_buffer.write<vector_size_type>(m_data.size());
                 m_buffer.write_padding(Layout<Vector<T>>::data_offset - m_buffer.get_size());
 
-                constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
+                constexpr bool is_trivial = IsTrivial<T>;
                 if constexpr (is_trivial) {
                     for (size_t i = 0; i < m_data.size(); ++i) {
                         m_buffer.write(m_data[i]);
@@ -162,7 +162,7 @@ namespace flatmemory
     /**
      * View
     */
-    template<typename T>
+    template<IsTrivialOrCustom T>
     class View<Vector<T>> {
     private:
         uint8_t* m_data;
@@ -174,7 +174,7 @@ namespace flatmemory
 
         decltype(auto) operator[](size_t pos) const {
             assert(pos < get_size());
-            constexpr bool is_trivial = is_trivial_and_standard_layout_v<T>;
+            constexpr bool is_trivial = IsTrivial<T>;
             if constexpr (is_trivial) {
                 return read_value<T>(m_data + Layout<Vector<T>>::data_offset + pos * sizeof(T));
             } else {

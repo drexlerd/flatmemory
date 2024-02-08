@@ -19,6 +19,7 @@
 #define FLATMEMORY_TYPE_TRAITS_HPP_
 
 #include "builder.hpp"
+#include "layout_utils.hpp"
 
 #include <type_traits>
 
@@ -26,26 +27,35 @@
 namespace flatmemory 
 {
     /**
+     * Base ID class for custom types.
+    */
+    struct Custom {};
+
+    template<typename T>
+    concept IsCustom = std::derived_from<T, Custom>;
+
+    template<typename T>
+    concept IsTrivial = std::is_trivial_v<T>;
+
+    /**
      * Base template assuming all types are static.
      * 
      * For dynamic types we need to write an offset instead of the data directly.
      */
-    template<typename T>
+    template<IsCustom T>
     struct is_dynamic_type : std::false_type {};
 
 
-    /**
-     * Distinguish between types that do not require a layout/builder/view and those that do.
-    */
     template<typename T>
-    inline constexpr bool is_trivial_and_standard_layout_v = std::is_trivial_v<T> && std::is_standard_layout_v<T>;
+    concept IsTrivialOrCustom = (IsTrivial<T> || IsCustom<T>);
 
-    template<typename T, bool = is_trivial_and_standard_layout_v<T>>
+
+    template<IsTrivialOrCustom T, bool = IsTrivial<T>>
     struct maybe_builder {
         using type = T;
     };
 
-    template<typename T>
+    template<IsTrivialOrCustom T>
     struct maybe_builder<T, false> {
         using type = Builder<T>;
     };
