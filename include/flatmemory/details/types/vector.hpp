@@ -192,8 +192,8 @@ namespace flatmemory
         [[nodiscard]] bool operator==(const View& other) const {
             if (this == &other) return true;
             if (m_buf != other.m_buf) {
-                if (buf_size() != other.buf_size()) return false;
-                return std::memcmp(m_buf, other.m_buf, buf_size());
+                if (buffer_size() != other.buffer_size()) return false;
+                return std::memcmp(m_buf, other.m_buf, buffer_size());
                 if (size() != other.size()) return false;
             }
             return true;
@@ -210,7 +210,7 @@ namespace flatmemory
         /**
          * buffer size
         */
-        [[nodiscard]] size_t buf_size() const { 
+        [[nodiscard]] size_t buffer_size() const { 
             assert(m_buf);
             return read_value<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_offset); 
         }

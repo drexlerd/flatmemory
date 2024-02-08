@@ -68,6 +68,7 @@ TEST(FlatmemoryTests, TypesVectorVectorTest) {
     EXPECT_EQ(builder.buffer().size(), 36);
 
     auto view = View<Vector<Vector<uint16_t>>>(builder.buffer().data());
+    EXPECT_EQ(view.buffer_size(), 36);
     EXPECT_EQ(view.size(), 2);
     EXPECT_EQ(view[0][0], 5);
     EXPECT_EQ(view[1][0], 6);

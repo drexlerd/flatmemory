@@ -29,6 +29,7 @@ assert(builder.get_size() == 36);
 
 // 2. Construct a view to interpret the byte sequence.
 auto view = View<Vector<Vector<uint16_t>>>(builder.get_data());
+EXPECT_EQ(view.buffer_size(), 36);
 EXPECT_EQ(view.size(), 2);
 EXPECT_EQ(view[0][0], 5);
 EXPECT_EQ(view[1][0], 6);
