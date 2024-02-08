@@ -18,8 +18,7 @@
 #ifndef FLATMEMORY_TYPE_TRAITS_HPP_
 #define FLATMEMORY_TYPE_TRAITS_HPP_
 
-#include "builder.hpp"
-#include "layout_utils.hpp"
+#include "layout.hpp"
 
 #include <type_traits>
 
@@ -35,21 +34,10 @@ namespace flatmemory
     concept IsCustom = std::derived_from<T, Custom>;
 
     template<typename T>
-    concept IsTrivial = std::is_trivial_v<T>;
+    concept IsTriviallyCopyable = std::is_trivially_copyable_v<T>;
 
     template<typename T>
-    concept IsTrivialOrCustom = (IsTrivial<T> || IsCustom<T>);
-
-
-    template<IsTrivialOrCustom T, bool = IsTrivial<T>>
-    struct maybe_builder {
-        using type = T;
-    };
-
-    template<IsTrivialOrCustom T>
-    struct maybe_builder<T, false> {
-        using type = Builder<T>;
-    };
+    concept IsTriviallyCopyableOrCustom = (IsTriviallyCopyable<T> || IsCustom<T>);
 }
 
 #endif 

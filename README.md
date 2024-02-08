@@ -8,7 +8,7 @@ Flatmemory currently provides the following non-trivial composite types:
 - Vector
 - Bitset
 
-All composite types support all types `T` that satisfy `std::is_trivial_v<T>` and `std::is_standard_layout_v<T>`. For example, `uint8_t`, `uint16_t`, `uint32_t`, `uint64_t`, `int8_t`, `int16_t`, `int32_t`, `int64_t`, and more.
+All composite types support all types `T` that satisfy `std::is_trivially_copyable_v<T>`.
 
 ## Example
 

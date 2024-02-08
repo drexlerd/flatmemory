@@ -57,6 +57,20 @@ namespace flatmemory
     */
     template<typename Tag>
     class Builder : IBuilder<Builder<Tag>> {};
+
+
+    /**
+     * Concepts
+    */
+    template<IsTriviallyCopyableOrCustom T, bool = IsTriviallyCopyable<T>>
+    struct maybe_builder {
+        using type = T;
+    };
+
+    template<IsTriviallyCopyableOrCustom T>
+    struct maybe_builder<T, false> {
+        using type = Builder<T>;
+    };
 }
 
 #endif 

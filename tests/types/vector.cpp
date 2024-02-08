@@ -34,7 +34,7 @@ TEST(FlatmemoryTests, TypesVectorTest) {
     builder[1] = 6;
     builder.finish();
 
-    EXPECT_EQ(builder.buffer().size(), 8);
+    EXPECT_EQ(builder.buffer().size(), 12);
 
     auto view = View<Vector<uint16_t>>(builder.buffer().data());
     EXPECT_EQ(view.size(), 2);
@@ -50,8 +50,8 @@ TEST(FlatmemoryTests, TypesVector2Test) {
     builder.resize(3);
     builder.finish();
 
-    // 2 additional padding are added from 10 to 12
-    EXPECT_EQ(builder.buffer().size(), 12);
+    // 2 additional padding are added from 14 to 16
+    EXPECT_EQ(builder.buffer().size(), 16);
 }
 
 
@@ -65,7 +65,7 @@ TEST(FlatmemoryTests, TypesVectorVectorTest) {
     builder[1].push_back(7);
     builder.finish();
 
-    EXPECT_EQ(builder.buffer().size(), 24);
+    EXPECT_EQ(builder.buffer().size(), 36);
 
     auto view = View<Vector<Vector<uint16_t>>>(builder.buffer().data());
     EXPECT_EQ(view.size(), 2);

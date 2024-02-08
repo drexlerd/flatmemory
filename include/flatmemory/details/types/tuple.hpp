@@ -38,16 +38,16 @@ namespace flatmemory
     /**
      * Dispatcher for tuple.
     */
-    template<IsTrivialOrCustom... Ts>
+    template<IsTriviallyCopyableOrCustom... Ts>
     struct Tuple : public Custom {
-        Tuple() { }  // Non-trivial constructor
+        Tuple(const Tuple& other) {}  // Non-trivial copy-constructor
     };
 
 
     /**
      * Layout
     */
-    template<IsTrivialOrCustom... Ts>
+    template<IsTriviallyCopyableOrCustom... Ts>
     class Layout<Tuple<Ts...>> {
         private:
             /**
@@ -112,7 +112,7 @@ namespace flatmemory
     /**
      * Builder
     */
-    template<IsTrivialOrCustom... Ts> 
+    template<IsTriviallyCopyableOrCustom... Ts> 
     class Builder<Tuple<Ts...>> : public IBuilder<Builder<Tuple<Ts...>>> {
         private:
             std::tuple<typename maybe_builder<Ts>::type...> m_data;
@@ -127,7 +127,7 @@ namespace flatmemory
             void finish_rec_impl(offset_type offset) {
                 if constexpr (I < sizeof...(Ts)) {
                     // Write the data.
-                    constexpr bool is_trivial = IsTrivial<std::tuple_element_t<I, std::tuple<Ts...>>>;
+                    constexpr bool is_trivial = IsTriviallyCopyable<std::tuple_element_t<I, std::tuple<Ts...>>>;
                     if constexpr (is_trivial) {
                         auto& value = std::get<I>(m_data);
                         m_buffer.write(value);
@@ -161,7 +161,7 @@ namespace flatmemory
             template<std::size_t I = 0>
             void clear_rec_impl() {
                 if constexpr (I < sizeof...(Ts)) {
-                    constexpr bool is_trivial = IsTrivial<std::tuple_element_t<I, std::tuple<Ts...>>>;
+                    constexpr bool is_trivial = IsTriviallyCopyable<std::tuple_element_t<I, std::tuple<Ts...>>>;
                     if constexpr (!is_trivial) {
                         auto& builder = std::get<I>(m_data);
                         builder.clear();
@@ -196,7 +196,7 @@ namespace flatmemory
     /**
      * View
     */
-    template<IsTrivialOrCustom... Ts>
+    template<IsTriviallyCopyableOrCustom... Ts>
     class View<Tuple<Ts...>> {
     private:
         template<size_t I>
@@ -204,15 +204,23 @@ namespace flatmemory
         template<size_t I>
         using element_view_type = View<std::tuple_element_t<I, std::tuple<Ts...>>>;
 
-        uint8_t* m_data;
+        uint8_t* m_buf;
+
+        /**
+         * Default constructor to make view a trivial data type and serializable
+        */
+        View() = default;
+
+        template<typename>
+        friend class Builder;
 
     public:
-        View() = default;  // trivial constructor
-        View(uint8_t* data) : m_data(data) {}
-        View(const View& other) = default;
-        View& operator=(const View& other) = default; 
-        View(View&& other) = default;
-        View& operator=(View&& other) = default; 
+        /**
+         * Constructor to interpret raw data created by its corresponding builder
+        */
+        View(uint8_t* data) : m_buf(data) {
+            assert(m_buf);
+        }
 
         /**
          * Returns a View to the I-th element.
@@ -221,13 +229,13 @@ namespace flatmemory
         */
         template<std::size_t I>
         decltype(auto) get() {
-            assert(m_data);
+            assert(m_buf);
             assert(I < Layout<Tuple<Ts...>>::size);
-            constexpr bool is_trivial = IsTrivial<element_type<I>>;
+            constexpr bool is_trivial = IsTriviallyCopyable<element_type<I>>;
             if constexpr (is_trivial) {
-                return read_value<element_type<I>>(m_data + Layout<Tuple<Ts...>>::header_offsets[I]);
+                return read_value<element_type<I>>(m_buf + Layout<Tuple<Ts...>>::header_offsets[I]);
             } else {
-                return element_view_type<I>(m_data + read_value<offset_type>(m_data + Layout<Tuple<Ts...>>::header_offsets[I]));
+                return element_view_type<I>(m_buf + read_value<offset_type>(m_buf + Layout<Tuple<Ts...>>::header_offsets[I]));
             }
         }
     };

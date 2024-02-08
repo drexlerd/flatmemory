@@ -31,7 +31,7 @@ namespace flatmemory::tests
 
     TEST(FlatmemoryTests, TypesTrivialTest) {
         EXPECT_EQ((Layout<Trivial<TrivialType>>::final_alignment), 16);
-        EXPECT_EQ(IsTrivial<View<Trivial<TrivialType>>>, true);
+        EXPECT_EQ(IsTriviallyCopyable<View<Trivial<TrivialType>>>, true);
 
         auto builder = Builder<Trivial<TrivialType>>();
         builder->x = true;

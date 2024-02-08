@@ -24,8 +24,6 @@
 #include <cstdint>
 #include <cstddef>
 #include <type_traits>
-#include <iostream>
-#include <iomanip>
 
 
 namespace flatmemory 
@@ -35,6 +33,7 @@ namespace flatmemory
     */
     using offset_type = uint16_t;
 
+    using buffer_size_type = uint32_t;
 
     /**
      * Compute the amount of bytes needed to store the header of type T
@@ -44,7 +43,7 @@ namespace flatmemory
     */
     template<typename T>
     inline consteval size_t calculate_header_type_size() {
-        constexpr bool is_trivial = IsTrivial<T>;
+        constexpr bool is_trivial = IsTriviallyCopyable<T>;
         if constexpr (is_trivial) {
             return sizeof(T);
         } else {
@@ -61,7 +60,7 @@ namespace flatmemory
     */
     template<typename T>
     inline consteval size_t calculate_header_alignment() {
-        constexpr bool is_trivial = IsTrivial<T>;
+        constexpr bool is_trivial = IsTriviallyCopyable<T>;
         if constexpr (is_trivial) {
             return alignof(T);
         } else {
@@ -75,7 +74,7 @@ namespace flatmemory
     */
     template<typename T>
     inline consteval size_t calculate_overall_alignment() {
-        constexpr bool is_trivial = IsTrivial<T>;
+        constexpr bool is_trivial = IsTriviallyCopyable<T>;
         if constexpr (is_trivial) {
             return alignof(T);
         } else {
@@ -101,6 +100,14 @@ namespace flatmemory
     inline constexpr size_t calculate_amoung_padding(size_t pos, size_t align_factor) {
         if (align_factor == 0) return 1;
         return (align_factor - (pos % align_factor)) % align_factor;
+    }
+
+
+    template<typename T, typename T_Next>
+    inline consteval T calculate_header_offset(size_t cur_pos) {
+        cur_pos += sizeof(T);
+        cur_pos += calculate_amoung_padding(cur_pos, calculate_header_alignment<T_Next>());
+        return cur_pos;
     }
 
 }

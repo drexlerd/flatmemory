@@ -38,16 +38,16 @@ namespace flatmemory
     /**
      * Dispatcher for tuple.
     */
-    template<IsTrivial T>
+    template<IsTriviallyCopyable T>
     struct Trivial : public Custom {
-        Trivial() { }  // Non-trivial constructor
+        Trivial(const Trivial& other) {}  // Non-trivial copy-constructor
     };
 
 
     /**
      * Layout
     */
-    template<IsTrivial T>
+    template<IsTriviallyCopyable T>
     class Layout<Trivial<T>> {     
         public:
             static constexpr size_t final_alignment = sizeof(T);
@@ -57,7 +57,7 @@ namespace flatmemory
     /**
      * Builder
     */
-    template<IsTrivial T>
+    template<IsTriviallyCopyable T>
     class Builder<Trivial<T>> : public IBuilder<Builder<Trivial<T>>> {
         private:
             T m_trivial;
@@ -90,26 +90,34 @@ namespace flatmemory
     /**
      * View
     */
-    template<IsTrivial T>
+    template<IsTriviallyCopyable T>
     class View<Trivial<T>> {
     private:
-        uint8_t* m_data;
+        uint8_t* m_buf;
+
+        /**
+         * Default constructor to make view a trivial data type and serializable
+        */
+        View() = default;
+
+        template<typename>
+        friend class Builder;
 
     public:
-        View() = default;  // trivial constructor
-        View(uint8_t* data) : m_data(data) {}
-        View(const View& other) = default;
-        View& operator=(const View& other) = default; 
-        View(View&& other) = default;
-        View& operator=(View&& other) = default; 
+        /**
+         * Constructor to interpret raw data created by its corresponding builder
+        */
+        View(uint8_t* data) : m_buf(data) {
+            assert(m_buf);
+        }
 
         T& operator*() { 
-            assert(m_data);
-            return read_value<T>(m_data); 
+            assert(m_buf);
+            return read_value<T>(m_buf); 
         }
         T* operator->() { 
-            assert(m_data);
-            return &read_value<T>(m_data); 
+            assert(m_buf);
+            return &read_value<T>(m_buf); 
         }
     };
 }

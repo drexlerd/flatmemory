@@ -27,7 +27,7 @@ namespace flatmemory::tests
 
 TEST(FlatmemoryTests, TypesBitsetTest) {
     EXPECT_EQ((Layout<Bitset<uint64_t>>::final_alignment), 8);
-    EXPECT_EQ(IsTrivial<View<Bitset<uint64_t>>>, true);
+    EXPECT_EQ(IsTriviallyCopyable<View<Bitset<uint64_t>>>, true);
 
     auto builder = Builder<Bitset<uint64_t>>();
     builder.get_default_bit_value() = true;

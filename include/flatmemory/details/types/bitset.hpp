@@ -42,7 +42,7 @@ namespace flatmemory
     */
     template<typename Block>
     struct Bitset : public Custom {
-        Bitset() { }  // Non-trivial constructor
+        Bitset(const Bitset& other) {}  // Non-trivial copy-constructor
     };
 
 
@@ -113,24 +113,32 @@ namespace flatmemory
     template<typename Block>
     class View<Bitset<Block>> {
     private:
-        uint8_t* m_data;
+        uint8_t* m_buf;
 
-    public:
-        View() = default;  // trivial constructor
-        View(uint8_t* data) : m_data(data) {}
-        View(const View& other) = default;
-        View& operator=(const View& other) = default; 
-        View(View&& other) = default;
-        View& operator=(View&& other) = default; 
+        /**
+         * Default constructor to make view a trivial data type and serializable
+        */
+        View() = default;
+
+        template<typename>
+        friend class Builder;
+
+    public:        
+        /**
+         * Constructor to interpret raw data created by its corresponding builder
+        */
+        View(uint8_t* data) : m_buf(data) {
+            assert(m_buf);
+        }
 
         bool& get_default_bit_value() {
-            assert(m_data);
-            return read_value<bool>(m_data);
+            assert(m_buf);
+            return read_value<bool>(m_buf);
         }
 
         View<Vector<Block>> get_blocks() {
-            assert(m_data);
-            return View<Vector<Block>>(m_data + Layout<Bitset<Block>>::blocks_offset);
+            assert(m_buf);
+            return View<Vector<Block>>(m_buf + Layout<Bitset<Block>>::blocks_offset);
         }
     };
 }

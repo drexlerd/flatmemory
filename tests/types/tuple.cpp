@@ -27,8 +27,8 @@ namespace flatmemory::tests
     TEST(FlatmemoryTests, TypesTupleEmptyTest) {
         // Test empty tuple
         EXPECT_EQ((Layout<Tuple<>>::final_alignment), 0);
-        EXPECT_EQ(IsTrivial<View<Tuple<>>>, true);
-        EXPECT_EQ(IsTrivial<Tuple<>>, false);
+        EXPECT_EQ(IsTriviallyCopyable<View<Tuple<>>>, true);
+        EXPECT_EQ(IsTriviallyCopyable<Tuple<>>, false);
 
         auto builder = Builder<Tuple<>>();
         builder.finish();
@@ -44,8 +44,8 @@ namespace flatmemory::tests
         // ||  5  ||  6  ||  7  ||
         // ||__|__||__|__||__|__||
         EXPECT_EQ((Layout<Tuple<uint16_t, uint16_t, uint16_t>>::final_alignment), 2);
-        EXPECT_EQ((IsTrivial<View<Tuple<uint16_t, uint16_t, uint16_t>>>), true);
-        EXPECT_EQ((IsTrivial<Tuple<uint16_t, uint16_t, uint16_t>>), false);
+        EXPECT_EQ((IsTriviallyCopyable<View<Tuple<uint16_t, uint16_t, uint16_t>>>), true);
+        EXPECT_EQ((IsTriviallyCopyable<Tuple<uint16_t, uint16_t, uint16_t>>), false);
 
         auto builder = Builder<Tuple<int16_t, uint16_t, uint16_t>>();
         builder.get<0>() = 5;
@@ -69,8 +69,8 @@ namespace flatmemory::tests
         // ||  5  ||  P  ||     6     ||  7  ||  P  ||
         // ||__|__||__|__||__|__|__|__||__|__||__|__||
         EXPECT_EQ((Layout<Tuple<int16_t, int32_t, uint16_t>>::final_alignment), 4);
-        EXPECT_EQ((IsTrivial<View<Tuple<int16_t, int32_t, uint16_t>>>), true);
-        EXPECT_EQ((IsTrivial<Tuple<int16_t, int32_t, uint16_t>>), false);
+        EXPECT_EQ((IsTriviallyCopyable<View<Tuple<int16_t, int32_t, uint16_t>>>), true);
+        EXPECT_EQ((IsTriviallyCopyable<Tuple<int16_t, int32_t, uint16_t>>), false);
 
         auto builder = Builder<Tuple<int16_t, int32_t, uint16_t>>();
         builder.get<0>() = 5;
@@ -89,8 +89,8 @@ namespace flatmemory::tests
 
     TEST(FlatmemoryTests, TypesTupleVectorTest) {
         EXPECT_EQ((Layout<Tuple<Vector<uint64_t>>>::final_alignment), 8);
-        EXPECT_EQ((IsTrivial<View<Tuple<Vector<uint64_t>>>>), true);
-        EXPECT_EQ((IsTrivial<Tuple<Vector<uint64_t>>>), false);
+        EXPECT_EQ((IsTriviallyCopyable<View<Tuple<Vector<uint64_t>>>>), true);
+        EXPECT_EQ((IsTriviallyCopyable<Tuple<Vector<uint64_t>>>), false);
 
         auto builder = Builder<Tuple<Vector<uint64_t>>>();
         builder.get<0>().resize(3);
@@ -105,8 +105,8 @@ namespace flatmemory::tests
 
     TEST(FlatmemoryTests, TypesTupleVector2Test) {
         EXPECT_EQ((Layout<Tuple<Vector<uint64_t>, Vector<uint16_t>>>::final_alignment), 8);
-        EXPECT_EQ((IsTrivial<View<Tuple<Vector<uint64_t>, Vector<uint16_t>>>>), true);
-        EXPECT_EQ((IsTrivial<Tuple<Vector<uint64_t>, Vector<uint16_t>>>), false);
+        EXPECT_EQ((IsTriviallyCopyable<View<Tuple<Vector<uint64_t>, Vector<uint16_t>>>>), true);
+        EXPECT_EQ((IsTriviallyCopyable<Tuple<Vector<uint64_t>, Vector<uint16_t>>>), false);
 
         auto builder = Builder<Tuple<Vector<uint64_t>, Vector<uint16_t>>>();
         builder.get<0>().resize(3);
@@ -123,8 +123,8 @@ namespace flatmemory::tests
 
     TEST(FlatmemoryTests, TypesTupleVectorVectorTest) {
         EXPECT_EQ((Layout<Tuple<Vector<Vector<uint8_t>>>>::final_alignment), 4);
-        EXPECT_EQ((IsTrivial<View<Tuple<Vector<Vector<uint8_t>>>>>), true);
-        EXPECT_EQ((IsTrivial<Tuple<Vector<Vector<uint8_t>>>>), false);
+        EXPECT_EQ((IsTriviallyCopyable<View<Tuple<Vector<Vector<uint8_t>>>>>), true);
+        EXPECT_EQ((IsTriviallyCopyable<Tuple<Vector<Vector<uint8_t>>>>), false);
 
         auto builder = Builder<Tuple<Vector<Vector<uint8_t>>>>();
         builder.get<0>().resize(3);
@@ -148,8 +148,8 @@ namespace flatmemory::tests
 
     TEST(FlatmemoryTests, TypesTupleStructTest) {
         EXPECT_EQ((Layout<Tuple<StructTest>>::final_alignment), 8);
-        EXPECT_EQ((IsTrivial<View<Tuple<StructTest>>>), true);
-        EXPECT_EQ((IsTrivial<Tuple<StructTest>>), false);
+        EXPECT_EQ((IsTriviallyCopyable<View<Tuple<StructTest>>>), true);
+        EXPECT_EQ((IsTriviallyCopyable<Tuple<StructTest>>), false);
 
         auto builder = Builder<Tuple<StructTest>>();
         builder.get<0>().x = 5;

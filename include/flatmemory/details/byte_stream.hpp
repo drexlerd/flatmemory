@@ -34,12 +34,13 @@ private:
     std::vector<uint8_t> m_data;
 
 public:
-    void write(const uint8_t* data, size_t amount) {
+    size_t write(const uint8_t* data, size_t amount) {
         m_data.insert(m_data.end(), data, data + amount);
+        return amount;
     }
     
     /// @brief Writes a value to the stream.
-    template<TriviallyCopyable T>
+    template<IsTriviallyCopyable T>
     size_t write(const T& value) {
         write(reinterpret_cast<const uint8_t*>(&value), sizeof(value));
         return sizeof(value);
