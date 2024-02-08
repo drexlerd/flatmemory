@@ -19,20 +19,20 @@ In this example, we use a `Builder`to serialize a 2-dimensional `Vector` of `uin
 
 // 1. Construct a builder, feed it with data, and finish the byte sequence.
 auto builder = Builder<Vector<Vector<uint16_t>>>();
-builder.get_builders().resize(2);
-builder.get_builders()[0].get_builders().push_back(5);
-builder.get_builders()[1].get_builders().push_back(6);
-builder.get_builders()[1].get_builders().push_back(7);
+builder.resize(2);
+builder[0].push_back(5);
+builder[1].push_back(6);
+builder[1].push_back(7);
 builder.finish();
 assert(builder.get_data() != nullptr);
-assert(builder.get_size() == 24);
+assert(builder.get_size() == 36);
 
 // 2. Construct a view to interpret the byte sequence.
 auto view = View<Vector<Vector<uint16_t>>>(builder.get_data());
-assert(view.get_size() == 2);
-assert(view[0][0] == 5);
-assert(view[1][0] == 6);
-assert(view[1][1] == 7);
+EXPECT_EQ(view.size(), 2);
+EXPECT_EQ(view[0][0], 5);
+EXPECT_EQ(view[1][0], 6);
+EXPECT_EQ(view[1][1], 7);
 
 // 3. Clear the builder to reuse its memory for successive creation of objects
 builder.clear();
