@@ -8,7 +8,7 @@ Flatmemory currently provides the following non-trivial composite types:
 - Vector
 - Bitset
 
-All composite types support all types `T` that satisfy `std::is_trivially_copyable_v<T>`.
+All non-trivial types support all non-trivial types and types `T` that satisfy `std::is_trivially_copyable_v<T>` as nested types.
 
 ## Example
 
