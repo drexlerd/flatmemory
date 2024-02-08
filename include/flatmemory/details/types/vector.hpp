@@ -133,11 +133,6 @@ namespace flatmemory
             }
 
 
-            /* Allow serialization of Views by giving access to private default constructor. */
-            template<typename>
-            friend class View;
-
-
             ByteStream& get_buffer_impl() { return m_buffer; }
             const ByteStream& get_buffer_impl() const { return m_buffer; }
 
@@ -161,14 +156,21 @@ namespace flatmemory
     private:
         uint8_t* m_data;
 
-        View() = default;  // trivial constructor
-
     public:
+        View() = default;  // trivial constructor
         View(uint8_t* data) : m_data(data) {}
+        View(const View& other) = default;
+        View& operator=(const View& other) = default; 
+        View(View&& other) = default;
+        View& operator=(View&& other) = default; 
 
-        size_t size() const { return read_value<vector_size_type>(m_data + Layout<Vector<T>>::size_offset); }
+        size_t size() const { 
+            assert(m_data);
+            return read_value<vector_size_type>(m_data + Layout<Vector<T>>::size_offset); 
+        }
 
         decltype(auto) operator[](size_t pos) const {
+            assert(m_data);
             assert(pos < size());
             constexpr bool is_trivial = IsTrivial<T>;
             if constexpr (is_trivial) {

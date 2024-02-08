@@ -75,5 +75,17 @@ TEST(FlatmemoryTests, TypesVectorVectorTest) {
 }
 
 
+TEST(FlatmemoryTests, TypesVectorViewTest) {
+    EXPECT_EQ((Layout<Vector<View<Vector<uint16_t>>>>::final_alignment), 8);
+
+    auto builder = Builder<Vector<View<Vector<uint16_t>>>>();
+    builder.resize(3);
+    builder.finish();
+
+    // 2 additional padding are added from 10 to 12
+    EXPECT_EQ(builder.buffer().size(), 32);
+}
+
+
 
 }
