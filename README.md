@@ -10,6 +10,16 @@ Flatmemory currently provides the following non-trivial composite types:
 
 All non-trivial types support all non-trivial types and types `T` that satisfy `std::is_trivially_copyable_v<T>` as nested types. The data of non-trivial types are stored with an offset of type `uint16_t` and all other types `T` are stored in-place.
 
+Comparison to related libraries such as flatbuffers or cap'n'proto:
+
+Advantages:
+  - No code generator needed
+  - Reduced size of vtable by storing trivially-copieable types in-place
+
+Disadvantages:
+  - No backwards compatiblity
+
+
 ## Example
 
 In this example, we use a `Builder`to serialize a 2-dimensional `Vector` of `uint16_t` into a sequence of bytes. A respective `View` can interpret the data.
