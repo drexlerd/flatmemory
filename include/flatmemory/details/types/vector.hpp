@@ -259,16 +259,21 @@ namespace flatmemory
         /**
          * iterators
         */
-        // Forward iterator class
         class iterator {
         private:
             uint8_t* buf;
 
         public:
+            using difference_type = std::ptrdiff_t;
+            using value_type = typename maybe_view<T>::type;
+            using pointer = typename maybe_view<T>::type*;
+            using reference = typename maybe_view<T>::type&;
+            using iterator_category = std::forward_iterator_tag;
+
             iterator(uint8_t* buf) : buf(buf) {}
 
             // Dereference operator
-            decltype(auto) operator*() const {
+            reference operator*() const {
                 constexpr bool is_trivial = IsTriviallyCopyable<T>;
                 if constexpr (is_trivial) {
                     return read_value<T>(buf);

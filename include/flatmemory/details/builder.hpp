@@ -54,6 +54,8 @@ namespace flatmemory
      * Implementation class.
      * 
      * Provide overload with your Tag.
+     * 
+     * Define operations to feed data for serialization.
     */
     template<typename Tag>
     class Builder : IBuilder<Builder<Tag>> {};

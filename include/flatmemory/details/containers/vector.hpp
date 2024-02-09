@@ -23,8 +23,8 @@ template<typename T>
 class VariableSizedTypeVector
 {
 private:
-    // Persistent storage
-    ByteStreamSegmented<100000> m_storage;
+    // Persistent storage 1MiB blocks
+    ByteStreamSegmented<1000000> m_storage;
 
     // Data to be accessed
     std::vector<View<T>> m_data;
@@ -74,8 +74,8 @@ template<typename T>
 class FixedSizedTypeVector
 {
 private:
-    // Persistent storage
-    ByteStreamSegmented<100000> m_storage;
+    // Persistent storage 1MiB blocks
+    ByteStreamSegmented<1000000> m_storage;
 
     // Data to be accessed
     std::vector<View<T>> m_data;

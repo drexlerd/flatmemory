@@ -27,6 +27,8 @@ namespace flatmemory
      * Implementation class.
      * 
      * Provide overload with your Tag.
+     * 
+     * Define the memory layout at compile time.
     */
     template<typename Tag>
     class Layout {};

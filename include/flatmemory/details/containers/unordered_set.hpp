@@ -20,8 +20,8 @@ template<typename T, typename Hash = std::hash<View<T>>, typename Equal = std::e
 class UnorderedSet
 {
 private:
-    // Persistent storage
-    ByteStreamSegmented<100000> m_storage;
+    // Persistent storage 1MiB blocks
+    ByteStreamSegmented<1000000> m_storage;
 
     // Data to be accessed
     std::unordered_set<View<T>, Hash, Equal, Allocator> m_data;

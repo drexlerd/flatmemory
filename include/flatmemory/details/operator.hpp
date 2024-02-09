@@ -27,6 +27,7 @@ namespace flatmemory
      * Implementation class.
      * 
      * Provide overload with your Tag.
+     * 
      * Define operations between Builder, View, and ConstView
     */
     template<typename Tag>
