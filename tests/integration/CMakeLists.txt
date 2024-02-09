@@ -34,3 +34,4 @@ message("${flatmemory_INCLUDE_DIRS}")
 ##############################################################
 
 add_executable(integration_standalone "main.cpp")
+target_link_libraries(integration_standalone PRIVATE flatmemory::flatmemory)
