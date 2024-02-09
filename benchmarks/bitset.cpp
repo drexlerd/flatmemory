@@ -26,17 +26,44 @@
 
 namespace flatmemory::benchmarks {
 
+    /// @brief In this benchmark, we evaluate the performance of accessing data in sequence
+    static void BM_BitsetBuilder(benchmark::State& state) {
+        const size_t num_bitsets = state.range(0);
+        const size_t bitset_size = state.range(1);
 
-/// @brief In this benchmark, we evaluate the performance of accessing data in sequence
-static void BM_BitsetBuilder(benchmark::State& state) {
-    for (auto _ : state) {
+        for (auto _ : state) {
+            // Create num_bitset many bitsets
+            std::vector<Builder<Bitset<uint64_t>>> builders;
+            builders.reserve(num_bitsets);
+            for (size_t i = 0; i < num_bitsets; ++i) {
+                auto builder = Builder<Bitset<uint64_t>>();
+                builder.get_blocks().resize(bitset_size);
+                builders.push_back(builder);
+            }
+        }
     }
-}
+
+    static void BM_BitsetView(benchmark::State& state) {
+        const size_t num_bitsets = state.range(0);
+        const size_t bitset_size = state.range(1);
+
+
+        for (auto _ : state) {
+            // Create num_bitset many views
+            VariableSizedTypeVector<Bitset<uint64_t>> view_vector;
+            auto builder = Builder<Bitset<uint64_t>>();
+            builder.get_blocks().resize(bitset_size);
+            builder.finish();
+            for (size_t i = 0; i < num_bitsets; ++i) {
+                view_vector.push_back(builder);
+            }
+        }
+    }
 
 }
 
 
-BENCHMARK(flatmemory::benchmarks::BM_BitsetBuilder)->Arg(100);
-
+BENCHMARK(flatmemory::benchmarks::BM_BitsetBuilder)->Args({100000, 10});
+BENCHMARK(flatmemory::benchmarks::BM_BitsetView)->Args({100000, 10});
 
 BENCHMARK_MAIN();
