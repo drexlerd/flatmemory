@@ -35,7 +35,9 @@ namespace flatmemory::tests
     }
 
     TEST(FlatmemoryTests, ContainersFixedSizedTypeVectorTest) {
-        FixedSizedTypeVector<Tuple<uint16_t, uint32_t>> vector(Builder<Tuple<uint16_t, uint32_t>>{});
+        auto builder = Builder<Tuple<uint16_t, uint32_t>>();
+        builder.finish();
+        FixedSizedTypeVector<Tuple<uint16_t, uint32_t>> vector(std::move(builder));
         vector.resize(5);
     }
 }

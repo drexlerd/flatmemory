@@ -114,7 +114,11 @@ private:
     const Builder<T> m_default_builder;
 
 public:
-    FixedSizedTypeVector(Builder<T>&& default_builder) : m_default_builder(std::move(default_builder)) { }
+    FixedSizedTypeVector(Builder<T>&& default_builder) : m_default_builder(std::move(default_builder)) { 
+        if (m_default_builder.buffer().data() == nullptr) {
+            throw std::runtime_error("Builder is not fully initialized! Did you forget to call finish()?");
+        }
+    }
     // Move only
     FixedSizedTypeVector(const FixedSizedTypeVector& other) = delete;
     FixedSizedTypeVector& operator=(const FixedSizedTypeVector& other) = delete;
@@ -124,7 +128,7 @@ public:
     /**
      * Element access
     */
-   
+
     [[nodiscard]] View<T> operator[](size_t pos) {
         if (pos >= size()) {
             resize(pos);
