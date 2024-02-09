@@ -48,6 +48,11 @@ if(BUILD_TESTS)
 endif()
 
 
+if(BUILD_BENCHMARKS)
+    add_subdirectory(benchmarks)
+endif()
+
+
 
 ###########
 # Install #

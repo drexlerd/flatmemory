@@ -1,0 +1,27 @@
+name: Googletest Unit Tests
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout flatmemory
+      uses: actions/checkout@v2
+      with:
+        ref: main
+
+    - name: Configure, Build, and Install Dependencies
+      run: |
+        cd dependencies
+        cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dependencies/installs
+        cmake --build build -j$(nproc)
+
+    - name: Configure, and Build flatmemory
+      run: |
+        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON -S . -B build -DCMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dependencies/installs
+        cmake --build build -j$(nproc)
+
+    - name: Test
+      working-directory: build/tests/unit
+      run: GTEST_OUTPUT=xml:test-results/ GTEST_COLOR=1 ctest -V
