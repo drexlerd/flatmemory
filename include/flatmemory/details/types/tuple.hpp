@@ -158,24 +158,21 @@ namespace flatmemory
             }
 
 
-            template<std::size_t I = 0>
-            void clear_rec_impl() {
-                if constexpr (I < sizeof...(Ts)) {
-                    constexpr bool is_trivial = IsTriviallyCopyable<std::tuple_element_t<I, std::tuple<Ts...>>>;
+            template<size_t... Is>
+            void clear_iterative_impl(std::index_sequence<Is...>) {
+                ([&] {
+                    constexpr bool is_trivial = IsTriviallyCopyable<std::tuple_element_t<Is, std::tuple<Ts...>>>;
                     if constexpr (!is_trivial) {
-                        auto& builder = std::get<I>(m_data);
+                        auto& builder = std::get<Is>(m_data);
                         builder.clear();
                     }
-
-                    // Call clear of next data
-                    clear_rec_impl<I + 1>();
-                }
+                }(), ...);
             }
 
 
             void clear_impl() {
                 // Clear all nested builders.
-                clear_rec_impl<0>();
+                clear_iterative_impl(std::make_index_sequence<sizeof...(Ts)>{});
                 // Clear this builder.
                 m_buffer.clear(),
                 m_dynamic_buffer.clear();
