@@ -133,5 +133,4 @@ BENCHMARK(flatmemory::benchmarks::BM_BitsetBuilderAccess)->Args({100000, 10});
 BENCHMARK(flatmemory::benchmarks::BM_BitsetViewCreate)->Args({100000, 10});
 BENCHMARK(flatmemory::benchmarks::BM_BitsetViewAccess)->Args({100000, 10});
 
-
 BENCHMARK_MAIN();
