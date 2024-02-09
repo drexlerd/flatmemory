@@ -37,7 +37,7 @@ namespace flatmemory::benchmarks {
             for (size_t i = 0; i < num_bitsets; ++i) {
                 auto builder = Builder<Bitset<uint64_t>>();
                 builder.get_blocks().resize(bitset_size);
-                builders.push_back(builder);
+                builders.push_back(std::move(builder));
             }
 
             benchmark::DoNotOptimize(builders);
