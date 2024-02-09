@@ -24,8 +24,10 @@
 #include "../byte_stream_utils.hpp"
 #include "../layout_utils.hpp"
 #include "../layout.hpp"
+#include "../operator.hpp"
 #include "../builder.hpp"
 #include "../view.hpp"
+#include "../view_const.hpp"
 #include "../type_traits.hpp"
 
 #include <algorithm>
@@ -140,6 +142,104 @@ namespace flatmemory
             assert(m_buf);
             return View<Vector<Block>>(m_buf + Layout<Bitset<Block>>::blocks_offset);
         }
+    };
+
+
+    /**
+     * View
+    */
+    template<typename Block>
+    class ConstView<Bitset<Block>> {
+    private:
+        const uint8_t* m_buf;
+
+        /**
+         * Default constructor to make view a trivial data type and serializable
+        */
+        ConstView() = default;
+
+        template<typename>
+        friend class Builder;
+
+    public:        
+        /**
+         * Constructor to interpret raw data created by its corresponding builder
+        */
+        ConstView(const uint8_t* data) : m_buf(data) {
+            assert(m_buf);
+        }
+
+        const bool& get_default_bit_value() {
+            assert(m_buf);
+            return read_value<bool>(m_buf);
+        }
+
+        const ConstView<Vector<Block>> get_blocks() const {
+            assert(m_buf);
+            return ConstView<Vector<Block>>(m_buf + Layout<Bitset<Block>>::blocks_offset);
+        }
+    };
+
+
+    /**
+     * Concepts 
+    */
+    template<typename>
+    struct is_mutable_bitset : std::false_type {};
+
+    template<typename Block>
+    struct is_mutable_bitset<Builder<Bitset<Block>>> : std::true_type {};
+
+    template<typename T>
+    concept IsMutableBitset = is_mutable_bitset<T>::value;
+
+    template<typename>
+    struct is_immutable_bitset : std::false_type {};
+
+    template<typename Block>
+    struct is_immutable_bitset<View<Bitset<Block>>> : std::true_type {};
+
+    template<typename Block>
+    struct is_immutable_bitset<ConstView<Bitset<Block>>> : std::true_type {};
+
+    template<typename T>
+    concept IsImmutableBitset = is_immutable_bitset<T>::value;
+
+    template<typename T>
+    concept IsMutableOrImmutableBitset = (is_mutable_bitset<T>::value || is_immutable_bitset<T>::value);
+
+
+    /**
+     * Operator
+    */
+    template<typename Block>
+    class Operator<Bitset<Block>> {
+        public:
+            /**
+             * operator|=
+            */
+            template<IsMutableBitset L, IsMutableOrImmutableBitset R>
+            static decltype(auto) or_equal(L& l, const R& r) {
+                // I will implement this, just to illustrate the functionality
+                return l;
+            }
+
+            /**
+             * operator&=
+            */
+            template<IsMutableBitset L, IsMutableOrImmutableBitset R>
+            static decltype(auto) and_equal(L& l, const R& r) {
+                // I will implement this, just to illustrate the functionality
+                return l;
+            }
+
+            /**
+             * hash
+            */
+            template<IsMutableOrImmutableBitset B>
+            static size_t hash(const B& b) {
+                return 0;
+            }
     };
 }
 
