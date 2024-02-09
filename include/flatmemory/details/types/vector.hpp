@@ -131,14 +131,16 @@ namespace flatmemory
             /* clear stl */
             void clear_impl() {
                 // Clear all nested builders.
-                for (auto& builder : m_data) {
-                    builder.clear();
+                constexpr bool is_trivial = IsTriviallyCopyable<T_>;
+                if constexpr (!is_trivial) {
+                    for (auto& builder : m_data) {
+                        builder.clear();
+                    }
                 }
                 // Clear this builder.
                 m_buffer.clear();
                 m_dynamic_buffer.clear();
             }
-
 
             [[nodiscard]] ByteStream& get_buffer_impl() { return m_buffer; }
             [[nodiscard]] const ByteStream& get_buffer_impl() const { return m_buffer; }

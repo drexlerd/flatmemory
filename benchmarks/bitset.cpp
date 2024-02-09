@@ -79,9 +79,10 @@ namespace flatmemory::benchmarks
         VariableSizedTypeVector<Bitset<uint64_t>> views;
         auto builder = Builder<Bitset<uint64_t>>();
         builder.get_blocks().resize(bitset_size);
-        builder.finish();
         for (size_t i = 0; i < num_bitsets; ++i) {
+            builder.finish();
             views.push_back(builder);
+            builder.clear();
         }
         return views;
     }
