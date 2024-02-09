@@ -14,12 +14,12 @@ jobs:
     - name: Configure, Build, and Install Dependencies
       run: |
         cd dependencies
-        cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dependencies/installs
+        cmake -S . -B build -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/dependencies/installs"
         cmake --build build -j$(nproc)
 
     - name: Configure, and Build flatmemory
       run: |
-        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON -S . -B build -DCMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dependencies/installs
+        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON -S . -B build -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/dependencies/installs"s
         cmake --build build -j$(nproc)
 
     - name: Test
