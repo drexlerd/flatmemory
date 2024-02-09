@@ -56,9 +56,9 @@ namespace flatmemory
     template<IsTriviallyCopyableOrCustom T>
     class Layout<Vector<T>> {
         public:
-            static constexpr buffer_size_type buffer_size_offset = 0;
-            static constexpr offset_type vector_size_offset = calculate_header_offset<buffer_size_type, offset_type>(buffer_size_offset);
-            static constexpr offset_type vector_data_offset = calculate_header_offset<vector_size_type, T>(vector_size_offset);
+            static constexpr size_t buffer_size_offset = 0;
+            static constexpr size_t vector_size_offset = calculate_header_offset<buffer_size_type, offset_type>(buffer_size_offset);
+            static constexpr size_t vector_data_offset = calculate_header_offset<vector_size_type, T>(vector_size_offset);
 
             static constexpr size_t final_alignment = calculate_final_alignment<buffer_size_type, offset_type, vector_size_type, T>();
 
@@ -92,12 +92,13 @@ namespace flatmemory
 
                 size_t buffer_size = 0;
 
-                buffer_size += m_buffer.write<buffer_size_type>(buffer_size);  // reserve 4 bytes written at the end
+                // Reserve 4 bytes written at the end
+                buffer_size += m_buffer.write<buffer_size_type>(buffer_size);
                 buffer_size += m_buffer.write_padding(Layout<Vector<T>>::vector_size_offset - m_buffer.size());
-                
+                // Write vector size
                 buffer_size += m_buffer.write<vector_size_type>(m_data.size());
                 buffer_size += m_buffer.write_padding(Layout<Vector<T>>::vector_data_offset - m_buffer.size());
-
+                // Write vector data
                 constexpr bool is_trivial = IsTriviallyCopyable<T>;
                 if constexpr (is_trivial) {
                     for (size_t i = 0; i < m_data.size(); ++i) {

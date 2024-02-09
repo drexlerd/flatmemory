@@ -58,51 +58,18 @@ namespace flatmemory
     template<typename Block>
     class Layout<Bitset<Block>> {
         public:
-            static constexpr size_t default_bit_value_offset = 0;
+            static constexpr size_t buffer_size_offset = 0;
+            static constexpr size_t default_bit_value_offset = calculate_header_offset<buffer_size_type, bool>(buffer_size_offset);
             static constexpr size_t blocks_offset = calculate_header_offset<bool, Vector<Block>>(default_bit_value_offset);
 
-            static constexpr size_t final_alignment = calculate_final_alignment<bool, Vector<Block>>();
-    };
-
-
-    /**
-     * Builder
-    */
-    template<typename Block>
-    class Builder<Bitset<Block>> : public IBuilder<Builder<Bitset<Block>>> {
-        private:
-            bool m_default_bit_value;
-            Builder<Vector<Block>> m_blocks_builder;
-
-            ByteStream m_buffer;
-
-            /* Implement IBuilder interface. */
-            template<typename>
-            friend class IBuilder;
-
-            void finish_impl() {
-                m_buffer.write(m_default_bit_value);
-                m_buffer.write_padding(Layout<Bitset<Block>>::blocks_offset - m_buffer.size());
-                m_blocks_builder.finish();
-                m_buffer.write(m_blocks_builder.buffer().data(), m_blocks_builder.buffer().size());
-                m_buffer.write_padding(calculate_amoung_padding(m_buffer.size(), Layout<Bitset<Block>>::final_alignment));
+            static constexpr size_t final_alignment = calculate_final_alignment<buffer_size_type, bool, Vector<Block>>();
+    
+            void print() const {
+                std::cout << "buffer_size_offset: " << buffer_size_offset << std::endl;
+                std::cout << "default_bit_value_offset: " << default_bit_value_offset << std::endl;
+                std::cout << "blocks_offset: " << blocks_offset << std::endl;
+                std::cout << "final_alignment: " << final_alignment << std::endl;
             }
-
-            void clear_impl() {
-                // Clear all nested builders.
-                m_blocks_builder.clear();
-                // Clear this builder.
-                m_buffer.clear();
-            }
-
-
-            ByteStream& get_buffer_impl() { return m_buffer; }
-            const ByteStream& get_buffer_impl() const { return m_buffer; }
-
-        public:
-            bool& get_default_bit_value() { return m_default_bit_value; }
-
-            auto& get_blocks() { return m_blocks_builder; }
     };
 
 
@@ -130,12 +97,17 @@ namespace flatmemory
             assert(m_buf);
         }
 
-        bool& get_default_bit_value() {
+        [[nodiscard]] size_t buffer_size() const { 
             assert(m_buf);
-            return read_value<bool>(m_buf);
+            return read_value<buffer_size_type>(m_buf + Layout<Bitset<Block>>::buffer_size_offset); 
         }
 
-        View<Vector<Block>> get_blocks() {
+        [[nodiscard]] bool& get_default_bit_value() {
+            assert(m_buf);
+            return read_value<bool>(m_buf + Layout<Bitset<Block>>::default_bit_value_offset);
+        }
+
+        [[nodiscard]] View<Vector<Block>> get_blocks() {
             assert(m_buf);
             return View<Vector<Block>>(m_buf + Layout<Bitset<Block>>::blocks_offset);
         }
@@ -166,12 +138,17 @@ namespace flatmemory
             assert(m_buf);
         }
 
-        const bool& get_default_bit_value() const {
+        [[nodiscard]] size_t buffer_size() const { 
             assert(m_buf);
-            return read_value<bool>(m_buf);
+            return read_value<buffer_size_type>(m_buf + Layout<Bitset<Block>>::buffer_size_offset); 
         }
 
-        ConstView<Vector<Block>> get_blocks() const {
+        [[nodiscard]] const bool& get_default_bit_value() const {
+            assert(m_buf);
+            return read_value<bool>(m_buf + Layout<Bitset<Block>>::default_bit_value_offset);
+        }
+
+        [[nodiscard]] ConstView<Vector<Block>> get_blocks() const {
             assert(m_buf);
             return ConstView<Vector<Block>>(m_buf + Layout<Bitset<Block>>::blocks_offset);
         }
@@ -182,28 +159,131 @@ namespace flatmemory
      * Concepts 
     */
     template<typename>
-    struct is_mutable_bitset : std::false_type {};
+    struct is_bitset : std::false_type {};
 
     template<typename Block>
-    struct is_mutable_bitset<Builder<Bitset<Block>>> : std::true_type {};
-
-    template<typename T>
-    concept IsMutableBitset = is_mutable_bitset<T>::value;
-
-    template<typename>
-    struct is_immutable_bitset : std::false_type {};
+    struct is_bitset<Builder<Bitset<Block>>> : std::true_type {};
 
     template<typename Block>
-    struct is_immutable_bitset<View<Bitset<Block>>> : std::true_type {};
+    struct is_bitset<View<Bitset<Block>>> : std::true_type {};
 
     template<typename Block>
-    struct is_immutable_bitset<ConstView<Bitset<Block>>> : std::true_type {};
+    struct is_bitset<ConstView<Bitset<Block>>> : std::true_type {};
 
     template<typename T>
-    concept IsImmutableBitset = is_immutable_bitset<T>::value;
+    concept IsBitset = is_bitset<T>::value;
 
-    template<typename T>
-    concept IsMutableOrImmutableBitset = (is_mutable_bitset<T>::value || is_immutable_bitset<T>::value);
+
+    /**
+     * Builder
+    */
+    template<typename Block>
+    class Builder<Bitset<Block>> : public IBuilder<Builder<Bitset<Block>>> {
+        private:
+            bool m_default_bit_value;
+            Builder<Vector<Block>> m_blocks;
+
+            ByteStream m_buffer;
+
+            static constexpr std::size_t block_size = sizeof(Block) * 8;
+            static constexpr Block block_zeroes = 0;
+            static constexpr Block block_ones = Block(-1);
+
+            /* Implement IBuilder interface. */
+            template<typename>
+            friend class IBuilder;
+
+            void finish_impl() 
+            {
+                size_t buffer_size = 0;
+                // Reserve 4 bytes written at the end
+                buffer_size += m_buffer.write<buffer_size_type>(buffer_size);
+                buffer_size += m_buffer.write_padding(Layout<Bitset<Block>>::default_bit_value_offset - m_buffer.size());
+                // Write default_bit_value
+                buffer_size += m_buffer.write(m_default_bit_value);
+                buffer_size += m_buffer.write_padding(Layout<Bitset<Block>>::blocks_offset - m_buffer.size());
+                m_blocks.finish();
+                // Write blocks
+                buffer_size += m_buffer.write(m_blocks.buffer().data(), m_blocks.buffer().size());
+                // Write final padding
+                buffer_size += m_buffer.write_padding(calculate_amoung_padding(m_buffer.size(), Layout<Bitset<Block>>::final_alignment));
+                // Modify the prefix size
+                write_value<buffer_size_type>(m_buffer.data(), buffer_size);
+            }
+
+            void clear_impl() 
+            {
+                // Clear all nested builders.
+                m_blocks.clear();
+                // Clear this builder.
+                m_buffer.clear();
+            }
+
+
+            ByteStream& get_buffer_impl() { return m_buffer; }
+            const ByteStream& get_buffer_impl() const { return m_buffer; }
+
+            template<IsBitset Other>
+            void resize_to_fit(const Other& other) 
+            {
+                if (m_blocks.size() < other.get_blocks().size()) 
+                {
+                    m_blocks.resize(other.get_blocks().size(), m_default_bit_value ? block_ones : block_zeroes);
+                }
+            }
+
+        public:
+            bool& get_default_bit_value() { return m_default_bit_value; }
+
+            auto& get_blocks() { return m_blocks; }
+
+            /**
+             * operator|=
+            */
+            template<IsBitset Other>
+            Builder& operator|=(const Other& other) {
+                // Fetch data
+                const auto& other_blocks = other.get_blocks();
+                bool other_default_bit_value = other.get_default_bit_value();
+                
+                // Update default bit value
+                m_default_bit_value |= other_default_bit_value;
+
+                // Update blocks
+                resize_to_fit(other);
+                auto it = m_blocks.begin();
+                auto other_it = other_blocks.begin();
+                while (it != m_blocks.end()) {
+                    *it |= *other_it;
+                    ++it;
+                    ++other_it;
+                }
+
+                return *this;
+            }
+
+            template<IsBitset Other>
+            Builder& operator&=(const Other& other) {
+                // Fetch data
+                const auto& other_blocks = other.get_blocks();
+                bool other_default_bit_value = other.get_default_bit_value();
+                
+                // Update default bit value
+                m_default_bit_value &= other_default_bit_value;
+
+                // Update blocks
+                resize_to_fit(other);
+                auto it = m_blocks.begin();
+                auto other_it = other_blocks.begin();
+                while (it != m_blocks.end()) {
+                    *it &= *other_it;
+                    ++it;
+                    ++other_it;
+                }
+
+                return *this;
+            }
+    };
 
 
     /**
@@ -215,57 +295,13 @@ namespace flatmemory
             static constexpr std::size_t block_size = sizeof(Block) * 8;
             static constexpr Block block_zeroes = 0;
             static constexpr Block block_ones = Block(-1);
-
-            template<IsMutableOrImmutableBitset Other>
-            void resize_to_fit(Builder<Bitset<Block>>& builder, const Other& other) {
-                auto& blocks = builder.get_blocks();
-                if (blocks.size() < other.get_blocks().size()) {
-                    bool default_bit_value = builder.get_default_bit_value();
-                    blocks.resize(other.get_blocks().size(), default_bit_value ? block_ones : block_zeroes);
-                }
-            }
             
         public:
-            /**
-             * operator|=
-            */
-            template<IsMutableOrImmutableBitset Other>
-            static decltype(auto) or_equal(Builder<Bitset<Block>>& builder, const Other& other) {
-                resize_to_fit(builder, other);
-
-                auto& blocks = builder.get_blocks();
-                const auto& other_blocks = other.get_blocks();
-                bool& default_bit_value = builder.get_default_bit_value();
-                bool other_default_bit_value = other.get_default_bit_value();
-                
-                // update default bit value
-                default_bit_value |= other_default_bit_value;
-
-                // update blocks
-                auto it = blocks.begin();
-                auto other_it = other_blocks.begin();
-                while (it != blocks.end()) {
-                    *it |= *other_it;
-                    ++it;
-                    ++other_it;
-                }
-
-                return builder;
-            }
-
-            /**
-             * operator&=
-            */
-            template<IsMutableOrImmutableBitset Other>
-            static decltype(auto) and_equal(Builder<Bitset<Block>>& builder, const Other& r) {
-                // I will implement this, just to illustrate the functionality
-                return builder;
-            }
 
             /**
              * hash
             */
-            template<IsMutableOrImmutableBitset B>
+            template<IsBitset B>
             static size_t hash(const B& b) {
                 
                 return 0;
@@ -276,7 +312,14 @@ namespace flatmemory
 
 namespace std 
 {
-    // Inject comparison and hash into the std namespace
+    // Inject hash into the std namespace
+    template<typename Block>
+    struct hash<flatmemory::Builder<flatmemory::Bitset<Block>>> {
+        std::size_t operator()(const flatmemory::Builder<flatmemory::Bitset<Block>>& bitset) const
+        {
+            return bitset.hash();
+        }
+    };
 }
 
 

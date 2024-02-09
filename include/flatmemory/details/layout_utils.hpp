@@ -103,10 +103,10 @@ namespace flatmemory
     }
 
 
-    template<typename T, typename T_Next>
-    inline consteval T calculate_header_offset(size_t cur_pos) {
-        cur_pos += sizeof(T);
-        cur_pos += calculate_amoung_padding(cur_pos, calculate_header_alignment<T_Next>());
+    template<typename T_Prev, typename T>
+    inline consteval size_t calculate_header_offset(size_t cur_pos) {
+        cur_pos += sizeof(T_Prev);
+        cur_pos += calculate_amoung_padding(cur_pos, calculate_header_alignment<T>());
         return cur_pos;
     }
 
