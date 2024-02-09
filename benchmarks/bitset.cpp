@@ -23,9 +23,8 @@
 #include <random>
 
 
-namespace flatmemory::benchmarks {
-
-    /// @brief In this benchmark, we evaluate the performance of accessing data in sequence
+namespace flatmemory::benchmarks 
+{
     static void BM_BitsetBuilder(benchmark::State& state) {
         const size_t num_bitsets = state.range(0);
         const size_t bitset_size = state.range(1);
@@ -44,10 +43,10 @@ namespace flatmemory::benchmarks {
         }
     }
 
+
     static void BM_BitsetView(benchmark::State& state) {
         const size_t num_bitsets = state.range(0);
         const size_t bitset_size = state.range(1);
-
 
         for (auto _ : state) {
             // Create num_bitset many views

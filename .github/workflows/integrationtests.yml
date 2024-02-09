@@ -1,0 +1,28 @@
+name: Integration Tests
+on: [push, pull_request]
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout flatmemory
+      uses: actions/checkout@v2
+
+    - name: Configure, Build, and Install Dependencies
+      run: |
+        cd dependencies
+        cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dependencies/installs
+        cmake --build build -j$(nproc)
+
+    - name: Configure, and Build flatmemory
+      run: |
+        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON -S . -B build -DCMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/tests/integration/dependencies/installs
+        cmake --build build -j$(nproc)
+
+    - name: Build and Test Project
+      run: |
+        cd tests/integration
+        cmake -S . -B build -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/tests/integration/dependencies/installs"
+        cmake --build build -j$(nproc)

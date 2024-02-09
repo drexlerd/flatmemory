@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Dominik Drexler
+ * Copyright (C) 2023 Dominik Drexler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,22 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef FLATMEMORY_OPERATOR_HPP_
-#define FLATMEMORY_OPERATOR_HPP_
-
-#include <type_traits>
+// Test flatmemory include
+#include <flatmemory/flatmemory.hpp>
 
 
-namespace flatmemory 
-{
-    /**
-     * Implementation class.
-     * 
-     * Provide overload with your Tag.
-     * Define operations between Builder, View, and ConstView
-    */
-    template<typename Tag>
-    class Operator {};
+int main() {
+    return 0;
 }
-
-#endif 
