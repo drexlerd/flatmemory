@@ -56,11 +56,11 @@ namespace flatmemory
     template<IsTriviallyCopyableOrCustom T>
     class Layout<Vector<T>> {
         public:
+            static constexpr size_t final_alignment = calculate_final_alignment<buffer_size_type, offset_type, vector_size_type, T>();
+            
             static constexpr size_t buffer_size_offset = 0;
             static constexpr size_t vector_size_offset = calculate_header_offset<buffer_size_type, offset_type>(buffer_size_offset);
             static constexpr size_t vector_data_offset = calculate_header_offset<vector_size_type, T>(vector_size_offset);
-
-            static constexpr size_t final_alignment = calculate_final_alignment<buffer_size_type, offset_type, vector_size_type, T>();
 
             void print() const {
                 std::cout << "buffer_size_offset: " << buffer_size_offset << std::endl;

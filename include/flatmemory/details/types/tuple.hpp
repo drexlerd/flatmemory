@@ -57,8 +57,8 @@ namespace flatmemory
              * with additional max overall alignment requirement at the end.
             */
             template<size_t... Is>
-            static consteval std::array<offset_type, sizeof...(Ts) + 1> calculate_header_alignments(std::index_sequence<Is...>) {
-                std::array<offset_type, sizeof...(Ts) + 1> alignments{};
+            static consteval std::array<size_t, sizeof...(Ts) + 1> calculate_header_alignments(std::index_sequence<Is...>) {
+                std::array<size_t, sizeof...(Ts) + 1> alignments{};
                 ([&] {
                     using T = std::tuple_element_t<Is, std::tuple<Ts...>>;
                     alignments[Is] = calculate_header_alignment<T>();
@@ -71,10 +71,16 @@ namespace flatmemory
              * Compute the header_offsets for each type T
             */
             template<size_t... Is>
-            static consteval std::array<offset_type, sizeof...(Ts) + 1> calculate_header_offsets_impl(std::index_sequence<Is...>) {
-                std::array<offset_type, sizeof...(Ts) + 1> layout{};
-                std::array<offset_type, sizeof...(Ts) + 1> alignments = calculate_header_alignments(std::index_sequence<Is...>{});
+            static consteval std::array<size_t, sizeof...(Ts) + 1> calculate_header_offsets_impl(std::index_sequence<Is...>) {
+                std::array<size_t, sizeof...(Ts) + 1> layout{};
+                std::array<size_t, sizeof...(Ts) + 1> alignments = calculate_header_alignments(std::index_sequence<Is...>{});
+                
                 size_t cur_pos = 0;
+                // Add sizeof of prefix to first position
+                if constexpr (sizeof...(Ts) > 0) {
+                    using T_First = std::tuple_element_t<0, std::tuple<Ts...>>;
+                    cur_pos = calculate_header_offset<buffer_size_type, T_First>(cur_pos);
+                }
                 layout[0] = cur_pos;
                 ([&] {
                     // The size of the i-th element (looks correct)
@@ -91,16 +97,16 @@ namespace flatmemory
                 return layout;
             }
 
-            static consteval std::array<offset_type, sizeof...(Ts) + 1> calculate_header_offsets() {
+            static consteval std::array<size_t, sizeof...(Ts) + 1> calculate_header_offsets() {
                 return calculate_header_offsets_impl(std::make_index_sequence<sizeof...(Ts)>{});
             }
 
         public:
             static constexpr size_t size = sizeof...(Ts);
-
-            static constexpr std::array<offset_type, sizeof...(Ts) + 1> header_offsets = calculate_header_offsets();
-
             static constexpr size_t final_alignment = calculate_final_alignment<Ts...>();
+
+            static constexpr size_t buffer_size_offset = 0;
+            static constexpr std::array<size_t, sizeof...(Ts) + 1> header_offsets = calculate_header_offsets();
 
             void print() const {
                 for (size_t i = 0; i < header_offsets.size(); ++i) {
@@ -108,6 +114,7 @@ namespace flatmemory
                 }
                 std::cout << "final_alignment: " << final_alignment << std::endl;
             }
+
     };
 
 
@@ -127,34 +134,44 @@ namespace flatmemory
 
             template<size_t... Is>
             void finish_iterative_impl(std::index_sequence<Is...>) {
+                size_t buffer_size = 0;
+
+                // Reserve 4 bytes written at the end
+                buffer_size += m_buffer.write<buffer_size_type>(buffer_size);
+                if constexpr (sizeof...(Ts) > 0) {
+                    buffer_size += m_buffer.write_padding(Layout<Tuple<Ts...>>::header_offsets[0] - m_buffer.size());
+                }
+
+                // Write the data.
                 offset_type offset = Layout<Tuple<Ts...>>::header_offsets.back();
                 ([&] {
-                    // Write the data.
                     constexpr bool is_trivial = IsTriviallyCopyable<std::tuple_element_t<Is, std::tuple<Ts...>>>;
                     if constexpr (is_trivial) {
                         auto& value = std::get<Is>(m_data);
-                        m_buffer.write(value);
+                        buffer_size += m_buffer.write(value);
                     } else {
                         // Recursively call finish
                         auto& nested_builder = std::get<Is>(m_data);
                         nested_builder.finish();
-                        m_buffer.write(offset);
+                        buffer_size += m_buffer.write(offset);
                         m_dynamic_buffer.write(nested_builder.buffer().data(), nested_builder.buffer().size());    
                         offset += nested_builder.buffer().size();
   
                     }
                     // Write the padding to satisfy alignment requirements
-                    m_buffer.write_padding(Layout<Tuple<Ts...>>::header_offsets[Is + 1] - m_buffer.size());
+                    buffer_size += m_buffer.write_padding(Layout<Tuple<Ts...>>::header_offsets[Is + 1] - m_buffer.size());
                 }(), ...);
+                // Concatenate all buffers
+                buffer_size += m_buffer.write(m_dynamic_buffer.data(), m_dynamic_buffer.size()); 
+                // Write alignment padding
+                buffer_size += m_buffer.write_padding(calculate_amoung_padding(m_buffer.size(), Layout<Tuple<Ts...>>::final_alignment));
+                // Modify the prefix size
+                write_value<buffer_size_type>(m_buffer.data(), buffer_size);
             }
 
             void finish_impl() {
                 // Build header and dynamic buffer
                 finish_iterative_impl(std::make_index_sequence<sizeof...(Ts)>{});
-                // Concatenate all buffers
-                m_buffer.write(m_dynamic_buffer.data(), m_dynamic_buffer.size()); 
-                // Write alignment padding
-                m_buffer.write_padding(calculate_amoung_padding(m_buffer.size(), Layout<Tuple<Ts...>>::final_alignment));
             }
 
 
@@ -234,6 +251,15 @@ namespace flatmemory
             } else {
                 return element_view_type<I>(m_buf + read_value<offset_type>(m_buf + Layout<Tuple<Ts...>>::header_offsets[I]));
             }
+        }
+
+
+        /**
+         * Capacity
+        */
+        [[nodiscard]] size_t buffer_size() const { 
+            assert(m_buf);
+            return read_value<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::buffer_size_offset); 
         }
     };
 }

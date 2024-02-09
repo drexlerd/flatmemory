@@ -90,7 +90,7 @@ namespace flatmemory
     inline consteval size_t calculate_final_alignment() {
         size_t max_alignment = 0;
         ((max_alignment = std::max(max_alignment, calculate_overall_alignment<Ts>())), ...);
-        return max_alignment;
+        return std::max(static_cast<size_t>(1), max_alignment);
     }
 
 
@@ -98,7 +98,6 @@ namespace flatmemory
      * Compute padding needed to store an object with given alignment factor from the given position.
     */
     inline constexpr size_t calculate_amoung_padding(size_t pos, size_t align_factor) {
-        if (align_factor == 0) return 1;
         return (align_factor - (pos % align_factor)) % align_factor;
     }
 

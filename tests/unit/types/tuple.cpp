@@ -26,7 +26,7 @@ namespace flatmemory::tests
 {
     TEST(FlatmemoryTests, TypesTupleEmptyTest) {
         // Test empty tuple
-        EXPECT_EQ((Layout<Tuple<>>::final_alignment), 0);
+        EXPECT_EQ((Layout<Tuple<>>::final_alignment), 1);
         EXPECT_EQ(IsTriviallyCopyable<View<Tuple<>>>, true);
         EXPECT_EQ(IsTriviallyCopyable<Tuple<>>, false);
 
@@ -34,7 +34,7 @@ namespace flatmemory::tests
         builder.finish();
 
         EXPECT_NE(builder.buffer().data(), nullptr);
-        EXPECT_EQ(builder.buffer().size(), 1);  // minimum alignment requirement is 1
+        EXPECT_EQ(builder.buffer().size(), 4);
     }
 
     TEST(FlatmemoryTests, TypesTupleTest) {
@@ -53,7 +53,7 @@ namespace flatmemory::tests
         builder.get<2>() = 7;
         builder.finish();
         EXPECT_NE(builder.buffer().data(), nullptr);
-        EXPECT_EQ(builder.buffer().size(), 6);
+        EXPECT_EQ(builder.buffer().size(), 10);
 
         auto view = View<Tuple<int16_t, uint16_t, uint16_t>>(builder.buffer().data());
         EXPECT_EQ(view.get<0>(), 5);
@@ -78,7 +78,7 @@ namespace flatmemory::tests
         builder.get<2>() = 7;
         builder.finish();
         EXPECT_NE(builder.buffer().data(), nullptr);
-        EXPECT_EQ(builder.buffer().size(), 12);
+        EXPECT_EQ(builder.buffer().size(), 16);
 
         auto view = View<Tuple<int16_t, int32_t, uint16_t>>(builder.buffer().data());
         EXPECT_EQ(view.get<0>(), 5);

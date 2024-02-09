@@ -58,11 +58,11 @@ namespace flatmemory
     template<typename Block>
     class Layout<Bitset<Block>> {
         public:
+            static constexpr size_t final_alignment = calculate_final_alignment<buffer_size_type, bool, Vector<Block>>();
+
             static constexpr size_t buffer_size_offset = 0;
             static constexpr size_t default_bit_value_offset = calculate_header_offset<buffer_size_type, bool>(buffer_size_offset);
             static constexpr size_t blocks_offset = calculate_header_offset<bool, Vector<Block>>(default_bit_value_offset);
-
-            static constexpr size_t final_alignment = calculate_final_alignment<buffer_size_type, bool, Vector<Block>>();
     
             void print() const {
                 std::cout << "buffer_size_offset: " << buffer_size_offset << std::endl;
