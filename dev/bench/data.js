@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1707487247103,
+  "lastUpdate": 1707487350024,
   "repoUrl": "https://github.com/drexlerd/flatmemory",
   "entries": {
     "Benchmark": [
@@ -288,6 +288,42 @@ window.BENCHMARK_DATA = {
             "value": 956608.2239010861,
             "unit": "ns/iter",
             "extra": "iterations: 728\ncpu: 956512.912087912 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dominik.drexler@gmx.net",
+            "name": "Dominik Drexler",
+            "username": "drexlerd"
+          },
+          "committer": {
+            "email": "dominik.drexler@gmx.net",
+            "name": "Dominik Drexler",
+            "username": "drexlerd"
+          },
+          "distinct": true,
+          "id": "c63bacf9c9ffbb7256a0b302a4b9b8c362428fc8",
+          "message": ".",
+          "timestamp": "2024-02-09T15:01:31+01:00",
+          "tree_id": "5276954a87c235c309a30dcd43b1e04b8ee3fb4c",
+          "url": "https://github.com/drexlerd/flatmemory/commit/c63bacf9c9ffbb7256a0b302a4b9b8c362428fc8"
+        },
+        "date": 1707487349159,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "flatmemory::benchmarks::BM_BitsetBuilder/100000/10",
+            "value": 3536912.8092783974,
+            "unit": "ns/iter",
+            "extra": "iterations: 194\ncpu: 3536508.762886598 ns\nthreads: 1"
+          },
+          {
+            "name": "flatmemory::benchmarks::BM_BitsetView/100000/10",
+            "value": 1056481.5801527083,
+            "unit": "ns/iter",
+            "extra": "iterations: 655\ncpu: 1056465.9541984734 ns\nthreads: 1"
           }
         ]
       }
