@@ -50,16 +50,16 @@ public:
     }
 
     [[nodiscard]] View<T> operator[](size_t pos) {
-        assert(pos <= static_cast<int>(get_size()));
+        assert(pos <= static_cast<int>(size()));
         return m_data[pos];
     }
 
     [[nodiscard]] const View<T> operator[](size_t pos) const {
-        assert(pos <= static_cast<int>(get_size()));
+        assert(pos <= static_cast<int>(size()));
         return m_data[pos];
     }
 
-    [[nodiscard]] size_t get_size() const {
+    [[nodiscard]] size_t size() const {
         return m_data.size();
     }
 };
@@ -91,7 +91,7 @@ public:
     FixedSizedTypeVector& operator=(FixedSizedTypeVector&& other) = default;
 
     void push_back(const Builder<T>& builder) {
-        m_data.push_back(View<T>(m_storage.write(builder.get_data(), builder.get_size()), builder.get_size()));
+        m_data.push_back(View<T>(m_storage.write(builder.get_data(), builder.size()), builder.size()));
     }
 
     [[nodiscard]] View<T> back() {
@@ -103,29 +103,29 @@ public:
     }
 
     [[nodiscard]] View<T> operator[](size_t pos) {
-        if (pos >= get_size()) {
+        if (pos >= size()) {
             resize(pos);
         }
         return m_data[pos];
     }
 
     [[nodiscard]] const View<T> operator[](size_t pos) const {
-        if (pos >= get_size()) {
+        if (pos >= size()) {
             resize(pos);
         }
         return m_data[pos];
     }
 
-    void resize(size_t size) {
+    void resize(size_t count) {
         const uint8_t* default_data = m_default_builder.get_data();
-        size_t default_size = m_default_builder.get_size();
-        while (get_size() <= size) {
+        size_t default_size = m_default_builder.size();
+        while (size() <= count) {
             uint8_t* written_data = m_storage.write(default_data, default_size);
             m_data.push_back(View<T>(written_data));
         }
     }
 
-    [[nodiscard]] size_t get_size() const {
+    [[nodiscard]] constexpr size_t size() const {
         return m_data.size();
     }
 };

@@ -33,6 +33,8 @@ else()
     set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g3 -ggdb")
 endif()
 
+# set(CMAKE_BUILD_TYPE "Release")
+
 message(STATUS "Build configuration: ${CMAKE_BUILD_TYPE}")
 
 

@@ -140,6 +140,21 @@ namespace flatmemory
             [[nodiscard]] const ByteStream& get_buffer_impl() const { return m_buffer; }
 
         public:
+            /**
+             * empty
+            */
+            [[nodiscard]] bool empty() const {
+                return m_data.empty();
+            }
+
+
+            /**
+             * size
+            */
+            [[nodiscard]] size_t size() const { 
+                return m_data.size(); 
+            }
+
             /* operator[] stl */
             [[nodiscard]] T_& operator[](size_t pos) {
                 assert(pos < m_data.size());
