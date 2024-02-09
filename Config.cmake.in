@@ -3,4 +3,6 @@
 # Compute the installation directory for header files
 # set(flatmemory_INCLUDE_DIRS "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_INCLUDEDIR@")
 
+include("${CMAKE_CURRENT_LIST_DIR}/flatmemoryTargets.cmake")
+
 message(STATUS "Found flatmemory: ${flatmemory_DIR} (found version ${flatmemory_VERSION})")
