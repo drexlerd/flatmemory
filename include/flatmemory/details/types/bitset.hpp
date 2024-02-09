@@ -53,16 +53,9 @@ namespace flatmemory
     */
     template<typename Block>
     class Layout<Bitset<Block>> {
-        private:
-            static consteval offset_type calculate_blocks_offset() {
-                size_t cur_pos = 0;
-                cur_pos += sizeof(bool);
-                cur_pos += calculate_amoung_padding(cur_pos, calculate_header_alignment<Vector<Block>>());
-                return cur_pos;
-            }
-            
         public:
-            static constexpr size_t blocks_offset = calculate_blocks_offset();
+            static constexpr size_t default_bit_value_offset = 0;
+            static constexpr size_t blocks_offset = calculate_header_offset<bool, Vector<Block>>(default_bit_value_offset);
 
             static constexpr size_t final_alignment = calculate_final_alignment<bool, Vector<Block>>();
     };
