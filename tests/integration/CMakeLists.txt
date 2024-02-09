@@ -26,7 +26,7 @@ if(flatmemory_FOUND)
   include_directories(${flatmemory_INCLUDE_DIRS})
   message(STATUS "Found flatmemory: ${flatmemory_DIR} (found version ${flatmemory_VERSION})")
 endif()
-message(${flatmemory_INCLUDE_DIRS})
+message("${flatmemory_INCLUDE_DIRS}")
 
 
 ##############################################################
