@@ -66,10 +66,7 @@ We recommend adding the following to your root `CMakeLists.txt` for making the h
 
 ```cmake
 find_package(flatmemory REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
-if(flatmemory_FOUND)
-  include_directories(${flatmemory_INCLUDE_DIRS})
-  message(STATUS "Found flatmemory: ${flatmemory_DIR} (found version ${flatmemory_VERSION})")
-endif()
+target_link_libraries(<your_target> flatmemory::flatmemory)
 ```
 
 

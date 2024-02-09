@@ -43,13 +43,20 @@ message(STATUS "Build configuration: ${CMAKE_BUILD_TYPE}")
 ##############################################################
 
 # -----------
+# Target Flatmemory
+# -----------
+add_subdirectory(src)
+
+# -----------
 # Target Test
 # -----------
 if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
-
+# -----------
+# Target Benchmarks
+# -----------
 if(BUILD_BENCHMARKS)
     add_subdirectory(benchmarks)
 endif()

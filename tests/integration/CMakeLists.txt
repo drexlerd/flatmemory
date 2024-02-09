@@ -22,10 +22,6 @@ project(integration_example VERSION "0.0.1" LANGUAGES C CXX)
 ##############################################################
 
 find_package(flatmemory COMPONENTS parsers REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
-if(flatmemory_FOUND)
-  include_directories(${flatmemory_INCLUDE_DIRS})
-  message(STATUS "Found flatmemory: ${flatmemory_DIR} (found version ${flatmemory_VERSION})")
-endif()
 
 
 ##############################################################
@@ -33,3 +29,4 @@ endif()
 ##############################################################
 
 add_executable(integration_standalone "main.cpp")
+target_link_libraries(integration_standalone flatmemory::flatmemory)

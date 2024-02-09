@@ -22,9 +22,9 @@ add_executable(${TEST_NAME}
 
 target_link_libraries(${TEST_NAME}
     PRIVATE
+        flatmemory::flatmemory
         GTest::GTest
         GTest::Main)
-target_include_directories(${TEST_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/include")
 
 add_test(domain_gtests ${TEST_NAME})
 

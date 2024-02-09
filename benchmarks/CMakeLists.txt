@@ -3,5 +3,8 @@ find_package(benchmark "1.8.3" REQUIRED benchmark Main PATHS ${CMAKE_PREFIX_PATH
 find_package(benchmark)
 
 add_executable(bitset "bitset.cpp")
-target_link_libraries(bitset benchmark::benchmark)
-target_include_directories(bitset PRIVATE "${CMAKE_SOURCE_DIR}/include")
+target_link_libraries(bitset 
+    PRIVATE 
+        flatmemory::flatmemory
+        benchmark::benchmark)
+
