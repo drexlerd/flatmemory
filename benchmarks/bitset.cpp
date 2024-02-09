@@ -72,11 +72,8 @@ namespace flatmemory::benchmarks
                 
                 for (auto block : builder.get_blocks()) {
                     benchmark::DoNotOptimize(block);
-                }
-                
+                }   
             }
-
-            benchmark::DoNotOptimize(builders);
         }
     }
 
@@ -130,7 +127,6 @@ namespace flatmemory::benchmarks
                 for (auto block : view.get_blocks()) {
                     benchmark::DoNotOptimize(block);
                 }
-                
             }
         }
     }
