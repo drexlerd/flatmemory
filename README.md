@@ -13,11 +13,12 @@ All non-trivial types support all non-trivial types and types `T` that satisfy `
 Comparison to related libraries such as flatbuffers or cap'n'proto:
 
 Advantages:
-  - No code generator needed
-  - Reduced size of vtable by storing trivially-copieable types in-place
+  - Availability of useful non-trivial types with reduced size of vtables
+  - Availability of standard containers to store byte sequences: vector (with limitations), unordered_set
+  - No code generator is needed
 
 Disadvantages:
-  - No backwards compatiblity
+  - Compatibility is restricted to in-memory computations, i.e., it is generally not safe to interpret the data in other enviroments and not possible to extend layouts while supporting backward compatibility
 
 
 ## Example
