@@ -116,8 +116,7 @@ namespace flatmemory::benchmarks
                 benchmark::DoNotOptimize(default_bit_value);
                 
                 auto blocks = view.get_blocks();
-                size_t size = blocks.size();
-                for (size_t i = 0; i < size; ++i) {
+                for (size_t i = 0; i < blocks.size(); ++i) {
                     auto block = blocks[i];
                     benchmark::DoNotOptimize(block);
                 }

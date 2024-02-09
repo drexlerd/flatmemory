@@ -216,6 +216,8 @@ namespace flatmemory
 
         /**
          * empty
+         * 
+         * This operation is more costly than std::vector empty() because it is not constexpr.
         */
         [[nodiscard]] bool empty() const {
             return size() == 0;
@@ -232,6 +234,8 @@ namespace flatmemory
 
         /**
          * vector size
+         * 
+         * This operation is more costly than std::vector size() because it is not constexpr.
         */
         [[nodiscard]] size_t size() const { 
             assert(m_buf);
