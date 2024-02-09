@@ -39,6 +39,7 @@ namespace flatmemory::tests
         builder.finish();
 
         EXPECT_EQ(builder.buffer().size(), 16);
+        EXPECT_EQ(sizeof(TrivialType), 16);
 
         auto view = View<Trivial<TrivialType>>(builder.buffer().data());
         EXPECT_EQ(view->x, true);

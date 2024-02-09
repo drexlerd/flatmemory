@@ -23,6 +23,7 @@
 #include "../layout_utils.hpp"
 #include "../layout.hpp"
 #include "../builder.hpp"
+#include "../view_const.hpp"
 #include "../view.hpp"
 #include "../type_traits.hpp"
 
@@ -52,6 +53,8 @@ namespace flatmemory
     template<IsTriviallyCopyable T>
     class Layout<Trivial<T>> {     
         public:
+            // we do not add size prefix since we can use sizeof for trivial types T
+
             static constexpr size_t final_alignment = sizeof(T);
     };
 
@@ -80,12 +83,13 @@ namespace flatmemory
             }
 
 
-            ByteStream& get_buffer_impl() { return m_buffer; }
-            const ByteStream& get_buffer_impl() const { return m_buffer; }
+            [[nodiscard]] ByteStream& get_buffer_impl() { return m_buffer; }
+            [[nodiscard]] const ByteStream& get_buffer_impl() const { return m_buffer; }
 
         public:
-            T& operator*() { return m_trivial; }
-            T* operator->() { return &m_trivial; }
+            [[nodiscard]] T& operator*() { return m_trivial; }
+
+            [[nodiscard]] T* operator->() { return &m_trivial; }
     };
 
 
@@ -113,11 +117,48 @@ namespace flatmemory
             assert(m_buf);
         }
 
-        T& operator*() { 
+        [[nodiscard]] T& operator*() { 
             assert(m_buf);
             return read_value<T>(m_buf); 
         }
-        T* operator->() { 
+
+        [[nodiscard]] T* operator->() { 
+            assert(m_buf);
+            return &read_value<T>(m_buf); 
+        }
+    };
+
+
+    /**
+     * ConstView
+    */
+    template<IsTriviallyCopyable T>
+    class ConstView<Trivial<T>> {
+    private:
+        const uint8_t* m_buf;
+
+        /**
+         * Default constructor to make view a trivial data type and serializable
+        */
+        ConstView() = default;
+
+        template<typename>
+        friend class Builder;
+
+    public:
+        /**
+         * Constructor to interpret raw data created by its corresponding builder
+        */
+        ConstView(const uint8_t* data) : m_buf(data) {
+            assert(m_buf);
+        }
+
+        [[nodiscard]] const T& operator*() const { 
+            assert(m_buf);
+            return read_value<T>(m_buf); 
+        }
+
+        [[nodiscard]] const T* operator->() const { 
             assert(m_buf);
             return &read_value<T>(m_buf); 
         }
