@@ -255,6 +255,71 @@ namespace flatmemory
                 return View<T>(m_buf + Layout<Vector<T>>::vector_data_offset + read_value<offset_type>(m_buf + Layout<Vector<T>>::vector_data_offset + pos * sizeof(offset_type)));
             }
         }
+
+        /**
+         * iterators
+        */
+        // Forward iterator class
+        class iterator {
+        private:
+            uint8_t* buf;
+
+        public:
+            iterator(uint8_t* buf) : buf(buf) {}
+
+            // Dereference operator
+            decltype(auto) operator*() const {
+                constexpr bool is_trivial = IsTriviallyCopyable<T>;
+                if constexpr (is_trivial) {
+                    return read_value<T>(buf);
+                } else {
+                    return View<T>(read_value<offset_type>(m_buf));
+                }
+            }
+
+            // Pre-increment operator
+            iterator& operator++() {
+                constexpr bool is_trivial = IsTriviallyCopyable<T>;
+                if constexpr (is_trivial) {
+                    buf += sizeof(T);
+                } else {
+                    buf += sizeof(offset_type);
+                }
+                return *this;
+            }
+
+            // Post-increment operator
+            iterator operator++(int) {
+                iterator tmp = *this;
+                ++(*this);
+                return tmp;
+            }
+
+            // Equality comparison
+            bool operator==(const iterator& other) const {
+                return buf == other.buf;
+            }
+
+            // Inequality comparison
+            bool operator!=(const iterator& other) const {
+                return !(*this == other);
+            }
+        };
+
+        // Begin iterator
+        iterator begin() {
+            return iterator(m_buf + Layout<Vector<T>>::vector_data_offset);
+        }
+
+        // End iterator
+        iterator end() {
+            constexpr bool is_trivial = IsTriviallyCopyable<T>;
+            if constexpr (is_trivial) {
+                return iterator(m_buf + Layout<Vector<T>>::vector_data_offset + sizeof(T) * size());
+            } else {
+                return iterator(m_buf + Layout<Vector<T>>::vector_data_offset + sizeof(offset_type) * size());
+            }
+        }
     };
 }
 

@@ -39,6 +39,9 @@ TEST(FlatmemoryTests, TypesBitsetTest) {
     auto view = View<Bitset<uint64_t>>(builder.buffer().data());
     EXPECT_EQ(view.get_default_bit_value(), true);
     EXPECT_EQ(view.get_blocks().size(), 5);
+    for (auto block : view.get_blocks()) {
+        
+    }
 }
 
 

@@ -115,10 +115,7 @@ namespace flatmemory::benchmarks
                 auto& default_bit_value = view.get_default_bit_value();
                 benchmark::DoNotOptimize(default_bit_value);
                 
-                auto blocks = view.get_blocks();
-                auto size = blocks.size();
-                for (size_t i = 0; i < size; ++i) {
-                    auto block = blocks[i];
+                for (auto block : view.get_blocks()) {
                     benchmark::DoNotOptimize(block);
                 }
                 
@@ -128,18 +125,18 @@ namespace flatmemory::benchmarks
 }
 
 
-BENCHMARK(flatmemory::benchmarks::BM_BitsetBuilderCreate)->Args({100000, 1});
-BENCHMARK(flatmemory::benchmarks::BM_BitsetViewCreate)->Args({100000, 1});
-BENCHMARK(flatmemory::benchmarks::BM_BitsetBuilderCreate)->Args({100000, 10});
-BENCHMARK(flatmemory::benchmarks::BM_BitsetViewCreate)->Args({100000, 10});
-BENCHMARK(flatmemory::benchmarks::BM_BitsetBuilderCreate)->Args({100000, 100});
-BENCHMARK(flatmemory::benchmarks::BM_BitsetViewCreate)->Args({100000, 100});
+BENCHMARK(flatmemory::benchmarks::BM_BitsetBuilderCreate)->Args({1000000, 1});
+BENCHMARK(flatmemory::benchmarks::BM_BitsetViewCreate)->Args({1000000, 1});
+BENCHMARK(flatmemory::benchmarks::BM_BitsetBuilderCreate)->Args({1000000, 10});
+BENCHMARK(flatmemory::benchmarks::BM_BitsetViewCreate)->Args({1000000, 10});
+BENCHMARK(flatmemory::benchmarks::BM_BitsetBuilderCreate)->Args({1000000, 100});
+BENCHMARK(flatmemory::benchmarks::BM_BitsetViewCreate)->Args({1000000, 100});
 
-BENCHMARK(flatmemory::benchmarks::BM_BitsetBuilderAccess)->Args({100000, 1});
-BENCHMARK(flatmemory::benchmarks::BM_BitsetViewAccess)->Args({100000, 1});
-BENCHMARK(flatmemory::benchmarks::BM_BitsetBuilderAccess)->Args({100000, 10});
-BENCHMARK(flatmemory::benchmarks::BM_BitsetViewAccess)->Args({100000, 10});
-BENCHMARK(flatmemory::benchmarks::BM_BitsetBuilderAccess)->Args({100000, 100});
-BENCHMARK(flatmemory::benchmarks::BM_BitsetViewAccess)->Args({100000, 100});
+BENCHMARK(flatmemory::benchmarks::BM_BitsetBuilderAccess)->Args({1000000, 1});
+BENCHMARK(flatmemory::benchmarks::BM_BitsetViewAccess)->Args({1000000, 1});
+BENCHMARK(flatmemory::benchmarks::BM_BitsetBuilderAccess)->Args({1000000, 10});
+BENCHMARK(flatmemory::benchmarks::BM_BitsetViewAccess)->Args({1000000, 10});
+BENCHMARK(flatmemory::benchmarks::BM_BitsetBuilderAccess)->Args({1000000, 100});
+BENCHMARK(flatmemory::benchmarks::BM_BitsetViewAccess)->Args({1000000, 100});
 
 BENCHMARK_MAIN();
