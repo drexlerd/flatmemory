@@ -25,7 +25,7 @@
 namespace flatmemory 
 {
     using State = Tuple<uint32_t, Bitset<uint64_t>>;
-    using StateView = View<State>;
+    using StateView = ConstView<State>;
 }
 
 

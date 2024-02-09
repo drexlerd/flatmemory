@@ -139,7 +139,7 @@ namespace flatmemory
 
 
     /**
-     * View
+     * ConstView
     */
     template<typename Block>
     class ConstView<Bitset<Block>> {
@@ -162,12 +162,12 @@ namespace flatmemory
             assert(m_buf);
         }
 
-        const bool& get_default_bit_value() {
+        const bool& get_default_bit_value() const {
             assert(m_buf);
             return read_value<bool>(m_buf);
         }
 
-        const ConstView<Vector<Block>> get_blocks() const {
+        ConstView<Vector<Block>> get_blocks() const {
             assert(m_buf);
             return ConstView<Vector<Block>>(m_buf + Layout<Bitset<Block>>::blocks_offset);
         }

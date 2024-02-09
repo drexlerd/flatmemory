@@ -22,6 +22,7 @@
 #include "../layout_utils.hpp"
 #include "../layout.hpp"
 #include "../builder.hpp"
+#include "../view_const.hpp"
 #include "../view.hpp"
 #include "../type_traits.hpp"
 
@@ -250,7 +251,7 @@ namespace flatmemory
             /**
              * operator[]
             */
-            [[nodiscard]] decltype(auto) operator[](size_t pos) const {
+            [[nodiscard]] decltype(auto) operator[](size_t pos) {
                 assert(m_buf);
                 assert(pos < size());
                 constexpr bool is_trivial = IsTriviallyCopyable<T>;
@@ -278,7 +279,7 @@ namespace flatmemory
                 iterator(uint8_t* buf) : buf(buf) {}
 
                 // Dereference operator
-                reference operator*() const {
+                decltype(auto) operator*() const {
                     constexpr bool is_trivial = IsTriviallyCopyable<T>;
                     if constexpr (is_trivial) {
                         return read_value<T>(buf);
@@ -328,6 +329,158 @@ namespace flatmemory
                     return iterator(m_buf + Layout<Vector<T>>::vector_data_offset + sizeof(T) * size());
                 } else {
                     return iterator(m_buf + Layout<Vector<T>>::vector_data_offset + sizeof(offset_type) * size());
+                }
+            }
+    };
+
+
+    /**
+     * ConstView
+    */
+    template<IsTriviallyCopyableOrCustom T>
+    class ConstView<Vector<T>> {
+        private:
+            const uint8_t* m_buf;
+
+            /**
+             * Default constructor to make view a trivial data type and serializable
+            */
+            ConstView() = default;
+
+            template<typename>
+            friend class Builder;
+
+        public:
+
+            /**
+             * Constructor to interpret raw data created by its corresponding builder
+            */
+            ConstView(const uint8_t* buf) : m_buf(buf) {
+                assert(buf);
+            } 
+
+            /**
+             * operator==
+            */
+            [[nodiscard]] bool operator==(const ConstView& other) const {
+                if (this == &other) return true;
+                if (m_buf != other.m_buf) {
+                    if (buffer_size() != other.buffer_size()) return false;
+                    return std::memcmp(m_buf, other.m_buf, buffer_size());
+                    if (size() != other.size()) return false;
+                }
+                return true;
+            }
+
+            /**
+             * empty
+             * 
+             * This operation is more costly than std::vector empty() because it is not constexpr.
+            */
+            [[nodiscard]] bool empty() const {
+                return size() == 0;
+            }
+
+
+            /**
+             * buffer size
+            */
+            [[nodiscard]] size_t buffer_size() const { 
+                assert(m_buf);
+                return read_value<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_offset); 
+            }
+
+            /**
+             * vector size
+             * 
+             * This operation is more costly than std::vector size() because it is not constexpr.
+            */
+            [[nodiscard]] size_t size() const { 
+                assert(m_buf);
+                return read_value<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_offset); 
+            }
+
+            /**
+             * operator[]
+            */
+            [[nodiscard]] decltype(auto) operator[](size_t pos) const {
+                assert(m_buf);
+                assert(pos < size());
+                constexpr bool is_trivial = IsTriviallyCopyable<T>;
+                if constexpr (is_trivial) {
+                    return read_value<T>(m_buf + Layout<Vector<T>>::vector_data_offset + pos * sizeof(T));
+                } else {
+                    return View<T>(m_buf + Layout<Vector<T>>::vector_data_offset + read_value<offset_type>(m_buf + Layout<Vector<T>>::vector_data_offset + pos * sizeof(offset_type)));
+                }
+            }
+
+            /**
+             * iterators
+            */
+            class const_iterator {
+            private:
+                uint8_t* buf;
+
+            public:
+                using difference_type = std::ptrdiff_t;
+                using value_type = typename maybe_const_view<T>::type;
+                using pointer = typename maybe_const_view<T>::type*;
+                using reference = typename maybe_const_view<T>::type&;
+                using iterator_category = std::forward_iterator_tag;
+
+                const_iterator(uint8_t* buf) : buf(buf) {}
+
+                // Dereference operator
+                decltype(auto) operator*() const {
+                    constexpr bool is_trivial = IsTriviallyCopyable<T>;
+                    if constexpr (is_trivial) {
+                        return read_value<T>(buf);
+                    } else {
+                        return View<T>(read_value<offset_type>(m_buf));
+                    }
+                }
+
+                // Pre-increment operator
+                const_iterator& operator++() {
+                    constexpr bool is_trivial = IsTriviallyCopyable<T>;
+                    if constexpr (is_trivial) {
+                        buf += sizeof(T);
+                    } else {
+                        buf += sizeof(offset_type);
+                    }
+                    return *this;
+                }
+
+                // Post-increment operator
+                const_iterator operator++(int) {
+                    const_iterator tmp = *this;
+                    ++(*this);
+                    return tmp;
+                }
+
+                // Equality comparison
+                bool operator==(const const_iterator& other) const {
+                    return buf == other.buf;
+                }
+
+                // Inequality comparison
+                bool operator!=(const const_iterator& other) const {
+                    return !(*this == other);
+                }
+            };
+
+            // Begin iterator
+            const_iterator begin() {
+                return const_iterator(m_buf + Layout<Vector<T>>::vector_data_offset);
+            }
+
+            // End iterator
+            const_iterator end() {
+                constexpr bool is_trivial = IsTriviallyCopyable<T>;
+                if constexpr (is_trivial) {
+                    return const_iterator(m_buf + Layout<Vector<T>>::vector_data_offset + sizeof(T) * size());
+                } else {
+                    return const_iterator(m_buf + Layout<Vector<T>>::vector_data_offset + sizeof(offset_type) * size());
                 }
             }
     };

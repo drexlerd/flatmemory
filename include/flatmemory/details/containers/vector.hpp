@@ -4,6 +4,7 @@
 
 #include "../builder.hpp"
 #include "../byte_stream_segmented.hpp"
+#include "../view_const.hpp"
 #include "../view.hpp"
 
 #include <cassert>
@@ -54,7 +55,7 @@ public:
         return m_data.back(); 
     }
 
-    [[nodiscard]] const View<T> back() const {  // TODO ConstView
+    [[nodiscard]] ConstView<T> back() const {
         assert(!m_data.empty());
         return m_data.back();
     }
@@ -64,7 +65,7 @@ public:
         return m_data[pos];
     }
 
-    [[nodiscard]] const View<T> operator[](size_t pos) const {  // TODO ConstView
+    [[nodiscard]] ConstView<T> operator[](size_t pos) const {
         assert(pos <= static_cast<int>(size()));
         return m_data[pos];
     }
@@ -110,14 +111,14 @@ public:
     }
 
     void push_back(const Builder<T>& builder) {
-        m_data.push_back(View<T>(m_storage.write(builder.get_data(), builder.size()), builder.size()));
+        m_data.push_back(View<T>(m_storage.write(builder.get_data(), builder.size())));
     }
 
     [[nodiscard]] View<T> back() {
         return m_data.back();
     }
 
-    [[nodiscard]] const View<T> back() const {
+    [[nodiscard]] ConstView<T> back() const {
         return m_data.back();
     }
 
@@ -128,7 +129,7 @@ public:
         return m_data[pos];
     }
 
-    [[nodiscard]] const View<T> operator[](size_t pos) const {
+    [[nodiscard]] ConstView<T> operator[](size_t pos) const {
         if (pos >= size()) {
             resize(pos);
         }
@@ -136,8 +137,8 @@ public:
     }
 
     void resize(size_t count) {
-        const uint8_t* default_data = m_default_builder.get_data();
-        size_t default_size = m_default_builder.size();
+        const uint8_t* default_data = m_default_builder.buffer().data();
+        size_t default_size = m_default_builder.buffer().size();
         while (size() <= count) {
             uint8_t* written_data = m_storage.write(default_data, default_size);
             m_data.push_back(View<T>(written_data));

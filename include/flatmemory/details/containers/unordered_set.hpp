@@ -4,7 +4,7 @@
 
 #include "../byte_stream_segmented.hpp"
 #include "../builder.hpp"
-#include "../view.hpp"
+#include "../view_const.hpp"
 
 #include <unordered_set>
 
@@ -16,7 +16,7 @@ namespace flatmemory {
  * 
  * We use it for states.
 */
-template<typename T, typename Hash = std::hash<View<T>>, typename Equal = std::equal_to<View<T>>, typename Allocator = std::allocator<View<T>>>
+template<typename T, typename Hash = std::hash<ConstView<T>>, typename Equal = std::equal_to<ConstView<T>>, typename Allocator = std::allocator<ConstView<T>>>
 class UnorderedSet
 {
 private:
@@ -24,7 +24,7 @@ private:
     ByteStreamSegmented<1000000> m_storage;
 
     // Data to be accessed
-    std::unordered_set<View<T>, Hash, Equal, Allocator> m_data;
+    std::unordered_set<ConstView<T>, Hash, Equal, Allocator> m_data;
 
 public:
     UnorderedSet() = default;
@@ -34,7 +34,7 @@ public:
     UnorderedSet(UnorderedSet&& other) = default;
     UnorderedSet& operator=(UnorderedSet&& other) = default;
 
-    [[nodiscard]] View<T> insert(const Builder<T>& builder) {
+    [[nodiscard]] ConstView<T> insert(const Builder<T>& builder) {
         const uint8_t* data = builder.get_data();
         size_t amount = builder.get_size();
         uint8_t* new_data = m_storage.write(data, amount);

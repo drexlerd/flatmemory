@@ -48,6 +48,7 @@ private:
     void increase_capacity() {
         if (cur_segment_id == (m_segments.size() - 1)) {
             m_segments.push_back(new uint8_t[N]);
+            assert(N % 16 == 0);
             cur_segment_pos = 0;
             capacity += N;
         }
