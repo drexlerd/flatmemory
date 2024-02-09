@@ -30,6 +30,8 @@
 #include "../view_const.hpp"
 #include "../type_traits.hpp"
 
+#include "../algorithms/murmurhash3.hpp"
+
 #include <algorithm>
 #include <cassert>
 #include <tuple>
@@ -209,23 +211,55 @@ namespace flatmemory
     */
     template<typename Block>
     class Operator<Bitset<Block>> {
+        private:
+            static constexpr std::size_t block_size = sizeof(Block) * 8;
+            static constexpr Block block_zeroes = 0;
+            static constexpr Block block_ones = Block(-1);
+
+            template<IsMutableOrImmutableBitset Other>
+            void resize_to_fit(Builder<Bitset<Block>>& builder, const Other& other) {
+                auto& blocks = builder.get_blocks();
+                if (blocks.size() < other.get_blocks().size()) {
+                    bool default_bit_value = builder.get_default_bit_value();
+                    blocks.resize(other.get_blocks().size(), default_bit_value ? block_ones : block_zeroes);
+                }
+            }
+            
         public:
             /**
              * operator|=
             */
-            template<IsMutableBitset L, IsMutableOrImmutableBitset R>
-            static decltype(auto) or_equal(L& l, const R& r) {
-                // I will implement this, just to illustrate the functionality
-                return l;
+            template<IsMutableOrImmutableBitset Other>
+            static decltype(auto) or_equal(Builder<Bitset<Block>>& builder, const Other& other) {
+                resize_to_fit(builder, other);
+
+                auto& blocks = builder.get_blocks();
+                const auto& other_blocks = other.get_blocks();
+                bool& default_bit_value = builder.get_default_bit_value();
+                bool other_default_bit_value = other.get_default_bit_value();
+                
+                // update default bit value
+                default_bit_value |= other_default_bit_value;
+
+                // update blocks
+                auto it = blocks.begin();
+                auto other_it = other_blocks.begin();
+                while (it != blocks.end()) {
+                    *it |= *other_it;
+                    ++it;
+                    ++other_it;
+                }
+
+                return builder;
             }
 
             /**
              * operator&=
             */
-            template<IsMutableBitset L, IsMutableOrImmutableBitset R>
-            static decltype(auto) and_equal(L& l, const R& r) {
+            template<IsMutableOrImmutableBitset Other>
+            static decltype(auto) and_equal(Builder<Bitset<Block>>& builder, const Other& r) {
                 // I will implement this, just to illustrate the functionality
-                return l;
+                return builder;
             }
 
             /**
@@ -233,6 +267,7 @@ namespace flatmemory
             */
             template<IsMutableOrImmutableBitset B>
             static size_t hash(const B& b) {
+                
                 return 0;
             }
     };

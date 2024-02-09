@@ -10,6 +10,10 @@
 #include <flatmemory/details/algorithms/murmurhash3.hpp>
 
 //-----------------------------------------------------------------------------
+
+namespace flatmemory 
+{
+
 // Platform-specific functions and macros
 
 // Microsoft Visual Studio
@@ -410,6 +414,8 @@ void MurmurHash3_x64_128(const void* key, const int len, const uint32_t seed, vo
 
     ((uint64_t*) out)[0] = h1;
     ((uint64_t*) out)[1] = h2;
+}
+
 }
 
 //-----------------------------------------------------------------------------
