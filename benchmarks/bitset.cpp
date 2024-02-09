@@ -39,6 +39,8 @@ namespace flatmemory::benchmarks {
                 builder.get_blocks().resize(bitset_size);
                 builders.push_back(builder);
             }
+
+            benchmark::DoNotOptimize(builders);
         }
     }
 
@@ -49,16 +51,17 @@ namespace flatmemory::benchmarks {
 
         for (auto _ : state) {
             // Create num_bitset many views
-            VariableSizedTypeVector<Bitset<uint64_t>> view_vector;
+            VariableSizedTypeVector<Bitset<uint64_t>> views;
             auto builder = Builder<Bitset<uint64_t>>();
             builder.get_blocks().resize(bitset_size);
             builder.finish();
             for (size_t i = 0; i < num_bitsets; ++i) {
-                view_vector.push_back(builder);
+                views.push_back(builder);
             }
+
+            benchmark::DoNotOptimize(views);
         }
     }
-
 }
 
 
