@@ -44,7 +44,6 @@ namespace flatmemory::benchmarks
         const size_t bitset_size = state.range(1);
 
         for (auto _ : state) {
-            // Create num_bitset many bitsets
             auto builders = create_builders(num_bitsets, bitset_size);
 
             benchmark::DoNotOptimize(builders);
@@ -55,18 +54,14 @@ namespace flatmemory::benchmarks
         const size_t num_bitsets = state.range(0);
         const size_t bitset_size = state.range(1);
 
-        // Create num_bitset many bitsets
         auto builders = create_builders(num_bitsets, bitset_size);
 
         for (auto _ : state) {
-            // Access the data
             for (auto& builder : builders) {
                 auto& default_bit_value = builder.get_default_bit_value();
                 benchmark::DoNotOptimize(default_bit_value);
                 
-                auto& blocks = builder.get_blocks();
-                for (size_t i = 0; i < blocks.size(); ++i) {
-                    auto block = blocks[i];
+                for (auto block : builder.get_blocks()) {
                     benchmark::DoNotOptimize(block);
                 }
                 
@@ -109,9 +104,7 @@ namespace flatmemory::benchmarks
         auto views = create_views(num_bitsets, bitset_size);
 
         for (auto _ : state) {
-            // Access the data
-            for (size_t i = 0; i < views.size(); ++i) {
-                auto view = views[i];
+            for (auto view : views) {
                 auto& default_bit_value = view.get_default_bit_value();
                 benchmark::DoNotOptimize(default_bit_value);
                 

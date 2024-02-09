@@ -37,15 +37,25 @@ public:
     VariableSizedTypeVector(VariableSizedTypeVector&& other) = default;
     VariableSizedTypeVector& operator=(VariableSizedTypeVector&& other) = default;
 
+    [[nodiscard]] constexpr size_t empty() const {
+        return m_data.empty();
+    }
+
+    [[nodiscard]] constexpr size_t size() const {
+        return m_data.size();
+    }
+
     void push_back(const Builder<T>& builder) {
         m_data.push_back(View<T>(m_storage.write(builder.buffer().data(), builder.buffer().size())));
     }
 
-    [[nodiscard]] View<T> back() {
-        return m_data.back();
+    [[nodiscard]] View<T> back() { 
+        assert(!m_data.empty());
+        return m_data.back(); 
     }
 
-    [[nodiscard]] const View<T> back() const {
+    [[nodiscard]] const View<T> back() const {  // TODO ConstView
+        assert(!m_data.empty());
         return m_data.back();
     }
 
@@ -54,14 +64,15 @@ public:
         return m_data[pos];
     }
 
-    [[nodiscard]] const View<T> operator[](size_t pos) const {
+    [[nodiscard]] const View<T> operator[](size_t pos) const {  // TODO ConstView
         assert(pos <= static_cast<int>(size()));
         return m_data[pos];
     }
 
-    [[nodiscard]] size_t size() const {
-        return m_data.size();
-    }
+    [[nodiscard]] auto begin() { return m_data.begin(); }
+    [[nodiscard]] const auto begin() const { return m_data.begin(); }
+    [[nodiscard]] auto end() { return m_data.end(); }
+    [[nodiscard]] const auto end() const { return m_data.end(); }
 };
 
 /**
@@ -89,6 +100,14 @@ public:
     FixedSizedTypeVector& operator=(const FixedSizedTypeVector& other) = delete;
     FixedSizedTypeVector(FixedSizedTypeVector&& other) = default;
     FixedSizedTypeVector& operator=(FixedSizedTypeVector&& other) = default;
+
+    [[nodiscard]] constexpr size_t empty() const {
+        return m_data.empty();
+    }
+
+    [[nodiscard]] constexpr size_t size() const {
+        return m_data.size();
+    }
 
     void push_back(const Builder<T>& builder) {
         m_data.push_back(View<T>(m_storage.write(builder.get_data(), builder.size()), builder.size()));
@@ -125,9 +144,10 @@ public:
         }
     }
 
-    [[nodiscard]] constexpr size_t size() const {
-        return m_data.size();
-    }
+    [[nodiscard]] auto begin() { return m_data.begin(); }
+    [[nodiscard]] const auto begin() const { return m_data.begin(); }
+    [[nodiscard]] auto end() { return m_data.end(); }
+    [[nodiscard]] const auto end() const { return m_data.end(); }
 };
 
 

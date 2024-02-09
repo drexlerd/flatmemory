@@ -237,4 +237,10 @@ namespace flatmemory
 }
 
 
+namespace std 
+{
+    // Inject comparison and hash into the std namespace
+}
+
+
 #endif
