@@ -18,7 +18,7 @@ jobs:
 
     - name: Configure, and Build flatmemory
       run: |
-        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON -S . -B build -DCMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/tests/integration/dependencies/installs
+        cmake -DCMAKE_BUILD_TYPE=Release -S . -B build -DCMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/tests/integration/dependencies/installs
         cmake --build build -j$(nproc)
 
     - name: Build and Test Project
