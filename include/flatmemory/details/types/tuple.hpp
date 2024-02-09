@@ -123,17 +123,18 @@ namespace flatmemory
             template<typename>
             friend class IBuilder;
 
-            template<std::size_t I>
-            void finish_rec_impl(offset_type offset) {
-                if constexpr (I < sizeof...(Ts)) {
+            template<size_t... Is>
+            void finish_iterative_impl(std::index_sequence<Is...>) {
+                offset_type offset = Layout<Tuple<Ts...>>::header_offsets.back();
+                ([&] {
                     // Write the data.
-                    constexpr bool is_trivial = IsTriviallyCopyable<std::tuple_element_t<I, std::tuple<Ts...>>>;
+                    constexpr bool is_trivial = IsTriviallyCopyable<std::tuple_element_t<Is, std::tuple<Ts...>>>;
                     if constexpr (is_trivial) {
-                        auto& value = std::get<I>(m_data);
+                        auto& value = std::get<Is>(m_data);
                         m_buffer.write(value);
                     } else {
                         // Recursively call finish
-                        auto& nested_builder = std::get<I>(m_data);
+                        auto& nested_builder = std::get<Is>(m_data);
                         nested_builder.finish();
                         m_buffer.write(offset);
                         m_dynamic_buffer.write(nested_builder.buffer().data(), nested_builder.buffer().size());    
@@ -141,16 +142,13 @@ namespace flatmemory
   
                     }
                     // Write the padding to satisfy alignment requirements
-                    m_buffer.write_padding(Layout<Tuple<Ts...>>::header_offsets[I + 1] - m_buffer.size());
-                    // Recursive call to next type
-                    finish_rec_impl<I + 1>(offset);
-                }
+                    m_buffer.write_padding(Layout<Tuple<Ts...>>::header_offsets[Is + 1] - m_buffer.size());
+                }(), ...);
             }
-
 
             void finish_impl() {
                 // Build header and dynamic buffer
-                finish_rec_impl<0>(Layout<Tuple<Ts...>>::header_offsets.back());
+                finish_iterative_impl(std::make_index_sequence<sizeof...(Ts)>{});
                 // Concatenate all buffers
                 m_buffer.write(m_dynamic_buffer.data(), m_dynamic_buffer.size()); 
                 // Write alignment padding
