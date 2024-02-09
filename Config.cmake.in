@@ -1,4 +1,4 @@
 @PACKAGE_INIT@
 
 # Compute the installation directory for header files
-set(${PROJECT_NAME}_INCLUDE_DIRS "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_INCLUDEDIR@")
+set(flatmemory_INCLUDE_DIRS "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_INCLUDEDIR@")
