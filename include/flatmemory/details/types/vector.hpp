@@ -35,11 +35,13 @@
 namespace flatmemory
 {
     /**
-     * Dispatcher for tuple.
+     * Dispatcher for Vector.
     */
     template<IsTriviallyCopyableOrCustom T>
     struct Vector : public Custom {
-        Vector(const Vector& other) {}  // Non-trivial copy-constructor
+        /// @brief Non-trivial copy-constructor
+        /// @param other 
+        Vector(const Vector& other) {}
     };
 
 
@@ -144,14 +146,14 @@ namespace flatmemory
             /**
              * empty
             */
-            [[nodiscard]] bool empty() const {
+            [[nodiscard]] constexpr bool empty() const {
                 return m_data.empty();
             }
 
             /**
              * size
             */
-            [[nodiscard]] size_t size() const { 
+            [[nodiscard]] constexpr size_t size() const { 
                 return m_data.size(); 
             }
 
@@ -190,26 +192,24 @@ namespace flatmemory
         private:
             uint8_t* m_buf;
 
-            /**
-             * Default constructor to make view a trivial data type and serializable
-            */
+            /// @brief Default constructor to make view a trivial data type and serializable
             View() = default;
 
             template<typename>
             friend class Builder;
 
         public:
-
-            /**
-             * Constructor to interpret raw data created by its corresponding builder
-            */
+            /// @brief Constructor to interpret raw data created by its corresponding builder.
+            /// @param buf 
             View(uint8_t* buf) : m_buf(buf) {
                 assert(buf);
             } 
 
+
             /**
-             * operator==
+             * Operators
             */
+
             [[nodiscard]] bool operator==(const View& other) const {
                 if (this == &other) return true;
                 if (m_buf != other.m_buf) {
@@ -220,37 +220,11 @@ namespace flatmemory
                 return true;
             }
 
-            /**
-             * empty
-             * 
-             * This operation is more costly than std::vector empty() because it is not constexpr.
-            */
-            [[nodiscard]] bool empty() const {
-                return size() == 0;
-            }
-
 
             /**
-             * buffer size
+             * Element access.
             */
-            [[nodiscard]] size_t buffer_size() const { 
-                assert(m_buf);
-                return read_value<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_offset); 
-            }
 
-            /**
-             * vector size
-             * 
-             * This operation is more costly than std::vector size() because it is not constexpr.
-            */
-            [[nodiscard]] size_t size() const { 
-                assert(m_buf);
-                return read_value<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_offset); 
-            }
-
-            /**
-             * operator[]
-            */
             [[nodiscard]] decltype(auto) operator[](size_t pos) {
                 assert(m_buf);
                 assert(pos < size());
@@ -262,9 +236,11 @@ namespace flatmemory
                 }
             }
 
+
             /**
-             * iterators
+             * Iterators
             */
+
             class iterator {
             private:
                 uint8_t* buf;
@@ -278,8 +254,7 @@ namespace flatmemory
 
                 iterator(uint8_t* buf) : buf(buf) {}
 
-                // Dereference operator
-                decltype(auto) operator*() const {
+                [[nodiscard]] decltype(auto) operator*() const {
                     constexpr bool is_trivial = IsTriviallyCopyable<T>;
                     if constexpr (is_trivial) {
                         return read_value<T>(buf);
@@ -288,7 +263,6 @@ namespace flatmemory
                     }
                 }
 
-                // Pre-increment operator
                 iterator& operator++() {
                     constexpr bool is_trivial = IsTriviallyCopyable<T>;
                     if constexpr (is_trivial) {
@@ -299,31 +273,28 @@ namespace flatmemory
                     return *this;
                 }
 
-                // Post-increment operator
                 iterator operator++(int) {
                     iterator tmp = *this;
                     ++(*this);
                     return tmp;
                 }
 
-                // Equality comparison
-                bool operator==(const iterator& other) const {
+                [[nodiscard]] bool operator==(const iterator& other) const {
                     return buf == other.buf;
                 }
 
-                // Inequality comparison
-                bool operator!=(const iterator& other) const {
+                [[nodiscard]] bool operator!=(const iterator& other) const {
                     return !(*this == other);
                 }
             };
 
-            // Begin iterator
-            iterator begin() {
+            [[nodiscard]] iterator begin() {
+                assert(m_buf);
                 return iterator(m_buf + Layout<Vector<T>>::vector_data_offset);
             }
 
-            // End iterator
-            iterator end() {
+            [[nodiscard]] iterator end() {
+                assert(m_buf);
                 constexpr bool is_trivial = IsTriviallyCopyable<T>;
                 if constexpr (is_trivial) {
                     return iterator(m_buf + Layout<Vector<T>>::vector_data_offset + sizeof(T) * size());
@@ -331,6 +302,39 @@ namespace flatmemory
                     return iterator(m_buf + Layout<Vector<T>>::vector_data_offset + sizeof(offset_type) * size());
                 }
             }
+
+
+            /**
+             * Capacity
+            */
+            
+            /// @brief 
+            ///
+            /// Notes: This operation is more costly than std::vector empty() because it is not constexpr.
+            /// @return 
+            [[nodiscard]] bool empty() const {
+                return size() == 0;
+            }
+
+            [[nodiscard]] size_t buffer_size() const { 
+                assert(m_buf);
+                return read_value<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_offset); 
+            }
+
+            /// @brief 
+            ///
+            /// Notes: This operation is more costly than std::vector size() because it is not constexpr.
+            /// @return 
+            [[nodiscard]] size_t size() const { 
+                assert(m_buf);
+                return read_value<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_offset); 
+            }
+
+            /**
+             * Modifiers
+             * 
+             * Views cannot be modified!
+            */
     };
 
 
@@ -342,25 +346,22 @@ namespace flatmemory
         private:
             const uint8_t* m_buf;
 
-            /**
-             * Default constructor to make view a trivial data type and serializable
-            */
+            /// @brief Default constructor to make view a trivial data type and serializable
             ConstView() = default;
 
             template<typename>
             friend class Builder;
 
         public:
-
-            /**
-             * Constructor to interpret raw data created by its corresponding builder
-            */
+            /// @brief Constructor to interpret raw data created by its corresponding builder
+            /// @param buf 
             ConstView(const uint8_t* buf) : m_buf(buf) {
                 assert(buf);
             } 
 
+
             /**
-             * operator==
+             * Operators
             */
             [[nodiscard]] bool operator==(const ConstView& other) const {
                 if (this == &other) return true;
@@ -372,37 +373,11 @@ namespace flatmemory
                 return true;
             }
 
-            /**
-             * empty
-             * 
-             * This operation is more costly than std::vector empty() because it is not constexpr.
-            */
-            [[nodiscard]] bool empty() const {
-                return size() == 0;
-            }
-
 
             /**
-             * buffer size
+             * Element access
             */
-            [[nodiscard]] size_t buffer_size() const { 
-                assert(m_buf);
-                return read_value<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_offset); 
-            }
 
-            /**
-             * vector size
-             * 
-             * This operation is more costly than std::vector size() because it is not constexpr.
-            */
-            [[nodiscard]] size_t size() const { 
-                assert(m_buf);
-                return read_value<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_offset); 
-            }
-
-            /**
-             * operator[]
-            */
             [[nodiscard]] decltype(auto) operator[](size_t pos) const {
                 assert(m_buf);
                 assert(pos < size());
@@ -414,9 +389,11 @@ namespace flatmemory
                 }
             }
 
+
             /**
-             * iterators
+             * Iterators
             */
+
             class const_iterator {
             private:
                 uint8_t* buf;
@@ -430,8 +407,7 @@ namespace flatmemory
 
                 const_iterator(uint8_t* buf) : buf(buf) {}
 
-                // Dereference operator
-                decltype(auto) operator*() const {
+                [[nodiscard]] decltype(auto) operator*() const {
                     constexpr bool is_trivial = IsTriviallyCopyable<T>;
                     if constexpr (is_trivial) {
                         return read_value<T>(buf);
@@ -440,7 +416,6 @@ namespace flatmemory
                     }
                 }
 
-                // Pre-increment operator
                 const_iterator& operator++() {
                     constexpr bool is_trivial = IsTriviallyCopyable<T>;
                     if constexpr (is_trivial) {
@@ -451,31 +426,28 @@ namespace flatmemory
                     return *this;
                 }
 
-                // Post-increment operator
                 const_iterator operator++(int) {
                     const_iterator tmp = *this;
                     ++(*this);
                     return tmp;
                 }
 
-                // Equality comparison
-                bool operator==(const const_iterator& other) const {
+                [[nodiscard]] bool operator==(const const_iterator& other) const {
                     return buf == other.buf;
                 }
 
-                // Inequality comparison
-                bool operator!=(const const_iterator& other) const {
+                [[nodiscard]] bool operator!=(const const_iterator& other) const {
                     return !(*this == other);
                 }
             };
 
-            // Begin iterator
-            const_iterator begin() {
+            [[nodiscard]] const_iterator begin() {
+                assert(m_buf);
                 return const_iterator(m_buf + Layout<Vector<T>>::vector_data_offset);
             }
 
-            // End iterator
-            const_iterator end() {
+            [[nodiscard]] const_iterator end() {
+                assert(m_buf);
                 constexpr bool is_trivial = IsTriviallyCopyable<T>;
                 if constexpr (is_trivial) {
                     return const_iterator(m_buf + Layout<Vector<T>>::vector_data_offset + sizeof(T) * size());
@@ -483,6 +455,40 @@ namespace flatmemory
                     return const_iterator(m_buf + Layout<Vector<T>>::vector_data_offset + sizeof(offset_type) * size());
                 }
             }
+
+
+            /**
+             * Capacity
+            */
+
+            /// @brief 
+            ///
+            /// Note: This operation is more costly than std::vector empty() because it is not constexpr.
+            /// @return 
+            [[nodiscard]] bool empty() const {
+                return size() == 0;
+            }
+
+            [[nodiscard]] size_t buffer_size() const { 
+                assert(m_buf);
+                return read_value<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_offset); 
+            }
+
+            /// @brief 
+            ///
+            /// Note: This operation is more costly than std::vector size() because it is not constexpr.
+            /// @return 
+            [[nodiscard]] size_t size() const { 
+                assert(m_buf);
+                return read_value<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_offset); 
+            }
+
+
+            /**
+             * Modifiers
+             * 
+             * Views cannot be modified!
+            */
     };
 }
 

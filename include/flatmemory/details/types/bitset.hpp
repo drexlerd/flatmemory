@@ -40,11 +40,13 @@
 namespace flatmemory
 {
     /**
-     * Dispatcher for tuple.
+     * Dispatcher for Bitset.
     */
     template<typename Block>
     struct Bitset : public Custom {
-        Bitset(const Bitset& other) {}  // Non-trivial copy-constructor
+        /// @brief Non-trivial copy-constructor
+        /// @param other 
+        Bitset(const Bitset& other) {}
     };
 
 

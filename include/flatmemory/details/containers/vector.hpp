@@ -38,16 +38,18 @@ public:
     VariableSizedTypeVector(VariableSizedTypeVector&& other) = default;
     VariableSizedTypeVector& operator=(VariableSizedTypeVector&& other) = default;
 
-    [[nodiscard]] constexpr size_t empty() const {
-        return m_data.empty();
+    /**
+     * Element access
+    */
+
+    [[nodiscard]] View<T> operator[](size_t pos) {
+        assert(pos <= static_cast<int>(size()));
+        return m_data[pos];
     }
 
-    [[nodiscard]] constexpr size_t size() const {
-        return m_data.size();
-    }
-
-    void push_back(const Builder<T>& builder) {
-        m_data.push_back(View<T>(m_storage.write(builder.buffer().data(), builder.buffer().size())));
+    [[nodiscard]] ConstView<T> operator[](size_t pos) const {
+        assert(pos <= static_cast<int>(size()));
+        return m_data[pos];
     }
 
     [[nodiscard]] View<T> back() { 
@@ -60,20 +62,37 @@ public:
         return m_data.back();
     }
 
-    [[nodiscard]] View<T> operator[](size_t pos) {
-        assert(pos <= static_cast<int>(size()));
-        return m_data[pos];
-    }
 
-    [[nodiscard]] ConstView<T> operator[](size_t pos) const {
-        assert(pos <= static_cast<int>(size()));
-        return m_data[pos];
-    }
+    /**
+     * Iterators
+    */
 
     [[nodiscard]] auto begin() { return m_data.begin(); }
     [[nodiscard]] const auto begin() const { return m_data.begin(); }
     [[nodiscard]] auto end() { return m_data.end(); }
     [[nodiscard]] const auto end() const { return m_data.end(); }
+
+
+    /**
+     * Capacity
+    */
+
+    [[nodiscard]] constexpr size_t empty() const {
+        return m_data.empty();
+    }
+
+    [[nodiscard]] constexpr size_t size() const {
+        return m_data.size();
+    }
+
+
+    /**
+     * Modifiers
+    */
+
+    void push_back(const Builder<T>& builder) {
+        m_data.push_back(View<T>(m_storage.write(builder.buffer().data(), builder.buffer().size())));
+    }
 };
 
 /**
@@ -102,26 +121,10 @@ public:
     FixedSizedTypeVector(FixedSizedTypeVector&& other) = default;
     FixedSizedTypeVector& operator=(FixedSizedTypeVector&& other) = default;
 
-    [[nodiscard]] constexpr size_t empty() const {
-        return m_data.empty();
-    }
-
-    [[nodiscard]] constexpr size_t size() const {
-        return m_data.size();
-    }
-
-    void push_back(const Builder<T>& builder) {
-        m_data.push_back(View<T>(m_storage.write(builder.get_data(), builder.size())));
-    }
-
-    [[nodiscard]] View<T> back() {
-        return m_data.back();
-    }
-
-    [[nodiscard]] ConstView<T> back() const {
-        return m_data.back();
-    }
-
+    /**
+     * Element access
+    */
+   
     [[nodiscard]] View<T> operator[](size_t pos) {
         if (pos >= size()) {
             resize(pos);
@@ -136,6 +139,46 @@ public:
         return m_data[pos];
     }
 
+    [[nodiscard]] View<T> back() {
+        return m_data.back();
+    }
+
+    [[nodiscard]] ConstView<T> back() const {
+        return m_data.back();
+    }
+
+
+    /**
+     * Iterators
+    */
+
+    [[nodiscard]] auto begin() { return m_data.begin(); }
+    [[nodiscard]] const auto begin() const { return m_data.begin(); }
+    [[nodiscard]] auto end() { return m_data.end(); }
+    [[nodiscard]] const auto end() const { return m_data.end(); }
+
+
+    /**
+     * Capacity
+    */
+
+    [[nodiscard]] constexpr size_t empty() const {
+        return m_data.empty();
+    }
+
+    [[nodiscard]] constexpr size_t size() const {
+        return m_data.size();
+    }
+
+
+    /**
+     * Modifiers
+    */
+
+    void push_back(const Builder<T>& builder) {
+        m_data.push_back(View<T>(m_storage.write(builder.get_data(), builder.size())));
+    }
+
     void resize(size_t count) {
         const uint8_t* default_data = m_default_builder.buffer().data();
         size_t default_size = m_default_builder.buffer().size();
@@ -144,11 +187,6 @@ public:
             m_data.push_back(View<T>(written_data));
         }
     }
-
-    [[nodiscard]] auto begin() { return m_data.begin(); }
-    [[nodiscard]] const auto begin() const { return m_data.begin(); }
-    [[nodiscard]] auto end() { return m_data.end(); }
-    [[nodiscard]] const auto end() const { return m_data.end(); }
 };
 
 

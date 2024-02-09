@@ -36,11 +36,13 @@
 namespace flatmemory
 {
     /**
-     * Dispatcher for tuple.
+     * Dispatcher for Tuple.
     */
     template<IsTriviallyCopyableOrCustom... Ts>
     struct Tuple : public Custom {
-        Tuple(const Tuple& other) {}  // Non-trivial copy-constructor
+        /// @brief Non-trivial copy-constructor
+        /// @param other 
+        Tuple(const Tuple& other) {}
     };
 
 
