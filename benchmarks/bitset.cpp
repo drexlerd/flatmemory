@@ -56,8 +56,17 @@ namespace flatmemory::benchmarks
 
         auto builders = create_builders(num_bitsets, bitset_size);
 
+        std::random_device rd;  // Obtain a random number from hardware
+        std::mt19937 eng(rd()); // Seed the generator
+
         for (auto _ : state) {
-            for (auto& builder : builders) {
+            std::vector<int> indices(builders.size());
+            std::iota(indices.begin(), indices.end(), 0);
+            std::shuffle(indices.begin(), indices.end(), eng);
+
+            for (int index : indices) {
+                auto builder = builders[index];
+
                 auto& default_bit_value = builder.get_default_bit_value();
                 benchmark::DoNotOptimize(default_bit_value);
                 
@@ -104,8 +113,17 @@ namespace flatmemory::benchmarks
 
         auto views = create_views(num_bitsets, bitset_size);
 
+        std::random_device rd;  // Obtain a random number from hardware
+        std::mt19937 eng(rd()); // Seed the generator
+
         for (auto _ : state) {
-            for (auto view : views) {
+            std::vector<int> indices(views.size());
+            std::iota(indices.begin(), indices.end(), 0);
+            std::shuffle(indices.begin(), indices.end(), eng);
+
+            for (int index : indices) {
+                auto view = views[index];
+
                 auto& default_bit_value = view.get_default_bit_value();
                 benchmark::DoNotOptimize(default_bit_value);
                 
