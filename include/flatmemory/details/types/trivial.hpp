@@ -63,7 +63,8 @@ namespace flatmemory
      * Builder
     */
     template<IsTriviallyCopyable T>
-    class Builder<Trivial<T>> : public IBuilder<Builder<Trivial<T>>> {
+    class Builder<Trivial<T>> : public IBuilder<Builder<Trivial<T>>> 
+    {
         private:
             T m_trivial;
 
@@ -97,7 +98,8 @@ namespace flatmemory
      * View
     */
     template<IsTriviallyCopyable T>
-    class View<Trivial<T>> {
+    class View<Trivial<T>> 
+    {
     private:
         uint8_t* m_buf;
 
@@ -119,11 +121,13 @@ namespace flatmemory
 
         [[nodiscard]] T& operator*() { 
             assert(m_buf);
+            assert(test_correct_alignment<T>(m_buf));
             return read_value<T>(m_buf); 
         }
 
         [[nodiscard]] T* operator->() { 
             assert(m_buf);
+            assert(test_correct_alignment<T>(m_buf));
             return &read_value<T>(m_buf); 
         }
     };
@@ -155,11 +159,13 @@ namespace flatmemory
 
         [[nodiscard]] const T& operator*() const { 
             assert(m_buf);
+            assert(test_correct_alignment<T>(m_buf));
             return read_value<T>(m_buf); 
         }
 
         [[nodiscard]] const T* operator->() const { 
             assert(m_buf);
+            assert(test_correct_alignment<T>(m_buf));
             return &read_value<T>(m_buf); 
         }
     };

@@ -42,16 +42,26 @@ public:
     /// @brief Writes a value to the stream.
     template<IsTriviallyCopyable T>
     size_t write(const T& value) {
+        assert(test_correct_alignment<T>(m_data.data()));
         write(reinterpret_cast<const uint8_t*>(&value), sizeof(value));
-        return sizeof(value);
+        return sizeof(T);
     }
 
     /// @brief Writes a pointer to the stream
     template<typename T>
     size_t write(const T* pointer) {
+        assert(test_correct_alignment<T*>(m_data.data()));
         uintptr_t address = reinterpret_cast<uintptr_t>(pointer);
         write(reinterpret_cast<const uint8_t*>(&address), sizeof(address));
-        return sizeof(address);
+        return sizeof(T);
+    }
+
+    template<IsTriviallyCopyable T>
+    size_t write(size_t pos, const T& value) {
+        assert(test_correct_alignment<T*>(m_data.data() + pos));
+        assert(pos + sizeof(T) <= m_data.size());
+        *reinterpret_cast<T*>(m_data.data() + pos) = value;
+        return sizeof(T);
     }
 
     size_t write_padding(size_t num_bytes) {

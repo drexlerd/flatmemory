@@ -35,14 +35,14 @@ namespace flatmemory
 
     using buffer_size_type = uint32_t;
 
+
     /**
-     * Compute the amount of bytes needed to store the header of type T
+     * Compute the amount of bytes needed to store the header information of type T
      *   - For trivial type T use sizeof(T)
-     *   - For dynamic custom type T use sizeof(offset_type) since we store the data with an offset
-     *   - For static custom type T use Layout<T>::size which is computed in the Layout of type T.
+     *   - For non trivial type T use sizeof(offset_type) since we store the data with an offset
     */
     template<typename T>
-    inline consteval size_t calculate_header_type_size() {
+    inline consteval size_t calculate_header_offset_type_size() {
         constexpr bool is_trivial = IsTriviallyCopyable<T>;
         if constexpr (is_trivial) {
             return sizeof(T);
@@ -53,13 +53,12 @@ namespace flatmemory
 
 
     /**
-     * Compute alignment needed to be added to cur_pos to obtain correct alignment for header information of type T.
+     * Compute alignment needed to be added to cur_pos to obtain correct header alignment of type T.
      *   - For trivial type T use alignof(T)
-     *   - For dynamic custom type T use alignof(offset_type) since we store the data with an offset
-     *   - For static custom type T use Layout<T>::final_alignment which is computed in the Layout of type T.
+     *   - For non-trivial type T use alignof(offset_type) since we store the data with an offset
     */
     template<typename T>
-    inline consteval size_t calculate_header_alignment() {
+    inline consteval size_t calculate_header_offset_alignment() {
         constexpr bool is_trivial = IsTriviallyCopyable<T>;
         if constexpr (is_trivial) {
             return alignof(T);
@@ -67,13 +66,23 @@ namespace flatmemory
             return alignof(offset_type); 
         }
     }
+    // special case when directly storing type T in the header
+    template<typename T>
+    inline consteval size_t calculate_header_direct_alignment() {
+        constexpr bool is_trivial = IsTriviallyCopyable<T>;
+        if constexpr (is_trivial) {
+            return alignof(T);
+        } else {
+            return Layout<T>::final_alignment; 
+        }
+    }
 
 
     /**
-     * Compute alignment needed to be added to cur_pos to obtain correct alignment for storing information of type T. 
+     * Compute alignment needed for a type T.
     */
     template<typename T>
-    inline consteval size_t calculate_overall_alignment() {
+    inline consteval size_t calculate_final_alignment_helper() {
         constexpr bool is_trivial = IsTriviallyCopyable<T>;
         if constexpr (is_trivial) {
             return alignof(T);
@@ -82,14 +91,10 @@ namespace flatmemory
         }
     }
 
-
-    /**
-     * Compute alignment needed for a collection of types.
-    */
     template<typename... Ts>
     inline consteval size_t calculate_final_alignment() {
         size_t max_alignment = 0;
-        ((max_alignment = std::max(max_alignment, calculate_overall_alignment<Ts>())), ...);
+        ((max_alignment = std::max(max_alignment, calculate_final_alignment_helper<Ts>())), ...);
         return std::max(static_cast<size_t>(1), max_alignment);
     }
 
@@ -102,10 +107,20 @@ namespace flatmemory
     }
 
 
+    /**
+     * Compute the position in the header when storing type T with offset
+    */
     template<typename T_Prev, typename T>
-    inline consteval size_t calculate_header_offset(size_t cur_pos) {
+    inline consteval size_t calculate_header_offset_pos(size_t cur_pos) {
         cur_pos += sizeof(T_Prev);
-        cur_pos += calculate_amoung_padding(cur_pos, calculate_header_alignment<T>());
+        cur_pos += calculate_amoung_padding(cur_pos, calculate_header_offset_alignment<T>());
+        return cur_pos;
+    }
+    // special case when directly storing type T in the header
+    template<typename T_Prev, typename T>
+    inline consteval size_t calculate_header_direct_pos(size_t cur_pos) {
+        cur_pos += sizeof(T_Prev);
+        cur_pos += calculate_amoung_padding(cur_pos, calculate_header_direct_alignment<T>());
         return cur_pos;
     }
 

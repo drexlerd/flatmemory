@@ -38,7 +38,8 @@ namespace flatmemory
      * Dispatcher for Vector.
     */
     template<IsTriviallyCopyableOrCustom T>
-    struct Vector : public Custom {
+    struct Vector : public Custom 
+    {
         /// @brief Non-trivial copy-constructor
         /// @param other 
         Vector(const Vector& other) {}
@@ -54,18 +55,19 @@ namespace flatmemory
      * Layout
     */
     template<IsTriviallyCopyableOrCustom T>
-    class Layout<Vector<T>> {
+    class Layout<Vector<T>> 
+    {
         public:
             static constexpr size_t final_alignment = calculate_final_alignment<buffer_size_type, offset_type, vector_size_type, T>();
             
-            static constexpr size_t buffer_size_offset = 0;
-            static constexpr size_t vector_size_offset = calculate_header_offset<buffer_size_type, offset_type>(buffer_size_offset);
-            static constexpr size_t vector_data_offset = calculate_header_offset<vector_size_type, T>(vector_size_offset);
+            static constexpr size_t buffer_size_position = 0;
+            static constexpr size_t vector_size_position = calculate_header_direct_pos<buffer_size_type, offset_type>(buffer_size_position);
+            static constexpr size_t vector_data_position = calculate_header_offset_pos<vector_size_type, T>(vector_size_position);
 
             void print() const {
-                std::cout << "buffer_size_offset: " << buffer_size_offset << std::endl;
-                std::cout << "vector_size_offset: " << vector_size_offset << std::endl;
-                std::cout << "vector_data_offset: " << vector_data_offset << std::endl;
+                std::cout << "buffer_size_position: " << buffer_size_position << std::endl;
+                std::cout << "vector_size_position: " << vector_size_position << std::endl;
+                std::cout << "vector_data_position: " << vector_data_position << std::endl;
                 std::cout << "final_alignment: " << final_alignment << std::endl;
             }
     };
@@ -75,7 +77,8 @@ namespace flatmemory
      * Builder
     */
     template<IsTriviallyCopyableOrCustom T>
-    class Builder<Vector<T>> : public IBuilder<Builder<Vector<T>>> {
+    class Builder<Vector<T>> : public IBuilder<Builder<Vector<T>>> 
+    {
         private:
             using T_ = typename maybe_builder<T>::type;
 
@@ -88,44 +91,40 @@ namespace flatmemory
             friend class IBuilder;
 
             void finish_impl() {
-                assert(m_data.size() <= std::numeric_limits<vector_size_type>::max());
-
-                size_t buffer_size = 0;
+                buffer_size_type buffer_size = 0;
 
                 // Reserve 4 bytes written at the end
                 buffer_size += m_buffer.write<buffer_size_type>(buffer_size);
-                buffer_size += m_buffer.write_padding(Layout<Vector<T>>::vector_size_offset - m_buffer.size());
+                buffer_size += m_buffer.write_padding(Layout<Vector<T>>::vector_size_position - m_buffer.size());
                 // Write vector size
                 buffer_size += m_buffer.write<vector_size_type>(m_data.size());
-                buffer_size += m_buffer.write_padding(Layout<Vector<T>>::vector_data_offset - m_buffer.size());
+                buffer_size += m_buffer.write_padding(Layout<Vector<T>>::vector_data_position - m_buffer.size());
                 // Write vector data
                 constexpr bool is_trivial = IsTriviallyCopyable<T>;
                 if constexpr (is_trivial) {
-                    for (size_t i = 0; i < m_data.size(); ++i) {
-                        buffer_size += m_buffer.write(m_data[i]);
+                    for (const auto& trivial_data : m_data) {
+                        buffer_size += m_buffer.write(trivial_data);
                     }
                 } else {
                     /* For dynamic type T, we store the offsets first */
                     // offset is the first position to write the dynamic data
-                    offset_type offset = m_data.size() * sizeof(offset_type);
+                    offset_type offset = Layout<Vector<T>>::vector_data_position + m_data.size() * sizeof(offset_type);
                     offset += calculate_amoung_padding(offset, Layout<T>::final_alignment);
-                    for (size_t i = 0; i < m_data.size(); ++i) {
-                        auto& nested_builder = m_data[i];
+                    for (auto& nested_builder : m_data) {
                         nested_builder.finish();
-
                         buffer_size += m_buffer.write(offset);
                         m_dynamic_buffer.write(nested_builder.buffer().data(), nested_builder.buffer().size());     
                         offset += nested_builder.buffer().size();
                     }
                 }
                 // Write padding after header
-                buffer_size += m_buffer.write_padding(calculate_amoung_padding(m_buffer.size(), calculate_overall_alignment<T>()));
+                buffer_size += m_buffer.write_padding(calculate_amoung_padding(m_buffer.size(), Layout<Vector<T>>::final_alignment));
                 // Concatenate all buffers
                 buffer_size += m_buffer.write(m_dynamic_buffer.data(), m_dynamic_buffer.size());  
                 // Write final padding
                 buffer_size += m_buffer.write_padding(calculate_amoung_padding(m_buffer.size(), Layout<Vector<T>>::final_alignment));
                 // Modify the prefix size
-                write_value<buffer_size_type>(m_buffer.data(), buffer_size);
+                m_buffer.write(Layout<Vector<T>>::buffer_size_position, buffer_size);
             }
 
             /* clear stl */
@@ -191,7 +190,8 @@ namespace flatmemory
      * View
     */
     template<IsTriviallyCopyableOrCustom T>
-    class View<Vector<T>> {
+    class View<Vector<T>> 
+    {
         private:
             uint8_t* m_buf;
 
@@ -233,9 +233,10 @@ namespace flatmemory
                 assert(pos < size());
                 constexpr bool is_trivial = IsTriviallyCopyable<T>;
                 if constexpr (is_trivial) {
-                    return read_value<T>(m_buf + Layout<Vector<T>>::vector_data_offset + pos * sizeof(T));
+                    assert(test_correct_alignment<T>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(T)));
+                    return read_value<T>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(T));
                 } else {
-                    return View<T>(m_buf + Layout<Vector<T>>::vector_data_offset + read_value<offset_type>(m_buf + Layout<Vector<T>>::vector_data_offset + pos * sizeof(offset_type)));
+                    return View<T>(m_buf + read_value<offset_type>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(offset_type)));
                 }
             }
 
@@ -260,9 +261,10 @@ namespace flatmemory
                 [[nodiscard]] decltype(auto) operator*() const {
                     constexpr bool is_trivial = IsTriviallyCopyable<T>;
                     if constexpr (is_trivial) {
+                        assert(test_correct_alignment<T>(buf));
                         return read_value<T>(buf);
                     } else {
-                        return View<T>(read_value<offset_type>(m_buf));
+                        return View<T>(m_buf + read_value<offset_type>(m_buf));
                     }
                 }
 
@@ -293,16 +295,19 @@ namespace flatmemory
 
             [[nodiscard]] iterator begin() {
                 assert(m_buf);
-                return iterator(m_buf + Layout<Vector<T>>::vector_data_offset);
+                assert(test_correct_alignment<iterator>(m_buf + Layout<Vector<T>>::vector_data_position));
+                return iterator(m_buf + Layout<Vector<T>>::vector_data_position);
             }
 
             [[nodiscard]] iterator end() {
                 assert(m_buf);
                 constexpr bool is_trivial = IsTriviallyCopyable<T>;
                 if constexpr (is_trivial) {
-                    return iterator(m_buf + Layout<Vector<T>>::vector_data_offset + sizeof(T) * size());
+                    assert(test_correct_alignment<iterator>(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(T) * size()));
+                    return iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(T) * size());
                 } else {
-                    return iterator(m_buf + Layout<Vector<T>>::vector_data_offset + sizeof(offset_type) * size());
+                    assert(test_correct_alignment<iterator>(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(offset_type) * size()));
+                    return iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(offset_type) * size());
                 }
             }
 
@@ -321,7 +326,8 @@ namespace flatmemory
 
             [[nodiscard]] size_t buffer_size() const { 
                 assert(m_buf);
-                return read_value<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_offset); 
+                assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_position));
+                return read_value<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_position); 
             }
 
             /// @brief 
@@ -330,7 +336,8 @@ namespace flatmemory
             /// @return 
             [[nodiscard]] size_t size() const { 
                 assert(m_buf);
-                return read_value<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_offset); 
+                assert(test_correct_alignment<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_position));
+                return read_value<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_position); 
             }
 
             /**
@@ -345,7 +352,8 @@ namespace flatmemory
      * ConstView
     */
     template<IsTriviallyCopyableOrCustom T>
-    class ConstView<Vector<T>> {
+    class ConstView<Vector<T>> 
+    {
         private:
             const uint8_t* m_buf;
 
@@ -386,9 +394,10 @@ namespace flatmemory
                 assert(pos < size());
                 constexpr bool is_trivial = IsTriviallyCopyable<T>;
                 if constexpr (is_trivial) {
-                    return read_value<T>(m_buf + Layout<Vector<T>>::vector_data_offset + pos * sizeof(T));
+                    assert(test_correct_alignment<T>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(T)));
+                    return read_value<T>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(T));
                 } else {
-                    return View<T>(m_buf + Layout<Vector<T>>::vector_data_offset + read_value<offset_type>(m_buf + Layout<Vector<T>>::vector_data_offset + pos * sizeof(offset_type)));
+                    return View<T>(m_buf + read_value<offset_type>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(offset_type)));
                 }
             }
 
@@ -399,7 +408,7 @@ namespace flatmemory
 
             class const_iterator {
             private:
-                uint8_t* buf;
+                const uint8_t* buf;
 
             public:
                 using difference_type = std::ptrdiff_t;
@@ -408,14 +417,15 @@ namespace flatmemory
                 using reference = typename maybe_const_view<T>::type&;
                 using iterator_category = std::forward_iterator_tag;
 
-                const_iterator(uint8_t* buf) : buf(buf) {}
+                const_iterator(const uint8_t* buf) : buf(buf) {}
 
                 [[nodiscard]] decltype(auto) operator*() const {
                     constexpr bool is_trivial = IsTriviallyCopyable<T>;
                     if constexpr (is_trivial) {
+                        assert(test_correct_alignment<T>(buf));
                         return read_value<T>(buf);
                     } else {
-                        return View<T>(read_value<offset_type>(m_buf));
+                        return View<T>(m_buf + read_value<offset_type>(m_buf));
                     }
                 }
 
@@ -446,16 +456,19 @@ namespace flatmemory
 
             [[nodiscard]] const_iterator begin() {
                 assert(m_buf);
-                return const_iterator(m_buf + Layout<Vector<T>>::vector_data_offset);
+                assert(test_correct_alignment<const_iterator>(m_buf + Layout<Vector<T>>::vector_data_position));
+                return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position);
             }
 
             [[nodiscard]] const_iterator end() {
                 assert(m_buf);
                 constexpr bool is_trivial = IsTriviallyCopyable<T>;
                 if constexpr (is_trivial) {
-                    return const_iterator(m_buf + Layout<Vector<T>>::vector_data_offset + sizeof(T) * size());
+                    assert(test_correct_alignment<const_iterator>(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(T) * size()));
+                    return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(T) * size());
                 } else {
-                    return const_iterator(m_buf + Layout<Vector<T>>::vector_data_offset + sizeof(offset_type) * size());
+                    assert(test_correct_alignment<const_iterator>(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(offset_type) * size()));
+                    return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(offset_type) * size());
                 }
             }
 
@@ -474,7 +487,8 @@ namespace flatmemory
 
             [[nodiscard]] size_t buffer_size() const { 
                 assert(m_buf);
-                return read_value<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_offset); 
+                assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_position));
+                return read_value<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_position); 
             }
 
             /// @brief 
@@ -483,7 +497,8 @@ namespace flatmemory
             /// @return 
             [[nodiscard]] size_t size() const { 
                 assert(m_buf);
-                return read_value<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_offset); 
+                assert(test_correct_alignment<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_position));
+                return read_value<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_position); 
             }
 
 
