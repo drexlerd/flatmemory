@@ -72,8 +72,6 @@ public:
         return amount;
     }
 
-    void clear() { /* do not clear */}
-
     [[nodiscard]] uint8_t* data() { return m_data.data(); }
     [[nodiscard]] const uint8_t* data() const { return m_data.data(); }
 

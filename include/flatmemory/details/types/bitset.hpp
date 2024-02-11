@@ -72,13 +72,13 @@ namespace flatmemory
 
         void print() const {
             std::cout << "buffer_size_position: " << buffer_size_position << "\n"
-                        << "buffer_size_end: " << buffer_size_end << "\n"
-                        << "buffer_size_padding: " << buffer_size_padding << "\n"
-                        << "default_bit_value_position: " << default_bit_value_position << "\n"
-                        << "default_bit_value_end: " << default_bit_value_end << "\n"
-                        << "default_bit_value_padding: " << default_bit_value_padding << "\n"
-                        << "blocks_position: " << blocks_position << "\n"
-                        << "final_alignment: " << final_alignment << std::endl;
+                      << "buffer_size_end: " << buffer_size_end << "\n"
+                      << "buffer_size_padding: " << buffer_size_padding << "\n"
+                      << "default_bit_value_position: " << default_bit_value_position << "\n"
+                      << "default_bit_value_end: " << default_bit_value_end << "\n"
+                      << "default_bit_value_padding: " << default_bit_value_padding << "\n"
+                      << "blocks_position: " << blocks_position << "\n"
+                      << "final_alignment: " << final_alignment << std::endl;
         }
     };
 
@@ -276,27 +276,28 @@ namespace flatmemory
 
         void finish_impl()
         {
+            /* Write header info */
             m_buffer.write_padding(Layout<Bitset<Block>>::buffer_size_end, Layout<Bitset<Block>>::buffer_size_padding);
-
             // Write default_bit_value
             m_buffer.write(Layout<Bitset<Block>>::default_bit_value_position, m_default_bit_value);
             m_buffer.write_padding(Layout<Bitset<Block>>::default_bit_value_end, Layout<Bitset<Block>>::default_bit_value_padding);
             
+            /* Write dynamic info */
+            buffer_size_type buffer_size = Layout<Bitset<Block>>::blocks_position;
             // Write blocks
             m_blocks.finish();
-            m_buffer.write(Layout<Bitset<Block>>::blocks_position, m_blocks.buffer().data(), m_blocks.buffer().size());
+            buffer_size += m_buffer.write(Layout<Bitset<Block>>::blocks_position, m_blocks.buffer().data(), read_value<buffer_size_type>(m_blocks.buffer().data()));
             // Write final padding
-            m_buffer.write_padding(m_buffer.size(), calculate_amoung_padding(m_buffer.size(), Layout<Bitset<Block>>::final_alignment));
-            // Modify the prefix size
-            m_buffer.write(Layout<Bitset<Block>>::buffer_size_position, static_cast<buffer_size_type>(m_buffer.size()));
+            buffer_size += m_buffer.write_padding(buffer_size, calculate_amoung_padding(buffer_size, Layout<Bitset<Block>>::final_alignment));
+            
+            /* Write buffer size */
+            m_buffer.write(Layout<Bitset<Block>>::buffer_size_position, buffer_size);
         }
 
         void clear_impl()
         {
             // Clear all nested builders.
             m_blocks.clear();
-            // Clear this builder.
-            m_buffer.clear();
         }
 
         [[nodiscard]] auto& get_buffer_impl() { return m_buffer; }
