@@ -276,11 +276,9 @@ namespace flatmemory
         void finish_impl()
         {
             /* Write header info */
-            m_buffer.write_padding(Layout<Bitset<Block>>::buffer_size_end, Layout<Bitset<Block>>::buffer_size_padding);
             // Write default_bit_value
             m_buffer.write(Layout<Bitset<Block>>::default_bit_value_position, m_default_bit_value);
-            m_buffer.write_padding(Layout<Bitset<Block>>::default_bit_value_end, Layout<Bitset<Block>>::default_bit_value_padding);
-            
+
             /* Write dynamic info */
             buffer_size_type buffer_size = Layout<Bitset<Block>>::blocks_position;
             // Write blocks
@@ -288,7 +286,7 @@ namespace flatmemory
             buffer_size_type blocks_buffer_size = read_value<buffer_size_type>(m_blocks.buffer().data());
             buffer_size += m_buffer.write(Layout<Bitset<Block>>::blocks_position, m_blocks.buffer().data(), blocks_buffer_size);
             // Write final padding
-            buffer_size += m_buffer.write_padding(buffer_size, calculate_amoung_padding(buffer_size, Layout<Bitset<Block>>::final_alignment));
+            buffer_size += calculate_amoung_padding(buffer_size, Layout<Bitset<Block>>::final_alignment);
             
             /* Write buffer size */
             m_buffer.write(Layout<Bitset<Block>>::buffer_size_position, buffer_size);
