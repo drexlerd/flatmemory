@@ -113,8 +113,7 @@ namespace flatmemory
                 constexpr bool is_trivial = IsTriviallyCopyable<T>;
                 if constexpr (is_trivial) {
                     for (size_t i = 0; i < m_data.size(); ++i) {
-                        m_buffer.write(buffer_size, m_data[i]);
-                        buffer_size += sizeof(T_);
+                        buffer_size += m_buffer.write(buffer_size, m_data[i]);
                     }
                 } else {
                     /* For dynamic type T, we store the offsets first */
