@@ -19,7 +19,6 @@
 #define FLATMEMORY_TYPES_VECTOR_HPP_
 
 #include "../byte_buffer.hpp"
-#include "../byte_buffer2.hpp"
 #include "../byte_buffer_utils.hpp" 
 #include "../layout_utils.hpp"
 #include "../layout.hpp"
@@ -94,7 +93,7 @@ namespace flatmemory
             using T_ = typename maybe_builder<T>::type;
 
             std::vector<T_> m_data;
-            ByteBuffer2 m_buffer;
+            ByteBuffer m_buffer;
 
             /* Implement IBuilder interface. */
             template<typename>
@@ -102,10 +101,8 @@ namespace flatmemory
 
             void finish_impl() {
                 /* Write header info */
-                m_buffer.write_padding(Layout<Vector<T>>::buffer_size_end, Layout<Vector<T>>::buffer_size_padding);
                 // Write vector size
                 m_buffer.write(Layout<Vector<T>>::vector_size_position, m_data.size());
-                m_buffer.write_padding(Layout<Vector<T>>::vector_size_end, Layout<Vector<T>>::vector_size_padding);
 
                 /* Write dynamic info */
                 buffer_size_type buffer_size = Layout<Vector<T>>::vector_data_position;
@@ -127,8 +124,7 @@ namespace flatmemory
                     buffer_size = data_offset;
                     for (size_t i = 0; i < m_data.size(); ++i) {
                         // write offset
-                        m_buffer.write(offset_pos, data_offset);
-                        offset_pos += sizeof(offset_type);
+                        offset_pos += m_buffer.write(offset_pos, data_offset);
 
                         // write data
                         auto& nested_builder = m_data[i];
@@ -139,7 +135,7 @@ namespace flatmemory
                         buffer_size += nested_buffer_size;
                     }
                 }
-                buffer_size += m_buffer.write_padding(buffer_size, calculate_amoung_padding(buffer_size, Layout<Vector<T>>::final_alignment));
+                buffer_size += calculate_amoung_padding(buffer_size, Layout<Vector<T>>::final_alignment);
                 
                 /* Write buffer size */
                 m_buffer.write(Layout<Vector<T>>::buffer_size_position, buffer_size);

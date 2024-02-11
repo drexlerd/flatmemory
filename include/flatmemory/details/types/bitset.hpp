@@ -21,7 +21,6 @@
 #include "vector.hpp"
 
 #include "../byte_buffer.hpp"
-#include "../byte_buffer2.hpp"
 #include "../byte_buffer_utils.hpp"
 #include "../layout_utils.hpp"
 #include "../layout.hpp"
@@ -264,7 +263,7 @@ namespace flatmemory
         bool m_default_bit_value;
         Builder<Vector<Block>> m_blocks;
 
-        ByteBuffer2 m_buffer;
+        ByteBuffer m_buffer;
 
         static constexpr std::size_t block_size = sizeof(Block) * 8;
         static constexpr Block block_zeroes = 0;

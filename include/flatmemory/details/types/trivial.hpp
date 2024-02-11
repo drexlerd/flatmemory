@@ -19,7 +19,6 @@
 #define FLATMEMORY_TYPES_STRUCT_HPP_
 
 #include "../byte_buffer.hpp"
-#include "../byte_buffer2.hpp"
 #include "../byte_buffer_utils.hpp"
 #include "../layout_utils.hpp"
 #include "../layout.hpp"
@@ -69,7 +68,7 @@ namespace flatmemory
         private:
             T m_trivial;
 
-            ByteBuffer2 m_buffer;
+            ByteBuffer m_buffer;
 
             /* Implement IBuilder interface. */
             template<typename>
