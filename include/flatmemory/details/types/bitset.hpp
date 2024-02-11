@@ -21,6 +21,7 @@
 #include "vector.hpp"
 
 #include "../byte_buffer.hpp"
+#include "../byte_buffer2.hpp"
 #include "../byte_buffer_utils.hpp"
 #include "../layout_utils.hpp"
 #include "../layout.hpp"
@@ -62,14 +63,22 @@ namespace flatmemory
 
         static constexpr size_t buffer_size_position = 0;
         static constexpr size_t default_bit_value_position = calculate_header_direct_pos<buffer_size_type, bool>(buffer_size_position);
-        static constexpr size_t blocks_position = calculate_header_direct_pos<bool, Vector<Block>>(default_bit_value_position); // we do not need offset pos because there is just 1 non trivial type at the end
+        static constexpr size_t blocks_position = calculate_header_direct_pos<bool, Vector<Block>>(default_bit_value_position);
 
-        void print() const
-        {
-            std::cout << "buffer_size_position: " << buffer_size_position << std::endl;
-            std::cout << "default_bit_value_position: " << default_bit_value_position << std::endl;
-            std::cout << "blocks_position: " << blocks_position << std::endl;
-            std::cout << "final_alignment: " << final_alignment << std::endl;
+        static constexpr size_t buffer_size_end = buffer_size_position + sizeof(buffer_size_type);
+        static constexpr size_t buffer_size_padding = default_bit_value_position - buffer_size_end;
+        static constexpr size_t default_bit_value_end = default_bit_value_position + sizeof(bool);
+        static constexpr size_t default_bit_value_padding = blocks_position - default_bit_value_end;
+
+        void print() const {
+            std::cout << "buffer_size_position: " << buffer_size_position << "\n"
+                        << "buffer_size_end: " << buffer_size_end << "\n"
+                        << "buffer_size_padding: " << buffer_size_padding << "\n"
+                        << "default_bit_value_position: " << default_bit_value_position << "\n"
+                        << "default_bit_value_end: " << default_bit_value_end << "\n"
+                        << "default_bit_value_padding: " << default_bit_value_padding << "\n"
+                        << "blocks_position: " << blocks_position << "\n"
+                        << "final_alignment: " << final_alignment << std::endl;
         }
     };
 
@@ -98,7 +107,7 @@ namespace flatmemory
         /**
          * Constructor to interpret raw data created by its corresponding builder
          */
-        View(uint8_t *data) : m_buf(data)
+        explicit View(uint8_t* buf) : m_buf(buf)
         {
             assert(m_buf);
         }
@@ -255,7 +264,7 @@ namespace flatmemory
         bool m_default_bit_value;
         Builder<Vector<Block>> m_blocks;
 
-        ByteBuffer m_buffer;
+        ByteBuffer2 m_buffer;
 
         static constexpr std::size_t block_size = sizeof(Block) * 8;
         static constexpr Block block_zeroes = 0;
@@ -267,20 +276,19 @@ namespace flatmemory
 
         void finish_impl()
         {
-            buffer_size_type buffer_size = 0;
-            // Reserve 4 bytes written at the end
-            buffer_size += m_buffer.write<buffer_size_type>(buffer_size);
-            buffer_size += m_buffer.write_padding(Layout<Bitset<Block>>::default_bit_value_position - m_buffer.size());
+            m_buffer.write_padding(Layout<Bitset<Block>>::buffer_size_end, Layout<Bitset<Block>>::buffer_size_padding);
+
             // Write default_bit_value
-            buffer_size += m_buffer.write(m_default_bit_value);
-            buffer_size += m_buffer.write_padding(Layout<Bitset<Block>>::blocks_position - m_buffer.size());
-            m_blocks.finish();
+            m_buffer.write(Layout<Bitset<Block>>::default_bit_value_position, m_default_bit_value);
+            m_buffer.write_padding(Layout<Bitset<Block>>::default_bit_value_end, Layout<Bitset<Block>>::default_bit_value_padding);
+            
             // Write blocks
-            buffer_size += m_buffer.write(m_blocks.buffer().data(), m_blocks.buffer().size());
+            m_blocks.finish();
+            m_buffer.write(Layout<Bitset<Block>>::blocks_position, m_blocks.buffer().data(), m_blocks.buffer().size());
             // Write final padding
-            buffer_size += m_buffer.write_padding(calculate_amoung_padding(m_buffer.size(), Layout<Bitset<Block>>::final_alignment));
+            m_buffer.write_padding(m_buffer.size(), calculate_amoung_padding(m_buffer.size(), Layout<Bitset<Block>>::final_alignment));
             // Modify the prefix size
-            m_buffer.write(Layout<Bitset<Block>>::buffer_size_position, buffer_size);
+            m_buffer.write(Layout<Bitset<Block>>::buffer_size_position, static_cast<buffer_size_type>(m_buffer.size()));
         }
 
         void clear_impl()
@@ -291,8 +299,8 @@ namespace flatmemory
             m_buffer.clear();
         }
 
-        [[nodiscard]] ByteBuffer &get_buffer_impl() { return m_buffer; }
-        [[nodiscard]] const ByteBuffer &get_buffer_impl() const { return m_buffer; }
+        [[nodiscard]] auto& get_buffer_impl() { return m_buffer; }
+        [[nodiscard]] const auto& get_buffer_impl() const { return m_buffer; }
 
         template <IsBitset Other>
         void resize_to_fit(const Other &other)

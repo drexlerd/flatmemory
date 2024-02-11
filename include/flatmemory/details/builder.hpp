@@ -51,8 +51,8 @@ namespace flatmemory
             void clear() { self().clear_impl(); }
 
             /// @brief Access the serialized buffer
-            ByteBuffer& buffer() { return self().get_buffer_impl(); }
-            const ByteBuffer& buffer() const { return self().get_buffer_impl(); }
+            auto& buffer() { return self().get_buffer_impl(); }
+            const auto& buffer() const { return self().get_buffer_impl(); }
     };
 
     

@@ -19,6 +19,7 @@
 #define FLATMEMORY_TYPES_VECTOR_HPP_
 
 #include "../byte_buffer.hpp"
+#include "../byte_buffer2.hpp"
 #include "../byte_buffer_utils.hpp" 
 #include "../layout_utils.hpp"
 #include "../layout.hpp"
@@ -62,14 +63,23 @@ namespace flatmemory
             static constexpr size_t final_alignment = calculate_final_alignment<buffer_size_type, offset_type, vector_size_type, T>();
             
             static constexpr size_t buffer_size_position = 0;
-            static constexpr size_t vector_size_position = calculate_header_direct_pos<buffer_size_type, offset_type>(buffer_size_position);
-            static constexpr size_t vector_data_position = calculate_header_offset_pos<vector_size_type, T>(vector_size_position);
+            static constexpr size_t vector_size_position = calculate_header_offset_pos<buffer_size_type, offset_type>(buffer_size_position);
+            static constexpr size_t vector_data_position = calculate_header_direct_pos<vector_size_type, T>(vector_size_position);
+
+            static constexpr size_t buffer_size_end = buffer_size_position + sizeof(buffer_size_type);
+            static constexpr size_t buffer_size_padding = vector_size_position - buffer_size_end;
+            static constexpr size_t vector_size_end = vector_size_position + sizeof(vector_size_type);
+            static constexpr size_t vector_size_padding = vector_data_position - vector_size_end;
 
             void print() const {
-                std::cout << "buffer_size_position: " << buffer_size_position << std::endl;
-                std::cout << "vector_size_position: " << vector_size_position << std::endl;
-                std::cout << "vector_data_position: " << vector_data_position << std::endl;
-                std::cout << "final_alignment: " << final_alignment << std::endl;
+                std::cout << "buffer_size_position: " << buffer_size_position << "\n"
+                          << "buffer_size_end: " << buffer_size_end << "\n"
+                          << "buffer_size_padding: " << buffer_size_padding << "\n"
+                          << "vector_size_position: " << vector_size_position << "\n"
+                          << "vector_size_end: " << vector_size_end << "\n"
+                          << "vector_data_position: " << vector_data_position << "\n"
+                          << "vector_size_padding: " << vector_size_padding << "\n"
+                          << "final_alignment: " << final_alignment << std::endl;
             }
     };
 
@@ -84,48 +94,47 @@ namespace flatmemory
             using T_ = typename maybe_builder<T>::type;
 
             std::vector<T_> m_data;
-            ByteBuffer m_buffer;
-            ByteBuffer m_dynamic_buffer;
+            ByteBuffer2 m_buffer;
 
             /* Implement IBuilder interface. */
             template<typename>
             friend class IBuilder;
 
             void finish_impl() {
-                buffer_size_type buffer_size = 0;
+                m_buffer.write_padding(Layout<Vector<T>>::buffer_size_end, Layout<Vector<T>>::buffer_size_padding);
 
-                // Reserve 4 bytes written at the end
-                buffer_size += m_buffer.write<buffer_size_type>(buffer_size);
-                buffer_size += m_buffer.write_padding(Layout<Vector<T>>::vector_size_position - m_buffer.size());
                 // Write vector size
-                buffer_size += m_buffer.write<vector_size_type>(m_data.size());
-                buffer_size += m_buffer.write_padding(Layout<Vector<T>>::vector_data_position - m_buffer.size());
+                m_buffer.write(Layout<Vector<T>>::vector_size_position, m_data.size());
+                m_buffer.write_padding(Layout<Vector<T>>::vector_size_end, Layout<Vector<T>>::vector_size_padding);
+
                 // Write vector data
                 constexpr bool is_trivial = IsTriviallyCopyable<T>;
                 if constexpr (is_trivial) {
-                    for (const auto& trivial_data : m_data) {
-                        buffer_size += m_buffer.write(trivial_data);
+                    size_t pos = Layout<Vector<T>>::vector_data_position;
+                    for (size_t i = 0; i < m_data.size(); ++i) {
+                        m_buffer.write(pos, m_data[i]);
+                        pos += sizeof(T_);
                     }
                 } else {
                     /* For dynamic type T, we store the offsets first */
-                    // offset is the first position to write the dynamic data
-                    offset_type offset = Layout<Vector<T>>::vector_data_position + m_data.size() * sizeof(offset_type);
-                    offset += calculate_amoung_padding(offset, Layout<T>::final_alignment);
-                    for (auto& nested_builder : m_data) {
+                    // position of offset
+                    size_t offset_pos = Layout<Vector<T>>::vector_data_position;
+                    size_t offset_end = offset_pos + m_data.size() * sizeof(offset_type);
+                    size_t offset_padding = calculate_amoung_padding(offset_end, Layout<T>::final_alignment);
+                    // position of data
+                    size_t data_pos = offset_end + offset_padding; 
+                    for (size_t i = 0; i < m_data.size(); ++i) {
+                        auto& nested_builder = m_data[i];
                         nested_builder.finish();
-                        buffer_size += m_buffer.write(offset);
-                        m_dynamic_buffer.write(nested_builder.buffer().data(), nested_builder.buffer().size());     
-                        offset += nested_builder.buffer().size();
+                        m_buffer.write(offset_pos, static_cast<offset_type>(data_pos));
+                        offset_pos += sizeof(offset_type);
+                        m_buffer.write(data_pos, nested_builder.buffer().data(), nested_builder.buffer().size());
+                        data_pos += nested_builder.buffer().size();
                     }
                 }
-                // Write padding after header
-                buffer_size += m_buffer.write_padding(calculate_amoung_padding(m_buffer.size(), Layout<Vector<T>>::final_alignment));
-                // Concatenate all buffers
-                buffer_size += m_buffer.write(m_dynamic_buffer.data(), m_dynamic_buffer.size());  
-                // Write final padding
-                buffer_size += m_buffer.write_padding(calculate_amoung_padding(m_buffer.size(), Layout<Vector<T>>::final_alignment));
-                // Modify the prefix size
-                m_buffer.write(Layout<Vector<T>>::buffer_size_position, buffer_size);
+                m_buffer.write_padding(m_buffer.size(), calculate_amoung_padding(m_buffer.size(), Layout<Vector<T>>::final_alignment));
+                // Write buffer size
+                m_buffer.write(Layout<Vector<T>>::buffer_size_position, static_cast<vector_size_type>(m_buffer.size()));
             }
 
             /* clear stl */
@@ -137,13 +146,10 @@ namespace flatmemory
                         builder.clear();
                     }
                 }
-                // Clear this builder.
-                m_buffer.clear();
-                m_dynamic_buffer.clear();
             }
 
-            [[nodiscard]] ByteBuffer& get_buffer_impl() { return m_buffer; }
-            [[nodiscard]] const ByteBuffer& get_buffer_impl() const { return m_buffer; }
+            [[nodiscard]] auto& get_buffer_impl() { return m_buffer; }
+            [[nodiscard]] const auto& get_buffer_impl() const { return m_buffer; }
 
         public:
             /**
