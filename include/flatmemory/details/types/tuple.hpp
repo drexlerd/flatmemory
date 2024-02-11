@@ -192,11 +192,11 @@ namespace flatmemory
                         // write data
                         auto& nested_builder = std::get<Is>(m_data);
                         nested_builder.finish();
-                        buffer_size_type nested_buffer_size = read_value<buffer_size_type>(nested_builder.buffer().data());
+                        buffer_size_type nested_buffer_size = nested_builder.buffer().size();
                         m_buffer.write(buffer_size, nested_builder.buffer().data(), nested_buffer_size);    
                         buffer_size += nested_buffer_size;
                     }
-                    // TODO maybe add padding?
+                    buffer_size += calculate_amount_padding(buffer_size, element_data.data_alignment);
                 }(), ...);
                 buffer_size += calculate_amount_padding(buffer_size, Layout<Tuple<Ts...>>::final_alignment);
                 /* Write buffer size */
