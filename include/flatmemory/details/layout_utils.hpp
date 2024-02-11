@@ -102,8 +102,33 @@ namespace flatmemory
     /**
      * Compute padding needed to store an object with given alignment factor from the given position.
     */
-    inline constexpr size_t calculate_amoung_padding(size_t pos, size_t align_factor) {
+    inline constexpr size_t calculate_amount_padding(size_t pos, size_t align_factor) {
         return (align_factor - (pos % align_factor)) % align_factor;
+    }
+
+    // new
+    template<typename T>
+    inline constexpr size_t calculate_header_amount_padding_to_next_type(size_t pos) {
+        constexpr bool is_trivial = IsTriviallyCopyable<T>;
+        size_t alignment = 1;
+        if constexpr (is_trivial) {
+            alignment = alignof(T);
+        } else {
+            alignment = alignof(offset_type); 
+        }
+        return calculate_amount_padding(pos, alignment);
+    }
+
+    template<typename T>
+    inline constexpr size_t calculate_data_amount_padding_to_next_type(size_t pos) {
+        constexpr bool is_trivial = IsTriviallyCopyable<T>;
+        size_t alignment = 1;
+        if constexpr (is_trivial) {
+            alignment = alignof(T);
+        } else {
+            alignment = Layout<T>::final_alignment; 
+        }
+        return calculate_amount_padding(pos, alignment);
     }
 
 
@@ -113,14 +138,14 @@ namespace flatmemory
     template<typename T_Prev, typename T>
     inline consteval size_t calculate_header_offset_pos(size_t cur_pos) {
         cur_pos += sizeof(T_Prev);
-        cur_pos += calculate_amoung_padding(cur_pos, calculate_header_offset_alignment<T>());
+        cur_pos += calculate_amount_padding(cur_pos, calculate_header_offset_alignment<T>());
         return cur_pos;
     }
     // special case when directly storing type T in the header
     template<typename T_Prev, typename T>
     inline consteval size_t calculate_header_direct_pos(size_t cur_pos) {
         cur_pos += sizeof(T_Prev);
-        cur_pos += calculate_amoung_padding(cur_pos, calculate_header_direct_alignment<T>());
+        cur_pos += calculate_amount_padding(cur_pos, calculate_header_direct_alignment<T>());
         return cur_pos;
     }
 

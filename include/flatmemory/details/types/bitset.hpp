@@ -61,13 +61,12 @@ namespace flatmemory
         static constexpr size_t final_alignment = calculate_final_alignment<buffer_size_type, bool, Vector<Block>>();
 
         static constexpr size_t buffer_size_position = 0;
-        static constexpr size_t default_bit_value_position = calculate_header_direct_pos<buffer_size_type, bool>(buffer_size_position);
-        static constexpr size_t blocks_position = calculate_header_direct_pos<bool, Vector<Block>>(default_bit_value_position);
-
-        static constexpr size_t buffer_size_end = buffer_size_position + sizeof(buffer_size_type);
-        static constexpr size_t buffer_size_padding = default_bit_value_position - buffer_size_end;
+        static constexpr size_t buffer_size_end = buffer_size_position + sizeof(buffer_size_type); 
+        static constexpr size_t buffer_size_padding = calculate_header_amount_padding_to_next_type<bool>(buffer_size_end);
+        static constexpr size_t default_bit_value_position = buffer_size_end + buffer_size_padding;
         static constexpr size_t default_bit_value_end = default_bit_value_position + sizeof(bool);
-        static constexpr size_t default_bit_value_padding = blocks_position - default_bit_value_end;
+        static constexpr size_t default_bit_value_padding = calculate_data_amount_padding_to_next_type<Vector<Block>>(default_bit_value_end);
+        static constexpr size_t blocks_position = default_bit_value_end + default_bit_value_padding;
 
         void print() const {
             std::cout << "buffer_size_position: " << buffer_size_position << "\n"
@@ -286,7 +285,7 @@ namespace flatmemory
             buffer_size_type blocks_buffer_size = read_value<buffer_size_type>(m_blocks.buffer().data());
             buffer_size += m_buffer.write(Layout<Bitset<Block>>::blocks_position, m_blocks.buffer().data(), blocks_buffer_size);
             // Write final padding
-            buffer_size += calculate_amoung_padding(buffer_size, Layout<Bitset<Block>>::final_alignment);
+            buffer_size += calculate_amount_padding(buffer_size, Layout<Bitset<Block>>::final_alignment);
             
             /* Write buffer size */
             m_buffer.write(Layout<Bitset<Block>>::buffer_size_position, buffer_size);

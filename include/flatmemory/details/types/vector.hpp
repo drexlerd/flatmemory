@@ -62,13 +62,12 @@ namespace flatmemory
             static constexpr size_t final_alignment = calculate_final_alignment<buffer_size_type, offset_type, vector_size_type, T>();
             
             static constexpr size_t buffer_size_position = 0;
-            static constexpr size_t vector_size_position = calculate_header_offset_pos<buffer_size_type, offset_type>(buffer_size_position);
-            static constexpr size_t vector_data_position = calculate_header_direct_pos<vector_size_type, T>(vector_size_position);
-
             static constexpr size_t buffer_size_end = buffer_size_position + sizeof(buffer_size_type);
-            static constexpr size_t buffer_size_padding = vector_size_position - buffer_size_end;
+            static constexpr size_t buffer_size_padding = calculate_header_amount_padding_to_next_type<vector_size_type>(buffer_size_end);
+            static constexpr size_t vector_size_position = buffer_size_end + buffer_size_padding;
             static constexpr size_t vector_size_end = vector_size_position + sizeof(vector_size_type);
-            static constexpr size_t vector_size_padding = vector_data_position - vector_size_end;
+            static constexpr size_t vector_size_padding = calculate_data_amount_padding_to_next_type<T>(vector_size_end);
+            static constexpr size_t vector_data_position = vector_size_end + vector_size_padding;
 
             void print() const {
                 std::cout << "buffer_size_position: " << buffer_size_position << "\n"
@@ -117,7 +116,7 @@ namespace flatmemory
                     // position of offset
                     size_t offset_pos = Layout<Vector<T>>::vector_data_position;
                     size_t offset_end = offset_pos + m_data.size() * sizeof(offset_type);
-                    size_t offset_padding = calculate_amoung_padding(offset_end, Layout<T>::final_alignment);
+                    size_t offset_padding = calculate_amount_padding(offset_end, Layout<T>::final_alignment);
                     // position of data
                     offset_type data_offset = offset_end + offset_padding; 
                     // buffer size points to data_offset
@@ -135,7 +134,7 @@ namespace flatmemory
                         buffer_size += nested_buffer_size;
                     }
                 }
-                buffer_size += calculate_amoung_padding(buffer_size, Layout<Vector<T>>::final_alignment);
+                buffer_size += calculate_amount_padding(buffer_size, Layout<Vector<T>>::final_alignment);
                 
                 /* Write buffer size */
                 m_buffer.write(Layout<Vector<T>>::buffer_size_position, buffer_size);

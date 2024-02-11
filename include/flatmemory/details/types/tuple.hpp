@@ -77,8 +77,7 @@ namespace flatmemory
             template<size_t... Is>
             static consteval std::array<size_t, sizeof...(Ts) + 1> calculate_header_positions(std::index_sequence<Is...>) {
                 std::array<size_t, sizeof...(Ts) + 1> layout{};
-                std::array<size_t, sizeof...(Ts) + 1> alignments = calculate_header_alignments(std::index_sequence<Is...>{});
-                
+
                 size_t cur_pos = 0;
                 // Add sizeof of prefix to first position
                 if constexpr (sizeof...(Ts) > 0) {
@@ -95,7 +94,7 @@ namespace flatmemory
 
                     // The padding dependent on the alignment of the i+1-th element
                     // or the maximum alignment, when reaching the last element
-                    cur_pos += calculate_amoung_padding(cur_pos, alignments[Is + 1]);
+                    cur_pos += calculate_amount_padding(cur_pos, alignments[Is + 1]);
 
                     layout[Is + 1] = cur_pos;
                 }(), ...);
@@ -177,7 +176,7 @@ namespace flatmemory
                     }
                     // TODO maybe add padding?
                 }(), ...);
-                buffer_size += calculate_amoung_padding(buffer_size, Layout<Tuple<Ts...>>::final_alignment);
+                buffer_size += calculate_amount_padding(buffer_size, Layout<Tuple<Ts...>>::final_alignment);
                 /* Write buffer size */
                 m_buffer.write(Layout<Tuple<Ts...>>::buffer_size_position, buffer_size);
                 m_buffer.set_size(buffer_size);
