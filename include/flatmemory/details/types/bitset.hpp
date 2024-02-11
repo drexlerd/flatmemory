@@ -282,8 +282,8 @@ namespace flatmemory
             buffer_size_type buffer_size = Layout<Bitset<Block>>::blocks_position;
             // Write blocks
             m_blocks.finish();
-            buffer_size_type blocks_buffer_size = read_value<buffer_size_type>(m_blocks.buffer().data());
-            buffer_size += m_buffer.write(Layout<Bitset<Block>>::blocks_position, m_blocks.buffer().data(), blocks_buffer_size);
+            buffer_size += m_buffer.write(Layout<Bitset<Block>>::blocks_position, m_blocks.buffer().data(), m_blocks.buffer().size());
+            
             // Write final padding
             buffer_size += calculate_amount_padding(buffer_size, Layout<Bitset<Block>>::final_alignment);
             

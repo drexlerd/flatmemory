@@ -116,9 +116,8 @@ namespace flatmemory
                     // position of offset
                     size_t offset_pos = Layout<Vector<T>>::vector_data_position;
                     size_t offset_end = offset_pos + m_data.size() * sizeof(offset_type);
-                    size_t offset_padding = calculate_amount_padding(offset_end, Layout<T>::final_alignment);
-                    // position of data
-                    offset_type data_offset = offset_end + offset_padding; 
+                    // We have to add padding to ensure that the data is correctly aligned
+                    offset_type data_offset = offset_end + calculate_amount_padding(offset_end, Layout<T>::final_alignment); 
                     // buffer size points to data_offset
                     buffer_size = data_offset;
                     for (size_t i = 0; i < m_data.size(); ++i) {
@@ -128,12 +127,13 @@ namespace flatmemory
                         // write data
                         auto& nested_builder = m_data[i];
                         nested_builder.finish();
-                        buffer_size_type nested_buffer_size = read_value<buffer_size_type>(nested_builder.buffer().data());
+                        buffer_size_type nested_buffer_size = nested_builder.buffer().size();
                         m_buffer.write(data_offset, nested_builder.buffer().data(), nested_buffer_size);
                         data_offset += nested_buffer_size;
                         buffer_size += nested_buffer_size;
                     }
                 }
+                // Write final padding to satisfy alignment requirements
                 buffer_size += calculate_amount_padding(buffer_size, Layout<Vector<T>>::final_alignment);
                 
                 /* Write buffer size */
