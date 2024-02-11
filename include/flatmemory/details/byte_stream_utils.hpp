@@ -30,6 +30,10 @@
 namespace flatmemory
 {
 
+/**
+ * Assertion logic
+*/
+
 template<typename T>
 bool test_correct_alignment(const uint8_t* buf) {
     return (reinterpret_cast<uintptr_t>(buf) % alignof(T)) == 0;

@@ -47,6 +47,16 @@ public:
         return sizeof(T);
     }
 
+    /// @brief Writes a value to the stream to a specific position
+    ///        Assumes that the value fits into the buffer.
+    template<IsTriviallyCopyable T>
+    size_t write(size_t pos, const T& value) {
+        assert(test_correct_alignment<T*>(m_data.data() + pos));
+        assert(pos + sizeof(T) <= m_data.size());
+        *reinterpret_cast<T*>(m_data.data() + pos) = value;
+        return sizeof(T);
+    }
+
     /// @brief Writes a pointer to the stream
     template<typename T>
     size_t write(const T* pointer) {
@@ -56,14 +66,7 @@ public:
         return sizeof(T);
     }
 
-    template<IsTriviallyCopyable T>
-    size_t write(size_t pos, const T& value) {
-        assert(test_correct_alignment<T*>(m_data.data() + pos));
-        assert(pos + sizeof(T) <= m_data.size());
-        *reinterpret_cast<T*>(m_data.data() + pos) = value;
-        return sizeof(T);
-    }
-
+    /// @brief Writes padding to the stream
     size_t write_padding(size_t num_bytes) {
         m_data.insert(m_data.end(), num_bytes, 0);
         return num_bytes;

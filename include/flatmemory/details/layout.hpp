@@ -18,8 +18,6 @@
 #ifndef FLATMEMORY_LAYOUT_HPP_
 #define FLATMEMORY_LAYOUT_HPP_
 
-#include <type_traits>
-
 
 namespace flatmemory 
 {

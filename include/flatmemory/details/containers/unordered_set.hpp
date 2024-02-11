@@ -5,6 +5,7 @@
 #include "../byte_stream_segmented.hpp"
 #include "../builder.hpp"
 #include "../view_const.hpp"
+#include "../type_traits.hpp"
 
 #include <unordered_set>
 
@@ -16,12 +17,12 @@ namespace flatmemory {
  * 
  * We use it for states.
 */
-template<typename T, typename Hash = std::hash<ConstView<T>>, typename Equal = std::equal_to<ConstView<T>>, typename Allocator = std::allocator<ConstView<T>>>
+template<typename T, NumBytes N = 1000000, typename Hash = std::hash<ConstView<T>>, typename Equal = std::equal_to<ConstView<T>>, typename Allocator = std::allocator<ConstView<T>>>
 class UnorderedSet
 {
 private:
     // Persistent storage 1MiB blocks
-    ByteStreamSegmented<1000000> m_storage;
+    ByteStreamSegmented<N> m_storage;
 
     // Data to be accessed
     std::unordered_set<ConstView<T>, Hash, Equal, Allocator> m_data;

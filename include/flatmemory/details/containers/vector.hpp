@@ -6,6 +6,7 @@
 #include "../byte_stream_segmented.hpp"
 #include "../view_const.hpp"
 #include "../view.hpp"
+#include "../type_traits.hpp"
 
 #include <cassert>
 #include <vector>
@@ -20,12 +21,12 @@ namespace flatmemory {
  * 
  * We use it to store ground actions
  */
-template<typename T>
+template<typename T, NumBytes N = 1000000>
 class VariableSizedTypeVector
 {
 private:
     // Persistent storage 1MiB blocks
-    ByteStreamSegmented<1000000> m_storage;
+    ByteStreamSegmented<N> m_storage;
 
     // Data to be accessed
     std::vector<View<T>> m_data;
@@ -101,12 +102,12 @@ public:
  * 
  * We use it to store SearchNodes.
  */
-template<typename T>
+template<typename T, NumBytes N = 1000000>
 class FixedSizedTypeVector
 {
 private:
     // Persistent storage 1MiB blocks
-    ByteStreamSegmented<1000000> m_storage;
+    ByteStreamSegmented<N> m_storage;
 
     // Data to be accessed
     std::vector<View<T>> m_data;

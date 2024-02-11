@@ -20,7 +20,9 @@
 
 #include "layout.hpp"
 
+#include <concepts>
 #include <type_traits>
+#include <cstddef>
 
 
 namespace flatmemory 
@@ -38,6 +40,9 @@ namespace flatmemory
 
     template<typename T>
     concept IsTriviallyCopyableOrCustom = (IsTriviallyCopyable<T> || IsCustom<T>);
+    
+
+    using NumBytes = size_t;
 }
 
 #endif 
