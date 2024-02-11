@@ -18,7 +18,8 @@
 #ifndef FLATMEMORY_TYPES_VECTOR_HPP_
 #define FLATMEMORY_TYPES_VECTOR_HPP_
 
-#include "../byte_stream.hpp"
+#include "../byte_buffer.hpp"
+#include "../byte_buffer_utils.hpp" 
 #include "../layout_utils.hpp"
 #include "../layout.hpp"
 #include "../builder.hpp"
@@ -83,8 +84,8 @@ namespace flatmemory
             using T_ = typename maybe_builder<T>::type;
 
             std::vector<T_> m_data;
-            ByteStream m_buffer;
-            ByteStream m_dynamic_buffer;
+            ByteBuffer m_buffer;
+            ByteBuffer m_dynamic_buffer;
 
             /* Implement IBuilder interface. */
             template<typename>
@@ -141,8 +142,8 @@ namespace flatmemory
                 m_dynamic_buffer.clear();
             }
 
-            [[nodiscard]] ByteStream& get_buffer_impl() { return m_buffer; }
-            [[nodiscard]] const ByteStream& get_buffer_impl() const { return m_buffer; }
+            [[nodiscard]] ByteBuffer& get_buffer_impl() { return m_buffer; }
+            [[nodiscard]] const ByteBuffer& get_buffer_impl() const { return m_buffer; }
 
         public:
             /**

@@ -18,7 +18,7 @@
 #ifndef FLATMEMORY_BUILDER_HPP_
 #define FLATMEMORY_BUILDER_HPP_
 
-#include "byte_stream.hpp"
+#include "type_traits.hpp"
 
 #include <cstdint>
 #include <cstddef>
@@ -27,6 +27,12 @@
 
 namespace flatmemory 
 {
+    /**
+     * Forward declarations
+    */
+    class ByteBuffer;
+
+
     /**
      * Interface class.
     */
@@ -45,8 +51,8 @@ namespace flatmemory
             void clear() { self().clear_impl(); }
 
             /// @brief Access the serialized buffer
-            ByteStream& buffer() { return self().get_buffer_impl(); }
-            const ByteStream& buffer() const { return self().get_buffer_impl(); }
+            ByteBuffer& buffer() { return self().get_buffer_impl(); }
+            const ByteBuffer& buffer() const { return self().get_buffer_impl(); }
     };
 
     

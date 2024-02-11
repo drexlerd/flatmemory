@@ -3,11 +3,12 @@
 #define FLATMEMORY_CONTAINERS_VECTOR_HPP_
 
 #include "../builder.hpp"
-#include "../byte_stream_segmented.hpp"
+#include "../byte_buffer_segmented.hpp"
 #include "../view_const.hpp"
 #include "../view.hpp"
 #include "../type_traits.hpp"
 
+#include <stdexcept>
 #include <cassert>
 #include <vector>
 
@@ -24,14 +25,14 @@ class VariableSizedTypeVector
 {
 private:
     // Persistent storage
-    ByteStreamSegmented m_storage;
+    ByteBufferSegmented m_storage;
 
     // Data to be accessed
     std::vector<View<T>> m_data;
 
 public:
     explicit VariableSizedTypeVector(NumBytes n = 1000000) 
-        : m_storage(ByteStreamSegmented(n)) { }
+        : m_storage(ByteBufferSegmented(n)) { }
     // Move only
     VariableSizedTypeVector(const VariableSizedTypeVector& other) = delete;
     VariableSizedTypeVector& operator=(const VariableSizedTypeVector& other) = delete;
@@ -104,7 +105,7 @@ class FixedSizedTypeVector
 {
 private:
     // Persistent storage
-    ByteStreamSegmented m_storage;
+    ByteBufferSegmented m_storage;
 
     // Data to be accessed
     std::vector<View<T>> m_data;
@@ -113,7 +114,7 @@ private:
 
 public:
     FixedSizedTypeVector(Builder<T>&& default_builder, NumBytes n = 1000000) 
-        : m_storage(ByteStreamSegmented(n))
+        : m_storage(ByteBufferSegmented(n))
         , m_default_builder(std::move(default_builder)) { 
         if (m_default_builder.buffer().data() == nullptr) {
             throw std::runtime_error("Builder is not fully initialized! Did you forget to call finish()?");

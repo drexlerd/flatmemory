@@ -15,10 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef FLATMEMORY_BYTE_STREAM_HPP_
-#define FLATMEMORY_BYTE_STREAM_HPP_
+#ifndef FLATMEMORY_BYTE_BUFFER_HPP_
+#define FLATMEMORY_BYTE_BUFFER_HPP_
 
-#include "byte_stream_utils.hpp"
+#include "byte_buffer_utils.hpp"
 
 #include <cstdint>
 #include <cstddef>
@@ -29,7 +29,7 @@
 namespace flatmemory {
 
 
-class ByteStream {
+class ByteBuffer {
 private:
     std::vector<uint8_t> m_data;
 

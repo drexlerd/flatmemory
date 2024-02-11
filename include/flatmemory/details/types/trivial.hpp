@@ -18,8 +18,8 @@
 #ifndef FLATMEMORY_TYPES_STRUCT_HPP_
 #define FLATMEMORY_TYPES_STRUCT_HPP_
 
-#include "../byte_stream.hpp"
-#include "../byte_stream_utils.hpp"
+#include "../byte_buffer.hpp"
+#include "../byte_buffer_utils.hpp"
 #include "../layout_utils.hpp"
 #include "../layout.hpp"
 #include "../builder.hpp"
@@ -68,7 +68,7 @@ namespace flatmemory
         private:
             T m_trivial;
 
-            ByteStream m_buffer;
+            ByteBuffer m_buffer;
 
             /* Implement IBuilder interface. */
             template<typename>
@@ -84,8 +84,8 @@ namespace flatmemory
             }
 
 
-            [[nodiscard]] ByteStream& get_buffer_impl() { return m_buffer; }
-            [[nodiscard]] const ByteStream& get_buffer_impl() const { return m_buffer; }
+            [[nodiscard]] ByteBuffer& get_buffer_impl() { return m_buffer; }
+            [[nodiscard]] const ByteBuffer& get_buffer_impl() const { return m_buffer; }
 
         public:
             [[nodiscard]] T& operator*() { return m_trivial; }

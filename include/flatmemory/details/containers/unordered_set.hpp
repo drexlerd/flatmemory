@@ -2,7 +2,7 @@
 #ifndef FLATMEMORY_CONTAINERS_UNORDERED_SET_HPP_
 #define FLATMEMORY_CONTAINERS_UNORDERED_SET_HPP_
 
-#include "../byte_stream_segmented.hpp"
+#include "../byte_buffer_segmented.hpp"
 #include "../builder.hpp"
 #include "../view_const.hpp"
 #include "../type_traits.hpp"
@@ -22,14 +22,14 @@ class UnorderedSet
 {
 private:
     // Persistent storage
-    ByteStreamSegmented m_storage;
+    ByteBufferSegmented m_storage;
 
     // Data to be accessed
     std::unordered_set<ConstView<T>, Hash, Equal, Allocator> m_data;
 
 public:
     explicit UnorderedSet(NumBytes n = 1000000) 
-        : m_storage(ByteStreamSegmented(n)) { }
+        : m_storage(ByteBufferSegmented(n)) { }
     // Move only
     UnorderedSet(const UnorderedSet& other) = delete;
     UnorderedSet& operator=(const UnorderedSet& other) = delete;
@@ -84,7 +84,7 @@ public:
     /**
      * Lookup
     */
-   
+
     [[nodiscard]] size_t count(ConstView<T> key) const { return m_data.count(key); }
 
     [[nodiscard]] decltype(auto) find(ConstView<T> key) { return m_data.find(key); }

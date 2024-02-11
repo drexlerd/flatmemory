@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef FLATMEMORY_BYTE_STREAM_UTILS_HPP_
-#define FLATMEMORY_BYTE_STREAM_UTILS_HPP_
+#ifndef FLATMEMORY_BYTE_BUFFER_UTILS_HPP_
+#define FLATMEMORY_BYTE_BUFFER_UTILS_HPP_
 
 #include "type_traits.hpp"
 

@@ -18,8 +18,8 @@
 #ifndef FLATMEMORY_TYPES_TUPLE_HPP_
 #define FLATMEMORY_TYPES_TUPLE_HPP_
 
-#include "../byte_stream.hpp"
-#include "../byte_stream_utils.hpp"
+#include "../byte_buffer.hpp"
+#include "../byte_buffer_utils.hpp"
 #include "../layout_utils.hpp"
 #include "../layout.hpp"
 #include "../builder.hpp"
@@ -126,8 +126,8 @@ namespace flatmemory
     {
         private:
             std::tuple<typename maybe_builder<Ts>::type...> m_data;
-            ByteStream m_buffer;
-            ByteStream m_dynamic_buffer;
+            ByteBuffer m_buffer;
+            ByteBuffer m_dynamic_buffer;
 
             /* Implement IBuilder interface. */
             template<typename>
@@ -197,8 +197,8 @@ namespace flatmemory
             }
 
 
-            ByteStream& get_buffer_impl() { return m_buffer; }
-            const ByteStream& get_buffer_impl() const { return m_buffer; }
+            ByteBuffer& get_buffer_impl() { return m_buffer; }
+            const ByteBuffer& get_buffer_impl() const { return m_buffer; }
 
         public:
             template<std::size_t I>

@@ -20,8 +20,8 @@
 
 #include "vector.hpp"
 
-#include "../byte_stream.hpp"
-#include "../byte_stream_utils.hpp"
+#include "../byte_buffer.hpp"
+#include "../byte_buffer_utils.hpp"
 #include "../layout_utils.hpp"
 #include "../layout.hpp"
 #include "../builder.hpp"
@@ -255,7 +255,7 @@ namespace flatmemory
         bool m_default_bit_value;
         Builder<Vector<Block>> m_blocks;
 
-        ByteStream m_buffer;
+        ByteBuffer m_buffer;
 
         static constexpr std::size_t block_size = sizeof(Block) * 8;
         static constexpr Block block_zeroes = 0;
@@ -291,8 +291,8 @@ namespace flatmemory
             m_buffer.clear();
         }
 
-        [[nodiscard]] ByteStream &get_buffer_impl() { return m_buffer; }
-        [[nodiscard]] const ByteStream &get_buffer_impl() const { return m_buffer; }
+        [[nodiscard]] ByteBuffer &get_buffer_impl() { return m_buffer; }
+        [[nodiscard]] const ByteBuffer &get_buffer_impl() const { return m_buffer; }
 
         template <IsBitset Other>
         void resize_to_fit(const Other &other)

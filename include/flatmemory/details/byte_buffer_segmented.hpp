@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef FLATMEMORY_BYTE_STREAM_SEGMENTED_HPP_
-#define FLATMEMORY_BYTE_STREAM_SEGMENTED_HPP_
+#ifndef FLATMEMORY_BYTE_BUFFER_SEGMENTED_HPP_
+#define FLATMEMORY_BYTE_BUFFER_SEGMENTED_HPP_
 
 #include "type_traits.hpp"
 
@@ -29,7 +29,7 @@
 
 namespace flatmemory
 {
-    class ByteStreamSegmented
+    class ByteBufferSegmented
     {
     private:
         NumBytes m_num_bytes_per_segment;
@@ -55,7 +55,7 @@ namespace flatmemory
         }
 
     public:
-        explicit ByteStreamSegmented(NumBytes n = 1000000)
+        explicit ByteBufferSegmented(NumBytes n = 1000000)
             : m_num_bytes_per_segment(n)
             , cur_segment_id(-1)
             , cur_segment_pos(0)
@@ -67,15 +67,15 @@ namespace flatmemory
             assert(cur_segment_pos == 0);
             assert(cur_segment_id == 0);
         }
-        ~ByteStreamSegmented() {
+        ~ByteBufferSegmented() {
             for (uint8_t* ptr : m_segments) {
                 delete[] ptr;
             }
         }
-        ByteStreamSegmented(const ByteStreamSegmented& other) = delete;
-        ByteStreamSegmented& operator=(const ByteStreamSegmented& other) = delete;
-        ByteStreamSegmented(ByteStreamSegmented&& other) = default;
-        ByteStreamSegmented& operator=(ByteStreamSegmented&& other) = default;
+        ByteBufferSegmented(const ByteBufferSegmented& other) = delete;
+        ByteBufferSegmented& operator=(const ByteBufferSegmented& other) = delete;
+        ByteBufferSegmented(ByteBufferSegmented&& other) = default;
+        ByteBufferSegmented& operator=(ByteBufferSegmented&& other) = default;
 
         /// @brief Write the data starting from the cur_segment_pos
         ///        in the segment with cur_segment_id, if it fits,

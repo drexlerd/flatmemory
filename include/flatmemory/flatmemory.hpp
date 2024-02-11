@@ -18,10 +18,18 @@
 #ifndef FLATMEMORY_FLATMEMORY_HPP_
 #define FLATMEMORY_FLATMEMORY_HPP_
 
-#include "details/byte_stream_segmented.hpp"
+
+/**
+ * Containers
+*/
 
 #include "details/containers/unordered_set.hpp"
 #include "details/containers/vector.hpp"
+
+
+/**
+ * Types
+*/
 
 #include "details/types/bitset.hpp"
 #include "details/types/trivial.hpp"
