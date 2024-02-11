@@ -209,25 +209,6 @@ namespace flatmemory
                 finish_iterative_impl(std::make_index_sequence<sizeof...(Ts)>{});
             }
 
-
-            template<size_t... Is>
-            void clear_iterative_impl(std::index_sequence<Is...>) {
-                ([&] {
-                    constexpr bool is_trivial = IsTriviallyCopyable<std::tuple_element_t<Is, std::tuple<Ts...>>>;
-                    if constexpr (!is_trivial) {
-                        auto& builder = std::get<Is>(m_data);
-                        builder.clear();
-                    }
-                }(), ...);
-            }
-
-
-            void clear_impl() {
-                // Clear all nested builders.
-                clear_iterative_impl(std::make_index_sequence<sizeof...(Ts)>{});
-            }
-
-
             auto& get_buffer_impl() { return m_buffer; }
             const auto& get_buffer_impl() const { return m_buffer; }
 

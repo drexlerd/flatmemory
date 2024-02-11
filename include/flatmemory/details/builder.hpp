@@ -47,9 +47,6 @@ namespace flatmemory
             /// @brief Write serialized data to the stream.
             void finish() { self().finish_impl(); }
 
-            /// @brief Clear all builders for reuse.
-            void clear() { self().clear_impl(); }
-
             /// @brief Access the serialized buffer
             auto& buffer() { return self().get_buffer_impl(); }
             const auto& buffer() const { return self().get_buffer_impl(); }

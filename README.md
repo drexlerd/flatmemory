@@ -47,9 +47,6 @@ EXPECT_EQ(view.size(), 2);
 EXPECT_EQ(view[0][0], 5);
 EXPECT_EQ(view[1][0], 6);
 EXPECT_EQ(view[1][1], 7);
-
-// 3. Clear the builder to reuse its memory for successive creation of objects
-builder.clear();
 ```
 
 

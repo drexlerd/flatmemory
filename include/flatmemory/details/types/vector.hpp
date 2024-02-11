@@ -138,17 +138,6 @@ namespace flatmemory
                 m_buffer.set_size(buffer_size);
             }
 
-            /* clear stl */
-            void clear_impl() {
-                // Clear all nested builders.
-                constexpr bool is_trivial = IsTriviallyCopyable<T_>;
-                if constexpr (!is_trivial) {
-                    for (auto& builder : m_data) {
-                        builder.clear();
-                    }
-                }
-            }
-
             [[nodiscard]] auto& get_buffer_impl() { return m_buffer; }
             [[nodiscard]] const auto& get_buffer_impl() const { return m_buffer; }
 

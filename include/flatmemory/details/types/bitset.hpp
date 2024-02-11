@@ -292,12 +292,6 @@ namespace flatmemory
             m_buffer.set_size(buffer_size);
         }
 
-        void clear_impl()
-        {
-            // Clear all nested builders.
-            m_blocks.clear();
-        }
-
         [[nodiscard]] auto& get_buffer_impl() { return m_buffer; }
         [[nodiscard]] const auto& get_buffer_impl() const { return m_buffer; }
 

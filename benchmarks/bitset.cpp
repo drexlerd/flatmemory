@@ -88,7 +88,6 @@ namespace flatmemory::benchmarks
         for (size_t i = 0; i < num_bitsets; ++i) {
             builder.finish();
             views.push_back(builder);
-            builder.clear();
         }
         return views;
     }
