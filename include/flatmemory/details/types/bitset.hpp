@@ -33,6 +33,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <tuple>
 #include <iostream>
 #include <string>
@@ -267,6 +268,7 @@ namespace flatmemory
         static constexpr std::size_t block_size = sizeof(Block) * 8;
         static constexpr Block block_zeroes = 0;
         static constexpr Block block_ones = Block(-1);
+        static constexpr std::size_t no_position = std::size_t(-1);
 
         /* Implement IBuilder interface. */
         template <typename>
@@ -280,6 +282,7 @@ namespace flatmemory
 
             /* Write dynamic info */
             buffer_size_type buffer_size = Layout<Bitset<Block>>::blocks_position;
+
             // Write blocks
             m_blocks.finish();
             buffer_size += m_buffer.write(Layout<Bitset<Block>>::blocks_position, m_blocks.buffer().data(), m_blocks.buffer().size());
@@ -304,13 +307,157 @@ namespace flatmemory
             }
         }
 
-    public:
-        [[nodiscard]] bool& get_default_bit_value() { return m_default_bit_value; }
+        std::size_t get_lsb_position(Block n) const
+        {
+            assert(n != 0);
+            const Block v = n & (-n);
+            return static_cast<std::size_t>(log2(v));
+        }
 
-        [[nodiscard]] auto& get_blocks() { return m_blocks; }
+    public:
+        Builder() : m_default_bit_value(false) {}
+        // Initialize the bitset with a certain size
+        Builder(std::size_t size) 
+            : m_default_bit_value(false)
+            , m_blocks((size / (sizeof(Block) * 8)) + 1, block_zeroes) {}
+
+        Builder(std::size_t size, bool default_bit_value)
+            : m_default_bit_value(default_bit_value)
+            , m_blocks((size / (sizeof(Block) * 8)) + 1, default_bit_value ? block_ones : block_zeroes) { }
+
+        
+        /**
+         * Operators
+        */
 
         template <IsBitset Other>
-        [[nodiscard]] Builder &operator|=(const Other &other)
+        bool operator<(const Other& other) const
+        {
+            // Fetch data
+            const auto &other_blocks = other.get_blocks();
+            bool other_default_bit_value = other.get_default_bit_value();
+
+            std::size_t common_size = std::min(m_blocks.size(), other_blocks.size());
+
+            for (std::size_t index = 0; index < common_size; ++index)
+            {
+                if (m_blocks[index] < other_blocks[index])
+                {
+                    return true;
+                }
+            }
+
+            std::size_t max_size = std::max(m_blocks.size(), other_blocks.size());
+
+            for (std::size_t index = common_size; index < max_size; ++index)
+            {
+                Block this_value = index < m_blocks.size() ? m_blocks[index] : (m_default_bit_value ? block_ones : block_zeroes);
+                Block other_value = index < other_blocks.size() ? other_blocks[index] : (other_default_bit_value ? block_ones : block_zeroes);
+
+                if (this_value < other_value)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        template <IsBitset Other>
+        bool operator==(const Other& other) const
+        {
+            // Fetch data
+            const auto &other_blocks = other.get_blocks();
+            bool other_default_bit_value = other.get_default_bit_value();
+
+            std::size_t common_size = std::min(m_blocks.size(), other_blocks.size());
+
+            for (std::size_t index = 0; index < common_size; ++index)
+            {
+                if (m_blocks[index] != other_blocks[index])
+                {
+                    return false;
+                }
+            }
+
+            std::size_t max_size = std::max(m_blocks.size(), other_blocks.size());
+
+            for (std::size_t index = common_size; index < max_size; ++index)
+            {
+                Block this_value = index < m_blocks.size() ? m_blocks[index] : (m_default_bit_value ? block_ones : block_zeroes);
+                Block other_value = index < other_blocks.size() ? other_blocks[index] : (other_default_bit_value ? block_ones : block_zeroes);
+
+                if (this_value != other_value)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+
+        /**
+         * Modifiers
+        */
+
+        // Set a bit at a specific position
+        void set(std::size_t position)
+        {
+            const std::size_t index = position / block_size;   // Find the index in the vector
+            const std::size_t offset = position % block_size;  // Find the offset within the std::size_t
+
+            if (index >= m_blocks.size())
+            {
+                m_blocks.resize(index + 1, m_default_bit_value ? block_ones : block_zeroes);
+            }
+
+            m_blocks[index] |= (static_cast<Block>(1) << offset);  // Set the bit at the offset
+        }
+
+        // Unset a bit at a specific position
+        void unset(std::size_t position)
+        {
+            const std::size_t index = position / block_size;   // Find the index in the vector
+            const std::size_t offset = position % block_size;  // Find the offset within the std::size_t
+
+            if (index >= m_blocks.size())
+            {
+                m_blocks.resize(index + 1, m_default_bit_value ? block_ones : block_zeroes);
+            }
+
+            m_blocks[index] &= ~(static_cast<Block>(1) << offset);  // Set the bit at the offset
+        }
+
+        // Unset all bits
+        void unset_all()
+        {
+            for (auto& value : m_blocks) {
+                value = (m_default_bit_value) ? block_ones : block_zeroes;
+            }
+        }
+
+        // Unset all bits for a given default_bit_value
+        void unset_all(bool default_bit_value)
+        {
+            m_default_bit_value = default_bit_value;
+            unset_all();
+        }
+
+        Builder& operator~()
+        {
+            m_default_bit_value = !m_default_bit_value;
+
+            for (Block& value : m_blocks)
+            {
+                value = ~value;
+            }
+
+            return *this;
+        }
+
+        template <IsBitset Other>
+        Builder& operator|=(const Other &other)
         {
             // Fetch data
             const auto &other_blocks = other.get_blocks();
@@ -334,7 +481,7 @@ namespace flatmemory
         }
 
         template <IsBitset Other>
-        [[nodiscard]] Builder &operator&=(const Other &other)
+        Builder& operator&=(const Other &other)
         {
             // Fetch data
             const auto &other_blocks = other.get_blocks();
@@ -357,6 +504,54 @@ namespace flatmemory
             return *this;
         }
 
+
+        /**
+         * Lookup
+        */
+
+        // Get the value of a bit at a specific position
+        bool get(std::size_t position) const {
+            {
+                const std::size_t index = position / block_size;
+
+                if (index < m_blocks.size())
+                {
+                    const std::size_t offset = position % block_size;
+                    return (m_blocks[index] & (static_cast<Block>(1) << offset)) != 0;
+                }
+                else
+                {
+                    return m_default_bit_value;
+                }
+            }
+        }
+
+        // Find the next set bit, inclusive the given position
+        std::size_t next_set_bit(std::size_t position) const
+        {
+            std::size_t index = position / block_size;
+            std::size_t offset = position % block_size;
+
+            while (index < m_blocks.size())
+            {
+                // Shift so that we start checking from the offset
+                const Block value = m_blocks[index] >> offset;
+
+                if (value)
+                {
+                    // If there are set bits in the current value
+                    const auto lsb_position = get_lsb_position(value);
+                    return index * block_size + offset + lsb_position;
+                }
+
+                // Reset offset for the next value
+                offset = 0;
+                index++;
+            }
+
+            return no_position;
+        }
+
         [[nodiscard]] size_t hash() const
         {
             const auto default_block = m_default_bit_value ? block_ones : block_zeroes;
@@ -375,6 +570,17 @@ namespace flatmemory
             MurmurHash3_x64_128(&m_blocks[0], length, seed, hash);
             return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
         }
+
+
+        /**
+         * Getters
+        */
+
+        [[nodiscard]] bool& get_default_bit_value() { return m_default_bit_value; }
+        [[nodiscard]] const bool& get_default_bit_value() const { return m_default_bit_value; }
+
+        [[nodiscard]] auto& get_blocks() { return m_blocks; }
+        [[nodiscard]] const auto& get_blocks() const { return m_blocks; }
     };
 }
 

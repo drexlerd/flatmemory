@@ -142,44 +142,59 @@ namespace flatmemory
             [[nodiscard]] const auto& get_buffer_impl() const { return m_buffer; }
 
         public:
-            /**
-             * empty
-            */
-            [[nodiscard]] constexpr bool empty() const {
-                return m_data.empty();
-            }
+            Builder() = default;
+            explicit Builder(size_t count) : m_data(count) { }
+            explicit Builder(size_t count, const T_& value) : m_data(count, value) { }
 
             /**
-             * size
+             * Element access
             */
-            [[nodiscard]] constexpr size_t size() const { 
-                return m_data.size(); 
-            }
-
-            /* operator[] stl */
             [[nodiscard]] T_& operator[](size_t pos) {
                 assert(pos < m_data.size());
                 return m_data[pos];
             }
 
-            /* push back stl */
+            [[nodiscard]] const T_& operator[](size_t pos) const {
+                assert(pos < m_data.size());
+                return m_data[pos];
+            }
+
+
+            /**
+             * Iterators
+            */
+
+            decltype(auto) begin() { return m_data.begin(); }
+            decltype(auto) begin() const { return m_data.begin(); }
+            decltype(auto) end() { return m_data.end(); }
+            decltype(auto) end() const { return m_data.end(); }
+
+            /**
+             * Capacity
+            */
+
+            [[nodiscard]] constexpr bool empty() const {
+                return m_data.empty();
+            }
+
+            [[nodiscard]] constexpr size_t size() const { 
+                return m_data.size(); 
+            }
+
+            
+            /**
+             * Modifiers 
+            */
             void push_back(T_&& element) { m_data.push_back(std::move(element)) ;}
             void push_back(const T_& element) { m_data.push_back(element) ;}
  
-            /**
-             * Resize
-             * 
-             * Resizing a vector of views needs additional caution 
-             * since the default constructed views are not meaningful.
-            */
+            /// @brief 
+            ///
+            /// Resizing a vector of views needs additional caution 
+            /// since the default constructed views are not meaningful.
+            /// @param count 
             void resize(size_t count) { m_data.resize(count, T_()); }
             void resize(size_t count, const T_& value) { m_data.resize(count, value); }
-
-            /**
-             * iterators
-            */
-            decltype(auto) begin() { return m_data.begin(); }
-            decltype(auto) end() { return m_data.end(); }
     };
 
 
