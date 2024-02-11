@@ -104,7 +104,7 @@ namespace flatmemory
                 m_buffer.write(Layout<Vector<T>>::vector_size_position, m_data.size());
 
                 /* Write dynamic info */
-                buffer_size_type buffer_size = Layout<Vector<T>>::vector_data_position;
+                offset_type buffer_size = Layout<Vector<T>>::vector_data_position;
                 // Write vector data
                 constexpr bool is_trivial = IsTriviallyCopyable<T>;
                 if constexpr (is_trivial) {
@@ -117,19 +117,16 @@ namespace flatmemory
                     size_t offset_pos = Layout<Vector<T>>::vector_data_position;
                     size_t offset_end = offset_pos + m_data.size() * sizeof(offset_type);
                     // We have to add padding to ensure that the data is correctly aligned
-                    offset_type data_offset = offset_end + calculate_amount_padding(offset_end, Layout<T>::final_alignment); 
-                    // buffer size points to data_offset
-                    buffer_size = data_offset;
+                    buffer_size = offset_end + calculate_amount_padding(offset_end, Layout<T>::final_alignment); 
                     for (size_t i = 0; i < m_data.size(); ++i) {
                         // write offset
-                        offset_pos += m_buffer.write(offset_pos, data_offset);
+                        offset_pos += m_buffer.write(offset_pos, buffer_size);
 
                         // write data
                         auto& nested_builder = m_data[i];
                         nested_builder.finish();
                         buffer_size_type nested_buffer_size = nested_builder.buffer().size();
-                        m_buffer.write(data_offset, nested_builder.buffer().data(), nested_buffer_size);
-                        data_offset += nested_buffer_size;
+                        m_buffer.write(buffer_size, nested_builder.buffer().data(), nested_buffer_size);
                         buffer_size += nested_buffer_size;
                     }
                 }

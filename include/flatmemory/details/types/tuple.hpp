@@ -55,9 +55,6 @@ namespace flatmemory
     class Layout<Tuple<Ts...>> 
     {
         private:
-
-
-
             /**
              * Helper function to calculate array that contains alignment requirements
              * with additional max overall alignment requirement at the end.
@@ -117,8 +114,8 @@ namespace flatmemory
             };
 
             template<size_t... Is>
-            static consteval LayoutData calculate_layout_data(std::index_sequence<Is...>) {
-                constexpr std::array<size_t, sizeof...(Ts) + 1> alignments = calculate_header_alignments(std::make_index_sequence<sizeof...(Ts)>{});
+            static consteval LayoutData calculate_layout_data(std::index_sequence<Is...> index_sequence) {
+                constexpr std::array<size_t, sizeof...(Ts) + 1> alignments = calculate_header_alignments(index_sequence);
 
                 size_t buffer_size_position = 0;
                 size_t buffer_size_end = buffer_size_position + sizeof(buffer_size_type);
@@ -180,10 +177,7 @@ namespace flatmemory
 
             template<size_t... Is>
             void finish_iterative_impl(std::index_sequence<Is...>) {
-                Layout<Tuple<Ts...>>().print();
-
-                offset_type data_offset = Layout<Tuple<Ts...>>::layout_data.element_datas_position;
-                buffer_size_type buffer_size = data_offset;
+                offset_type buffer_size = Layout<Tuple<Ts...>>::layout_data.element_datas_position;
                 ([&] {
                     using T = std::tuple_element_t<Is, std::tuple<Ts...>>;
                     constexpr auto& element_data = Layout<Tuple<Ts...>>::layout_data.element_datas[Is];
@@ -193,14 +187,13 @@ namespace flatmemory
                         m_buffer.write(element_data.position, value);
                     } else {
                         // write offset
-                        m_buffer.write(element_data.position, data_offset);
+                        m_buffer.write(element_data.position, buffer_size);
         
                         // write data
                         auto& nested_builder = std::get<Is>(m_data);
                         nested_builder.finish();
                         buffer_size_type nested_buffer_size = read_value<buffer_size_type>(nested_builder.buffer().data());
-                        m_buffer.write(data_offset, nested_builder.buffer().data(), nested_buffer_size);    
-                        data_offset += nested_buffer_size;
+                        m_buffer.write(buffer_size, nested_builder.buffer().data(), nested_buffer_size);    
                         buffer_size += nested_buffer_size;
                     }
                     // TODO maybe add padding?
