@@ -15,17 +15,15 @@
 namespace flatmemory {
 
 /**
- * Vector can handle different sized objects
+ * VariableSizedTypeVector can handle different sized objects
  * but does not support resize since the exact 
- * amount of bytes needed is not known in advance.
- * 
- * We use it to store ground actions
+ * amount of needed bytes is not known in advance.
  */
 template<typename T>
 class VariableSizedTypeVector
 {
 private:
-    // Persistent storage 1MiB blocks
+    // Persistent storage
     ByteStreamSegmented m_storage;
 
     // Data to be accessed
@@ -69,10 +67,10 @@ public:
      * Iterators
     */
 
-    [[nodiscard]] auto begin() { return m_data.begin(); }
-    [[nodiscard]] const auto begin() const { return m_data.begin(); }
-    [[nodiscard]] auto end() { return m_data.end(); }
-    [[nodiscard]] const auto end() const { return m_data.end(); }
+    [[nodiscard]] decltype(auto) begin() { return m_data.begin(); }
+    [[nodiscard]] decltype(auto) begin() const { return m_data.begin(); }
+    [[nodiscard]] decltype(auto) end() { return m_data.end(); }
+    [[nodiscard]] decltype(auto) end() const { return m_data.end(); }
 
 
     /**
@@ -98,16 +96,14 @@ public:
 };
 
 /**
- * AutomaticVector can handle only equally sized objects
+ * FixedSizedTypeVector can handle only equally sized objects
  * because it is meant to be resizeable.
- * 
- * We use it to store SearchNodes.
  */
 template<typename T>
 class FixedSizedTypeVector
 {
 private:
-    // Persistent storage 1MiB blocks
+    // Persistent storage
     ByteStreamSegmented m_storage;
 
     // Data to be accessed
@@ -160,10 +156,10 @@ public:
      * Iterators
     */
 
-    [[nodiscard]] auto begin() { return m_data.begin(); }
-    [[nodiscard]] const auto begin() const { return m_data.begin(); }
-    [[nodiscard]] auto end() { return m_data.end(); }
-    [[nodiscard]] const auto end() const { return m_data.end(); }
+    [[nodiscard]] decltype(auto) begin() { return m_data.begin(); }
+    [[nodiscard]] decltype(auto) begin() const { return m_data.begin(); }
+    [[nodiscard]] decltype(auto) end() { return m_data.end(); }
+    [[nodiscard]] decltype(auto) end() const { return m_data.end(); }
 
 
     /**

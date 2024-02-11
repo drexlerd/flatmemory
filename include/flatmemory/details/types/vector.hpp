@@ -181,8 +181,8 @@ namespace flatmemory
             /**
              * iterators
             */
-            auto begin() { return m_data.begin(); }
-            auto end() { return m_data.end(); }
+            decltype(auto) begin() { return m_data.begin(); }
+            decltype(auto) end() { return m_data.end(); }
     };
 
 

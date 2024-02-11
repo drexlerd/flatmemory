@@ -38,8 +38,8 @@ namespace flatmemory
         size_t cur_segment_id;
         size_t cur_segment_pos;
 
-        size_t size;
-        size_t capacity;
+        size_t m_size;
+        size_t m_capacity;
 
         size_t last_written;
 
@@ -48,7 +48,7 @@ namespace flatmemory
             if (cur_segment_id == (m_segments.size() - 1)) {
                 m_segments.push_back(new uint8_t[m_num_bytes_per_segment]);
                 cur_segment_pos = 0;
-                capacity += m_num_bytes_per_segment;
+                m_capacity += m_num_bytes_per_segment;
             }
             ++cur_segment_id;
             assert(cur_segment_id < m_segments.size());
@@ -59,8 +59,8 @@ namespace flatmemory
             : m_num_bytes_per_segment(n)
             , cur_segment_id(-1)
             , cur_segment_pos(0)
-            , size(0)
-            , capacity(0)
+            , m_size(0)
+            , m_capacity(0)
             , last_written(0) {
             // allocate first block of memory
             increase_capacity();
@@ -89,7 +89,7 @@ namespace flatmemory
             uint8_t* result_data = &m_segments[cur_segment_id][cur_segment_pos];
             memcpy(result_data, data, amount);
             cur_segment_pos += amount;
-            size += amount;
+            m_size += amount;
             last_written += amount;
             return result_data;
         }
@@ -104,12 +104,12 @@ namespace flatmemory
         void clear() {
             cur_segment_id = 0;
             cur_segment_pos = 0;
-            size = 0;
+            m_size = 0;
             last_written = 0;
         }
 
-        [[nodiscard]] size_t get_size() const { return size; }
-        [[nodiscard]] size_t get_capacity() const { return capacity; }
+        [[nodiscard]] size_t size() const { return m_size; }
+        [[nodiscard]] size_t capacity() const { return m_capacity; }
     };
 }
 

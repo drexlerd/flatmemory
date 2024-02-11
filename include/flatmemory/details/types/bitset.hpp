@@ -110,7 +110,7 @@ namespace flatmemory
             return read_value<buffer_size_type>(m_buf + Layout<Bitset<Block>>::buffer_size_position);
         }
 
-        [[nodiscard]] bool &get_default_bit_value()
+        [[nodiscard]] bool& get_default_bit_value()
         {
             assert(m_buf);
             assert(test_correct_alignment<bool>(m_buf + Layout<Bitset<Block>>::default_bit_value_position));
@@ -183,7 +183,7 @@ namespace flatmemory
             return read_value<buffer_size_type>(m_buf + Layout<Bitset<Block>>::buffer_size_position);
         }
 
-        [[nodiscard]] const bool &get_default_bit_value() const
+        [[nodiscard]] const bool& get_default_bit_value() const
         {
             assert(m_buf);
             assert(test_correct_alignment<bool>(m_buf + Layout<Bitset<Block>>::default_bit_value_position));
@@ -304,9 +304,9 @@ namespace flatmemory
         }
 
     public:
-        [[nodiscard]] bool &get_default_bit_value() { return m_default_bit_value; }
+        [[nodiscard]] bool& get_default_bit_value() { return m_default_bit_value; }
 
-        [[nodiscard]] auto &get_blocks() { return m_blocks; }
+        [[nodiscard]] auto& get_blocks() { return m_blocks; }
 
         template <IsBitset Other>
         [[nodiscard]] Builder &operator|=(const Other &other)
