@@ -34,14 +34,14 @@ jobs:
           cmake --build build -j$(nproc)
 
       # Run benchmarks and store the output to a file
-      - name: Run benchmark construct_atoms
-        run: build/benchmarks/bitset --benchmark_format=json | tee benchmark_result_bitset.json
-      #- name: Run benchmark iterate_atoms
-      #  run: build/benchmarks/iterate_atoms --benchmark_format=json | tee benchmark_result_iterate_atoms.json
+      - name: Run benchmark bitset_builder
+        run: build/benchmarks/bitset_builder --benchmark_format=json | tee benchmark_result_bitset_builder.json
+      - name: Run benchmark bitset_view
+        run: build/benchmarks/bitset_view --benchmark_format=json | tee benchmark_result_bitset_view.json
 
       # Combine outputs to a single file
       - name: Combine JSON files
-        run: python3 benchmarks/combine_results.py benchmark_result_bitset.json > benchmark_result.json
+        run: python3 benchmarks/combine_results.py benchmark_result_bitset_builder.json benchmark_result_bitset_view.json > benchmark_result.json
 
       # Run `github-action-benchmark` action
       - name: Store benchmark result

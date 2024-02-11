@@ -21,6 +21,7 @@
 #include "type_traits.hpp"
 #include "layout.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstddef>
 #include <type_traits>

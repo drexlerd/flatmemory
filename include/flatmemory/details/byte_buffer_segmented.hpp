@@ -19,6 +19,7 @@
 #define FLATMEMORY_BYTE_BUFFER_SEGMENTED_HPP_
 
 #include "type_traits.hpp"
+#include "layout_utils.hpp"
 
 #include <cassert>
 #include <cstddef>
