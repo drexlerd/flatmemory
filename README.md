@@ -1,6 +1,6 @@
 # Flatmemory
 
-Flatmemory is a C++20 library for serializing nested data types into a sequence of bytes with zero-cost deserialization. Flatmemory can be used to decrease memory allocations to almost zero and to obtain better cache locality. Flatmemory computes the memory layouts at compile time.
+Flatmemory is a C++20 library for serializing nested data types into a sequence of bytes with zero-cost deserialization. Flatmemory can be used to decrease memory allocations and to obtain better cache locality. Flatmemory computes the memory layouts at compile time. Flatmemory reuses memory during the construction of buffers. Flatmemory provides containers to store the buffers that require only a few memory allocations for a storing a collection of buffers.
 
 Flatmemory currently provides the following non-trivial composite types:
 
