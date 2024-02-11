@@ -30,6 +30,9 @@ private:
     // Data to be accessed
     std::vector<View<T>> m_data;
 
+    using iterator = std::vector<View<T>>::iterator;
+    using const_iterator = std::vector<View<T>>::const_iterator;
+
 public:
     explicit VariableSizedTypeVector(NumBytes n = 1000000) 
         : m_storage(ByteBufferSegmented(n)) { }
@@ -68,10 +71,10 @@ public:
      * Iterators
     */
 
-    [[nodiscard]] decltype(auto) begin() { return m_data.begin(); }
-    [[nodiscard]] decltype(auto) begin() const { return m_data.begin(); }
-    [[nodiscard]] decltype(auto) end() { return m_data.end(); }
-    [[nodiscard]] decltype(auto) end() const { return m_data.end(); }
+    [[nodiscard]] iterator begin() { return m_data.begin(); }
+    [[nodiscard]] const_iterator begin() const { return m_data.begin(); }
+    [[nodiscard]] iterator end() { return m_data.end(); }
+    [[nodiscard]] const_iterator end() const { return m_data.end(); }
 
 
     /**
@@ -111,6 +114,9 @@ private:
     std::vector<View<T>> m_data;
 
     const Builder<T> m_default_builder;
+
+    using iterator = std::vector<View<T>>::iterator;
+    using const_iterator = std::vector<View<T>>::const_iterator;
 
 public:
     FixedSizedTypeVector(Builder<T>&& default_builder, NumBytes n = 1000000) 
@@ -157,10 +163,10 @@ public:
      * Iterators
     */
 
-    [[nodiscard]] decltype(auto) begin() { return m_data.begin(); }
-    [[nodiscard]] decltype(auto) begin() const { return m_data.begin(); }
-    [[nodiscard]] decltype(auto) end() { return m_data.end(); }
-    [[nodiscard]] decltype(auto) end() const { return m_data.end(); }
+    [[nodiscard]] iterator begin() { return m_data.begin(); }
+    [[nodiscard]] const_iterator begin() const { return m_data.begin(); }
+    [[nodiscard]] iterator end() { return m_data.end(); }
+    [[nodiscard]] const_iterator end() const { return m_data.end(); }
 
 
     /**

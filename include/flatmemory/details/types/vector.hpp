@@ -94,6 +94,9 @@ namespace flatmemory
             std::vector<T_> m_data;
             ByteBuffer m_buffer;
 
+            using iterator = std::vector<T_>::iterator;
+            using const_iterator = std::vector<T_>::const_iterator;
+
             /* Implement IBuilder interface. */
             template<typename>
             friend class IBuilder;
@@ -164,10 +167,10 @@ namespace flatmemory
              * Iterators
             */
 
-            decltype(auto) begin() { return m_data.begin(); }
-            decltype(auto) begin() const { return m_data.begin(); }
-            decltype(auto) end() { return m_data.end(); }
-            decltype(auto) end() const { return m_data.end(); }
+            iterator begin() { return m_data.begin(); }
+            const_iterator begin() const { return m_data.begin(); }
+            iterator end() { return m_data.end(); }
+            const_iterator end() const { return m_data.end(); }
 
             /**
              * Capacity

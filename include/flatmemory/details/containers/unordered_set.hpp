@@ -27,6 +27,9 @@ private:
     // Data to be accessed
     std::unordered_set<ConstView<T>, Hash, Equal, Allocator> m_data;
 
+    using iterator = std::unordered_set<ConstView<T>, Hash, Equal, Allocator>::iterator;
+    using const_iterator = std::unordered_set<ConstView<T>, Hash, Equal, Allocator>::const_iterator;
+
 public:
     explicit UnorderedSet(NumBytes n = 1000000) 
         : m_storage(ByteBufferSegmented(n)) { }
@@ -41,10 +44,10 @@ public:
      * Iterators
     */
 
-    [[nodiscard]] decltype(auto) begin() { return m_data.begin(); }
-    [[nodiscard]] decltype(auto) begin() const { return m_data.begin(); }
-    [[nodiscard]] decltype(auto) end() { return m_data.end(); }
-    [[nodiscard]] decltype(auto) end() const { return m_data.end(); }
+    [[nodiscard]] iterator begin() { return m_data.begin(); }
+    [[nodiscard]] const_iterator begin() const { return m_data.begin(); }
+    [[nodiscard]] iterator end() { return m_data.end(); }
+    [[nodiscard]] const_iterator end() const { return m_data.end(); }
 
 
     /**
@@ -87,8 +90,8 @@ public:
 
     [[nodiscard]] size_t count(ConstView<T> key) const { return m_data.count(key); }
 
-    [[nodiscard]] decltype(auto) find(ConstView<T> key) { return m_data.find(key); }
-    [[nodiscard]] decltype(auto) find(ConstView<T> key) const { return m_data.find(key); }
+    [[nodiscard]] iterator find(ConstView<T> key) { return m_data.find(key); }
+    [[nodiscard]] const_iterator find(ConstView<T> key) const { return m_data.find(key); }
 
     [[nodiscard]] bool contains(ConstView<T> key) const { return m_data.contains(key); }
 };
