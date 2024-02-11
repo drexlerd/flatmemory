@@ -63,10 +63,10 @@ namespace flatmemory
             
             static constexpr size_t buffer_size_position = 0;
             static constexpr size_t buffer_size_end = buffer_size_position + sizeof(buffer_size_type);
-            static constexpr size_t buffer_size_padding = calculate_header_amount_padding_to_next_type<vector_size_type>(buffer_size_end);
+            static constexpr size_t buffer_size_padding = calculate_amount_padding(buffer_size_end, calculate_header_alignment<vector_size_type>());
             static constexpr size_t vector_size_position = buffer_size_end + buffer_size_padding;
             static constexpr size_t vector_size_end = vector_size_position + sizeof(vector_size_type);
-            static constexpr size_t vector_size_padding = calculate_data_amount_padding_to_next_type<T>(vector_size_end);
+            static constexpr size_t vector_size_padding = calculate_amount_padding(vector_size_end, calculate_data_alignment<T>());
             static constexpr size_t vector_data_position = vector_size_end + vector_size_padding;
 
             void print() const {

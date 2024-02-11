@@ -55,6 +55,9 @@ namespace flatmemory
     class Layout<Tuple<Ts...>> 
     {
         private:
+
+
+
             /**
              * Helper function to calculate array that contains alignment requirements
              * with additional max overall alignment requirement at the end.
@@ -65,74 +68,97 @@ namespace flatmemory
                 ([&] {
                     using T = std::tuple_element_t<Is, std::tuple<Ts...>>;
                     // We use offset alignment for non trivial types
-                    alignments[Is] = calculate_header_offset_alignment<T>();
+                    alignments[Is] = calculate_header_alignment<T>();
                 }(), ...);
                 alignments[sizeof...(Ts)] = final_alignment;
                 return alignments;
             }
-           
-            /**
-             * Compute the attribute_positions for each type T
-            */
-            template<size_t... Is>
-            static consteval std::array<size_t, sizeof...(Ts) + 1> calculate_header_positions(std::index_sequence<Is...>) {
-                std::array<size_t, sizeof...(Ts) + 1> layout{};
 
-                size_t cur_pos = 0;
-                // Add sizeof of prefix to first position
-                if constexpr (sizeof...(Ts) > 0) {
-                    using T_First = std::tuple_element_t<0, std::tuple<Ts...>>;
-                    cur_pos = calculate_header_offset_pos<buffer_size_type, T_First>(cur_pos);
+
+            template<typename T>
+            static consteval size_t calculate_header_offset_type_size() {
+                constexpr bool is_trivial = IsTriviallyCopyable<T>;
+                if constexpr (is_trivial) {
+                    return sizeof(T);
                 } else {
-                    cur_pos = sizeof(buffer_size_type);
+                    return sizeof(offset_type);
                 }
-                layout[0] = cur_pos;
+            }
+
+            struct ElementData {
+                size_t position;
+                size_t end;
+                size_t padding;
+                size_t data_alignment;
+
+                void print() const {
+                    std::cout << "position: " << position << " end: " << end << " padding: " << padding << std::endl;
+                }
+            };
+
+            struct LayoutData {
+                size_t buffer_size_position;
+                size_t buffer_size_end;
+                size_t buffer_size_padding;
+
+                size_t element_datas_position;
+                std::array<ElementData, sizeof...(Ts)> element_datas;
+
+                void print() const {
+                    std::cout << "LayoutData:\n"
+                              << "buffer_size_position: " << buffer_size_position << "\n"
+                              << "buffer_size_end: " << buffer_size_end << "\n"
+                              << "buffer_size_padding: " << buffer_size_padding << "\n"
+                              << "element_datas_position: " << element_datas_position << std::endl;
+                    for (const auto& element_data : element_datas) {
+                        element_data.print();
+                    }
+                }
+            };
+
+            template<size_t... Is>
+            static consteval LayoutData calculate_layout_data(std::index_sequence<Is...>) {
+                constexpr std::array<size_t, sizeof...(Ts) + 1> alignments = calculate_header_alignments(std::make_index_sequence<sizeof...(Ts)>{});
+
+                size_t buffer_size_position = 0;
+                size_t buffer_size_end = buffer_size_position + sizeof(buffer_size_type);
+                size_t buffer_size_padding = calculate_amount_padding(buffer_size_end, alignments[0]);
+
+                size_t current_position = buffer_size_end + buffer_size_padding;
+
+                std::array<ElementData, sizeof...(Ts)> element_datas{};
                 ([&] {
-                    // The size of the i-th element
                     using T = std::tuple_element_t<Is, std::tuple<Ts...>>;
-                    cur_pos += calculate_header_offset_type_size<T>();
-
-                    // The padding dependent on the alignment of the i+1-th element
-                    // or the maximum alignment, when reaching the last element
-                    cur_pos += calculate_amount_padding(cur_pos, alignments[Is + 1]);
-
-                    layout[Is + 1] = cur_pos;
+                    size_t position = current_position;
+                    size_t end = position + calculate_header_offset_type_size<T>();
+                    size_t padding = calculate_amount_padding(end, alignments[Is + 1]);
+                    size_t alignment = calculate_data_alignment<T>();
+                    element_datas[Is] = ElementData{position, end, padding, alignment};
+                    current_position = end + padding;
                 }(), ...);
-                layout[sizeof...(Ts)] = cur_pos;
-                return layout;
+
+                size_t element_datas_position = current_position;
+
+                return LayoutData{
+                    buffer_size_position, 
+                    buffer_size_end, 
+                    buffer_size_padding,
+                    element_datas_position,
+                    element_datas};
             }
 
-            static consteval size_t calculate_buffer_size_padding(size_t pos) {
-                if constexpr (sizeof...(Ts) > 0) {
-                    return attribute_positions[0] - pos;
-                }
-                return 0;
-            }
+           
 
         public:
             static constexpr size_t size = sizeof...(Ts);
 
             static constexpr size_t final_alignment = calculate_final_alignment<buffer_size_type, offset_type, Ts...>();
-            static constexpr std::array<size_t, sizeof...(Ts) + 1> alignments = calculate_header_alignments(std::make_index_sequence<sizeof...(Ts)>{});
-            static constexpr size_t buffer_size_position = 0;
-            static constexpr std::array<size_t, sizeof...(Ts) + 1> attribute_positions = calculate_header_positions(std::make_index_sequence<sizeof...(Ts)>{});
 
-            static constexpr size_t buffer_size_end = buffer_size_position + sizeof(buffer_size_type);
-            static constexpr size_t buffer_size_padding = calculate_buffer_size_padding(buffer_size_end);
+            static constexpr LayoutData layout_data = calculate_layout_data(std::make_index_sequence<sizeof...(Ts)>{});
 
             void print() const {
-                std::cout << "buffer_size_position: " << buffer_size_position << "\n"
-                          << "buffer_size_end: " << buffer_size_end << "\n"
-                          << "buffer_size_padding: " << buffer_size_padding << std::endl;
-                std::cout << "positions: " << std::endl;
-                for (size_t i = 0; i < attribute_positions.size(); ++i) {
-                    std::cout << "i: " << i << " " << attribute_positions[i] << std::endl;
-                }
-                std::cout << "alignments: " << std::endl;
-                for (size_t i = 0; i < alignments.size(); ++i) {
-                    std::cout << "i: " << i << " " << alignments[i] << std::endl;
-                }
                 std::cout << "final_alignment: " << final_alignment << std::endl;
+                layout_data.print();
             }
 
     };
@@ -154,17 +180,20 @@ namespace flatmemory
 
             template<size_t... Is>
             void finish_iterative_impl(std::index_sequence<Is...>) {
-                offset_type data_offset = Layout<Tuple<Ts...>>::attribute_positions[sizeof...(Ts)];
+                Layout<Tuple<Ts...>>().print();
+
+                offset_type data_offset = Layout<Tuple<Ts...>>::layout_data.element_datas_position;
                 buffer_size_type buffer_size = data_offset;
                 ([&] {
                     using T = std::tuple_element_t<Is, std::tuple<Ts...>>;
+                    constexpr auto& element_data = Layout<Tuple<Ts...>>::layout_data.element_datas[Is];
                     constexpr bool is_trivial = IsTriviallyCopyable<T>;
                     if constexpr (is_trivial) {
                         auto& value = std::get<Is>(m_data);
-                        m_buffer.write(Layout<Tuple<Ts...>>::attribute_positions[Is], value);
+                        m_buffer.write(element_data.position, value);
                     } else {
                         // write offset
-                        m_buffer.write(Layout<Tuple<Ts...>>::attribute_positions[Is], data_offset);
+                        m_buffer.write(element_data.position, data_offset);
         
                         // write data
                         auto& nested_builder = std::get<Is>(m_data);
@@ -178,7 +207,7 @@ namespace flatmemory
                 }(), ...);
                 buffer_size += calculate_amount_padding(buffer_size, Layout<Tuple<Ts...>>::final_alignment);
                 /* Write buffer size */
-                m_buffer.write(Layout<Tuple<Ts...>>::buffer_size_position, buffer_size);
+                m_buffer.write(Layout<Tuple<Ts...>>::layout_data.buffer_size_position, buffer_size);
                 m_buffer.set_size(buffer_size);
             }
 
@@ -258,10 +287,10 @@ namespace flatmemory
             assert(I < Layout<Tuple<Ts...>>::size);
             constexpr bool is_trivial = IsTriviallyCopyable<element_type<I>>;
             if constexpr (is_trivial) {
-                assert(test_correct_alignment<element_type<I>>(m_buf + Layout<Tuple<Ts...>>::attribute_positions[I]));
-                return read_value<element_type<I>>(m_buf + Layout<Tuple<Ts...>>::attribute_positions[I]);
+                assert(test_correct_alignment<element_type<I>>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position));
+                return read_value<element_type<I>>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position);
             } else {
-                return element_view_type<I>(m_buf + read_value<offset_type>(m_buf + Layout<Tuple<Ts...>>::attribute_positions[I]));
+                return element_view_type<I>(m_buf + read_value<offset_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position));
             }
         }
 
@@ -318,10 +347,10 @@ namespace flatmemory
             assert(I < Layout<Tuple<Ts...>>::size);
             constexpr bool is_trivial = IsTriviallyCopyable<element_type<I>>;
             if constexpr (is_trivial) {
-                assert(test_correct_alignment<element_type<I>>(m_buf + Layout<Tuple<Ts...>>::attribute_positions[I]));
-                return read_value<element_type<I>>(m_buf + Layout<Tuple<Ts...>>::attribute_positions[I]);
+                assert(test_correct_alignment<element_type<I>>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position));
+                return read_value<element_type<I>>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position);
             } else {
-                return element_view_type<I>(m_buf + read_value<offset_type>(m_buf + Layout<Tuple<Ts...>>::attribute_positions[I]));
+                return element_view_type<I>(m_buf + read_value<offset_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position));
             }
         }
 
