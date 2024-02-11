@@ -17,18 +17,18 @@ namespace flatmemory {
  * 
  * We use it for states.
 */
-template<typename T, NumBytes N = 1000000, typename Hash = std::hash<ConstView<T>>, typename Equal = std::equal_to<ConstView<T>>, typename Allocator = std::allocator<ConstView<T>>>
+template<typename T, typename Hash = std::hash<ConstView<T>>, typename Equal = std::equal_to<ConstView<T>>, typename Allocator = std::allocator<ConstView<T>>>
 class UnorderedSet
 {
 private:
     // Persistent storage 1MiB blocks
-    ByteStreamSegmented<N> m_storage;
+    ByteStreamSegmented m_storage;
 
     // Data to be accessed
     std::unordered_set<ConstView<T>, Hash, Equal, Allocator> m_data;
 
 public:
-    UnorderedSet() = default;
+    explicit UnorderedSet(NumBytes n = 1000000) : m_storage(ByteStreamSegmented(n)) { }
     // Move only
     UnorderedSet(const UnorderedSet& other) = delete;
     UnorderedSet& operator=(const UnorderedSet& other) = delete;

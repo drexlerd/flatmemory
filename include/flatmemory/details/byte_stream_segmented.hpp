@@ -29,10 +29,10 @@
 
 namespace flatmemory
 {
-    template<NumBytes N = 1000000>  // 1MB
     class ByteStreamSegmented
     {
     private:
+        NumBytes m_num_bytes_per_segment;
         std::vector<uint8_t*> m_segments;
 
         size_t cur_segment_id;
@@ -46,17 +46,18 @@ namespace flatmemory
         /// @brief Allocate a block of size N and update tracking variables.
         void increase_capacity() {
             if (cur_segment_id == (m_segments.size() - 1)) {
-                m_segments.push_back(new uint8_t[N]);
+                m_segments.push_back(new uint8_t[m_num_bytes_per_segment]);
                 cur_segment_pos = 0;
-                capacity += N;
+                capacity += m_num_bytes_per_segment;
             }
             ++cur_segment_id;
             assert(cur_segment_id < m_segments.size());
         }
 
     public:
-        ByteStreamSegmented()
-            : cur_segment_id(-1)
+        explicit ByteStreamSegmented(NumBytes n = 1000000)
+            : m_num_bytes_per_segment(n)
+            , cur_segment_id(-1)
             , cur_segment_pos(0)
             , size(0)
             , capacity(0)
@@ -81,8 +82,8 @@ namespace flatmemory
         ///        and otherwise, push_back a new segment first.
         uint8_t* write(const uint8_t* data, size_t amount) {
             assert(data);
-            assert(amount <= N);
-            if (amount > (N - cur_segment_pos)) {
+            assert(amount <= m_num_bytes_per_segment);
+            if (amount > (m_num_bytes_per_segment - cur_segment_pos)) {
                 increase_capacity();
             }
             uint8_t* result_data = &m_segments[cur_segment_id][cur_segment_pos];

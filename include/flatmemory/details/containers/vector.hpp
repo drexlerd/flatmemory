@@ -21,18 +21,19 @@ namespace flatmemory {
  * 
  * We use it to store ground actions
  */
-template<typename T, NumBytes N = 1000000>
+template<typename T>
 class VariableSizedTypeVector
 {
 private:
     // Persistent storage 1MiB blocks
-    ByteStreamSegmented<N> m_storage;
+    ByteStreamSegmented m_storage;
 
     // Data to be accessed
     std::vector<View<T>> m_data;
 
 public:
-    VariableSizedTypeVector() = default;
+    explicit VariableSizedTypeVector(NumBytes n = 1000000) 
+        : m_storage(ByteStreamSegmented(n)) { }
     // Move only
     VariableSizedTypeVector(const VariableSizedTypeVector& other) = delete;
     VariableSizedTypeVector& operator=(const VariableSizedTypeVector& other) = delete;
@@ -44,12 +45,12 @@ public:
     */
 
     [[nodiscard]] View<T> operator[](size_t pos) {
-        assert(pos <= static_cast<int>(size()));
+        assert(pos <= size());
         return m_data[pos];
     }
 
     [[nodiscard]] ConstView<T> operator[](size_t pos) const {
-        assert(pos <= static_cast<int>(size()));
+        assert(pos <= size());
         return m_data[pos];
     }
 
@@ -102,12 +103,12 @@ public:
  * 
  * We use it to store SearchNodes.
  */
-template<typename T, NumBytes N = 1000000>
+template<typename T>
 class FixedSizedTypeVector
 {
 private:
     // Persistent storage 1MiB blocks
-    ByteStreamSegmented<N> m_storage;
+    ByteStreamSegmented m_storage;
 
     // Data to be accessed
     std::vector<View<T>> m_data;
@@ -115,7 +116,9 @@ private:
     const Builder<T> m_default_builder;
 
 public:
-    FixedSizedTypeVector(Builder<T>&& default_builder) : m_default_builder(std::move(default_builder)) { 
+    FixedSizedTypeVector(Builder<T>&& default_builder, NumBytes n = 1000000) 
+        : m_storage(ByteStreamSegmented(n))
+        , m_default_builder(std::move(default_builder)) { 
         if (m_default_builder.buffer().data() == nullptr) {
             throw std::runtime_error("Builder is not fully initialized! Did you forget to call finish()?");
         }
