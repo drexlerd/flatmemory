@@ -56,36 +56,14 @@ const T& read_value(const uint8_t* buf) {
     return *reinterpret_cast<const T*>(buf);
 }
 
-// not used
-template<IsTriviallyCopyable T>
-T* read_pointer(uint8_t* buf) {
-    assert(test_correct_alignment<T*>(buf));
-    return reinterpret_cast<T*>(*reinterpret_cast<uintptr_t*>(buf));
-}
-
-// not used
-template<IsTriviallyCopyable T>
-const T* read_pointer(const uint8_t* buf) {
-    assert(test_correct_alignment<T*>(buf));
-    return reinterpret_cast<const T*>(*reinterpret_cast<const uintptr_t*>(buf));
-}
-
 
 /**
- * Convert between raw data and pointers (not used)
+ * Write values to raw data.
 */
 
-template<typename T>
-uint64_t pointer_to_uint64_t(const T* ptr) {
-    assert(test_correct_alignment<T*>(ptr));
-    uintptr_t address = reinterpret_cast<uintptr_t>(ptr);
-    return static_cast<uint64_t>(address);
-}
-
-template<typename T>
-T* uint64_t_to_pointer(uint64_t address) {
-    uintptr_t ptrAddress = static_cast<uintptr_t>(address);
-    return reinterpret_cast<T*>(ptrAddress);
+template<IsTriviallyCopyable T>
+void write_value(uint8_t* buf, const T& value) {
+    *reinterpret_cast<T*>(buf) = value;
 }
 
 
