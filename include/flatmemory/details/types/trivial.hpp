@@ -19,6 +19,7 @@
 #define FLATMEMORY_TYPES_STRUCT_HPP_
 
 #include "../byte_buffer.hpp"
+#include "../byte_buffer2.hpp"
 #include "../byte_buffer_utils.hpp"
 #include "../layout_utils.hpp"
 #include "../layout.hpp"
@@ -68,24 +69,19 @@ namespace flatmemory
         private:
             T m_trivial;
 
-            ByteBuffer m_buffer;
+            ByteBuffer2 m_buffer;
 
             /* Implement IBuilder interface. */
             template<typename>
             friend class IBuilder;
 
             void finish_impl() {
-                m_buffer.write(m_trivial);
+                m_buffer.write(0, m_trivial);
+                m_buffer.set_size(sizeof(T));
             }
 
-            void clear_impl() {
-                // Clear this builder.
-                m_buffer.clear();
-            }
-
-
-            [[nodiscard]] ByteBuffer& get_buffer_impl() { return m_buffer; }
-            [[nodiscard]] const ByteBuffer& get_buffer_impl() const { return m_buffer; }
+            [[nodiscard]] auto& get_buffer_impl() { return m_buffer; }
+            [[nodiscard]] const auto& get_buffer_impl() const { return m_buffer; }
 
         public:
             [[nodiscard]] T& operator*() { return m_trivial; }
@@ -130,6 +126,11 @@ namespace flatmemory
             assert(test_correct_alignment<T>(m_buf));
             return &read_value<T>(m_buf); 
         }
+
+        [[nodiscard]] size_t buffer_size() const { 
+            assert(m_buf);
+            return sizeof(T);
+        }
     };
 
 
@@ -167,6 +168,11 @@ namespace flatmemory
             assert(m_buf);
             assert(test_correct_alignment<T>(m_buf));
             return &read_value<T>(m_buf); 
+        }
+
+        [[nodiscard]] size_t buffer_size() const { 
+            assert(m_buf);
+            return sizeof(T);
         }
     };
 }

@@ -122,22 +122,28 @@ namespace flatmemory
                     size_t offset_end = offset_pos + m_data.size() * sizeof(offset_type);
                     size_t offset_padding = calculate_amoung_padding(offset_end, Layout<T>::final_alignment);
                     // position of data
-                    size_t data_pos = offset_end + offset_padding; 
-                    // buffer size points to data_pos
-                    buffer_size = data_pos;
+                    offset_type data_offset = offset_end + offset_padding; 
+                    // buffer size points to data_offset
+                    buffer_size = data_offset;
                     for (size_t i = 0; i < m_data.size(); ++i) {
+                        // write offset
+                        m_buffer.write(offset_pos, data_offset);
+                        offset_pos += sizeof(offset_type);
+
+                        // write data
                         auto& nested_builder = m_data[i];
                         nested_builder.finish();
-                        m_buffer.write(offset_pos, static_cast<offset_type>(data_pos));
-                        offset_pos += sizeof(offset_type);
-                        buffer_size += m_buffer.write(data_pos, nested_builder.buffer().data(), read_value<buffer_size_type>(nested_builder.buffer().data()));
-                        data_pos += nested_builder.buffer().size();
+                        buffer_size_type nested_buffer_size = read_value<buffer_size_type>(nested_builder.buffer().data());
+                        m_buffer.write(data_offset, nested_builder.buffer().data(), nested_buffer_size);
+                        data_offset += nested_buffer_size;
+                        buffer_size += nested_buffer_size;
                     }
                 }
                 buffer_size += m_buffer.write_padding(buffer_size, calculate_amoung_padding(buffer_size, Layout<Vector<T>>::final_alignment));
                 
                 /* Write buffer size */
                 m_buffer.write(Layout<Vector<T>>::buffer_size_position, buffer_size);
+                m_buffer.set_size(buffer_size);
             }
 
             /* clear stl */

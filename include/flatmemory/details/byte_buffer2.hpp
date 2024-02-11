@@ -33,6 +33,7 @@ namespace flatmemory {
 class ByteBuffer2 {
 private:
     std::vector<uint8_t> m_data;
+    size_t m_size;
 
     void resize_to_fit(size_t pos, size_t amount) {
         size_t final_size = pos + amount;
@@ -72,10 +73,14 @@ public:
         return amount;
     }
 
+    /// @brief Set the final size of the buffer.
+    /// @param count 
+    void set_size(size_t count) { m_size = count; }
+
     [[nodiscard]] uint8_t* data() { return m_data.data(); }
     [[nodiscard]] const uint8_t* data() const { return m_data.data(); }
 
-    [[nodiscard]] size_t size() const { return m_data.size(); }
+    [[nodiscard]] size_t size() const { return m_size; }
     [[nodiscard]] size_t capacity() const { return m_data.capacity(); }
 };
 
