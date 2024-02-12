@@ -298,6 +298,7 @@ namespace flatmemory
         [[nodiscard]] auto& get_buffer_impl() { return m_buffer; }
         [[nodiscard]] const auto& get_buffer_impl() const { return m_buffer; }
 
+
         template <IsBitset Other>
         void resize_to_fit(const Other &other)
         {
