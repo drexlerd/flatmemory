@@ -694,7 +694,7 @@ namespace flatmemory
             }
  
             /// @brief Find the last block that differs from the default block
-            size_t find_last_non_default_block() {
+            size_t find_last_non_default_block() const {
                 const auto default_block = m_default_bit_value ? block_ones : block_zeroes;
                 auto last_relevant_block_index = static_cast<int64_t>(m_blocks->size()) - 1;
                 for (; (last_relevant_block_index >= 0) && ((*m_blocks)[last_relevant_block_index] == default_block); --last_relevant_block_index)
@@ -704,7 +704,7 @@ namespace flatmemory
             }
 
             /// @brief Find last non default bit that differs from a non default bit value
-            size_t find_last_non_default_bit(size_t block_index) {
+            size_t find_last_non_default_bit(size_t block_index) const {
                 assert(block_index < m_blocks->size());
                 Block block = (*m_blocks)[block_index];
                 size_t last_non_default_bit_index = sizeof(Block) - 1;
