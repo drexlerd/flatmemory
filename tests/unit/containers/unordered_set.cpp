@@ -52,6 +52,13 @@ namespace std
 namespace flatmemory::tests
 {
     TEST(FlatmemoryTests, ContainersUnorderedSetTest) {
+        Builder<Tuple<uint32_t, Bitset<uint64_t>>> builder;
+        builder.get<0>() = 9;
+        builder.finish();
+
         UnorderedSet<Tuple<uint32_t, Bitset<uint64_t>>> unordered_set;
+        auto const_view = unordered_set.insert(builder);
+
+        EXPECT_EQ(const_view.get<0>(), 9);
     }
 }

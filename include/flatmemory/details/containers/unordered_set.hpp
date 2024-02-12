@@ -69,10 +69,10 @@ public:
     }
 
     [[nodiscard]] ConstView<T> insert(const Builder<T>& builder) {
-        const uint8_t* data = builder.get_data();
-        size_t amount = builder.size();
-        uint8_t* new_data = m_storage.write(data, amount);
-        auto view = View<T>(new_data);
+        const uint8_t* data = builder.buffer().data();
+        size_t amount = builder.buffer().size();
+        const uint8_t* new_data = m_storage.write(data, amount);
+        auto view = ConstView<T>(new_data);
         auto it = m_data.find(view);
         if (it != m_data.end()) {
             // not unique, mark the storage as free again
