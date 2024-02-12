@@ -59,7 +59,7 @@ namespace flatmemory
     {
         private:
             /**
-             * Helper function to calculate array that contains alignment requirements
+             * Helper function to calculate an array that contains header alignment requirements
              * with additional max overall alignment requirement at the end.
             */
             template<size_t... Is>
@@ -73,6 +73,10 @@ namespace flatmemory
                 return alignments;
             }
 
+            /**
+             * Helper function to calculate an array that contains data alignment requirements
+             * with additional max overall alignment requirement at the end.
+            */
             template<size_t... Is>
             static consteval std::array<size_t, sizeof...(Ts) + 1> calculate_data_alignments(std::index_sequence<Is...>) {
                 std::array<size_t, sizeof...(Ts) + 1> alignments{};
