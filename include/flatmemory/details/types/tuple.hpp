@@ -27,6 +27,7 @@
 #include "../view.hpp"
 #include "../type_traits.hpp"
 
+#include <array>
 #include <algorithm>
 #include <cassert>
 #include <tuple>
