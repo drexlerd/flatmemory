@@ -26,10 +26,12 @@
 #include "../view_const.hpp"
 #include "../view.hpp"
 #include "../type_traits.hpp"
+#include "../algorithms/hash.hpp"
 
 #include <array>
 #include <algorithm>
 #include <cassert>
+#include <functional>
 #include <tuple>
 #include <iostream>
 #include <string>
@@ -168,6 +170,11 @@ namespace flatmemory
     class Builder<Tuple<Ts...>> : public IBuilder<Builder<Tuple<Ts...>>> 
     {
         private:
+            template<size_t I>
+            using element_type = std::tuple_element_t<I, std::tuple<Ts...>>;
+            template<size_t I>
+            using element_builder_type = typename maybe_builder<element_type<I>>::type;
+
             std::tuple<typename maybe_builder<Ts>::type...> m_data;
             ByteBuffer m_buffer;
 
@@ -179,12 +186,13 @@ namespace flatmemory
             void finish_iterative_impl(std::index_sequence<Is...>) {
                 offset_type buffer_size = Layout<Tuple<Ts...>>::layout_data.element_datas_position;
                 ([&] {
-                    using T = std::tuple_element_t<Is, std::tuple<Ts...>>;
+                    using T = element_type<Is>;
                     constexpr auto& element_data = Layout<Tuple<Ts...>>::layout_data.element_datas[Is];
                     constexpr bool is_trivial = IsTriviallyCopyable<T>;
                     if constexpr (is_trivial) {
                         auto& value = std::get<Is>(m_data);
                         m_buffer.write(element_data.position, value);
+                        m_buffer.write_padding(element_data.end, element_data.padding);
                     } else {
                         // write offset
                         m_buffer.write(element_data.position, buffer_size);
@@ -195,10 +203,10 @@ namespace flatmemory
                         buffer_size_type nested_buffer_size = nested_builder.buffer().size();
                         m_buffer.write(buffer_size, nested_builder.buffer().data(), nested_buffer_size);    
                         buffer_size += nested_buffer_size;
-                    }
-                    buffer_size += calculate_amount_padding(buffer_size, element_data.data_alignment);
+                        buffer_size += m_buffer.write_padding(buffer_size, calculate_amount_padding(buffer_size, element_data.data_alignment));
+                    }            
                 }(), ...);
-                buffer_size += calculate_amount_padding(buffer_size, Layout<Tuple<Ts...>>::final_alignment);
+                buffer_size += m_buffer.write_padding(buffer_size, calculate_amount_padding(buffer_size, Layout<Tuple<Ts...>>::final_alignment));
                 /* Write buffer size */
                 m_buffer.write(Layout<Tuple<Ts...>>::layout_data.buffer_size_position, buffer_size);
                 m_buffer.set_size(buffer_size);
@@ -213,9 +221,63 @@ namespace flatmemory
             const auto& get_buffer_impl() const { return m_buffer; }
 
         public:
+            /**
+             * Operators
+            */
+            template<size_t... Is>
+            [[nodiscard]] bool are_equal_helper(std::index_sequence<Is...>, const Builder& other) const {
+                bool are_equal = true;
+                ([&] {
+                    if (this->get<Is>() != other.get<Is>()) {
+                        are_equal = false;
+                        return;
+                    }
+                }(), ...);
+                return are_equal;
+            }
+
+            [[nodiscard]] bool operator==(const Builder& other) const {
+                if (this != &other) {
+                    return are_equal_helper(std::make_index_sequence<sizeof...(Ts)>{}, other); 
+                }
+                return true;
+            }
+
+            [[nodiscard]] bool operator!=(const Builder& other) const {
+                return !(*this == other);
+            }
+
+    
+            /**
+             * Lookup
+            */
+
             template<std::size_t I>
             auto& get() {
                 return std::get<I>(m_data);
+            }
+
+            template<std::size_t I>
+            const auto& get() const {
+                return std::get<I>(m_data);
+            }
+
+            template<size_t... Is>
+            [[nodiscard]] size_t hash_helper(std::index_sequence<Is...>) const {
+                size_t seed = Layout<Tuple<Ts...>>::size;
+                ([&] {
+                    constexpr bool is_trivial = IsTriviallyCopyable<element_type<Is>>;
+                    if constexpr (is_trivial) {
+                        hash_combine(seed, std::hash<element_type<Is>>()(get<Is>()));
+                    } else { 
+                        hash_combine(seed, get<Is>().hash());
+                    }
+                }(), ...);
+                return seed;
+            }
+
+            [[nodiscard]] size_t hash() const {
+                return hash_helper(std::make_index_sequence<sizeof...(Ts)>{});
             }
     };
 
@@ -250,11 +312,41 @@ namespace flatmemory
             assert(m_buf);
         }
 
+
         /**
-         * Returns a View to the I-th element.
-         * 
-         * If the I-th type is dynamic we must add the offset to the actual data first.
+         * Operators
         */
+        [[nodiscard]] bool operator==(const View& other) const {
+            if (this != &other) {
+                if (buffer_size() != other.buffer_size()) return false;
+                return std::memcmp(m_buf, other.m_buf, buffer_size()) == 0;
+            }
+            return true;
+        }
+
+        [[nodiscard]] bool operator!=(const View& other) const {
+            return !(*this == other);
+        }
+
+
+        /**
+         * Capacity
+        */
+
+        [[nodiscard]] size_t buffer_size() const { 
+            assert(m_buf);
+            assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position));
+            return read_value<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position); 
+        }
+
+
+        /**
+         * Lookup
+        */
+
+        /// @brief Returns a View to the I-th element.
+        /// 
+        /// If the I-th type is dynamic we must add the offset to the actual data first.
         template<std::size_t I>
         decltype(auto) get() {
             assert(m_buf);
@@ -268,14 +360,36 @@ namespace flatmemory
             }
         }
 
-
-        /**
-         * Capacity
-        */
-        [[nodiscard]] size_t buffer_size() const { 
+        template<std::size_t I>
+        decltype(auto) get() const {
             assert(m_buf);
-            assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::buffer_size_position));
-            return read_value<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::buffer_size_position); 
+            assert(I < Layout<Tuple<Ts...>>::size);
+            constexpr bool is_trivial = IsTriviallyCopyable<element_type<I>>;
+            if constexpr (is_trivial) {
+                assert(test_correct_alignment<element_type<I>>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position));
+                return read_value<element_type<I>>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position);
+            } else {
+                return element_view_type<I>(m_buf + read_value<offset_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position));
+            }
+        }
+
+
+        template<size_t... Is>
+        [[nodiscard]] size_t hash_helper(std::index_sequence<Is...>) const {
+            size_t seed = Layout<Tuple<Ts...>>::size;
+            ([&] {
+                constexpr bool is_trivial = IsTriviallyCopyable<element_type<Is>>;
+                if constexpr (is_trivial) {
+                    hash_combine(seed, std::hash<element_type<Is>>()(get<Is>()));
+                } else { 
+                    hash_combine(seed, get<Is>().hash());
+                }
+            }(), ...);
+            return seed;
+        }
+
+        [[nodiscard]] size_t hash() const {
+            return hash_helper(std::make_index_sequence<sizeof...(Ts)>{});
         }
     };
 
@@ -310,11 +424,33 @@ namespace flatmemory
             assert(m_buf);
         }
 
+
         /**
-         * Returns a View to the I-th element.
-         * 
-         * If the I-th type is dynamic we must add the offset to the actual data first.
+         * Operators
         */
+
+        [[nodiscard]] bool operator==(const ConstView& other) const {
+            if (this != &other) {
+                if (m_buf != other.m_buf) {
+                    if (buffer_size() != other.buffer_size()) return false;
+                    return std::memcmp(m_buf, other.m_buf, buffer_size()) == 0;
+                }
+            }
+            return true;
+        }
+
+        [[nodiscard]] bool operator!=(const ConstView& other) const {
+            return !(*this == other);
+        }
+
+
+        /**
+         * Lookup
+        */
+
+        /// @brief Returns a View to the I-th element.
+        /// 
+        /// If the I-th type is dynamic we must add the offset to the actual data first.
         template<std::size_t I>
         decltype(auto) get() const {
             assert(m_buf);
@@ -334,8 +470,27 @@ namespace flatmemory
         */
         [[nodiscard]] size_t buffer_size() const { 
             assert(m_buf);
-            assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::buffer_size_position));
-            return read_value<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::buffer_size_position); 
+            assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position));
+            return read_value<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position); 
+        }
+
+
+        template<size_t... Is>
+        [[nodiscard]] size_t hash_helper(std::index_sequence<Is...>) const {
+            size_t seed = Layout<Tuple<Ts...>>::size;
+            ([&] {
+                constexpr bool is_trivial = IsTriviallyCopyable<element_type<Is>>;
+                if constexpr (is_trivial) {
+                    hash_combine(seed, std::hash<element_type<Is>>()(get<Is>()));
+                } else { 
+                    hash_combine(seed, get<Is>().hash());
+                }
+            }(), ...);
+            return seed;
+        }
+
+        [[nodiscard]] size_t hash() const {
+            return hash_helper(std::make_index_sequence<sizeof...(Ts)>{});
         }
     };
 }

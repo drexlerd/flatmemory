@@ -160,4 +160,65 @@ namespace flatmemory::tests
         EXPECT_EQ(view.get<0>().x, 5);
         EXPECT_EQ(view.get<0>().y, 10);
     }
+
+
+    TEST(FlatmemoryTests, TypesTupleEqualityTest) {
+        using TupleLayout = Tuple<uint64_t, uint32_t>;
+        EXPECT_EQ((Layout<TupleLayout>::final_alignment), 8);
+        EXPECT_EQ((IsTriviallyCopyable<View<TupleLayout>>), true);
+        EXPECT_EQ((IsTriviallyCopyable<TupleLayout>), false);
+
+        auto builder1 = Builder<TupleLayout>();
+        builder1.get<0>() = 5;
+        builder1.get<1>() = 10;
+        builder1.finish();
+
+        auto builder2 = Builder<TupleLayout>();
+        builder2.get<0>() = 5;
+        builder2.get<1>() = 10;
+        builder2.finish();
+
+        auto builder3 = Builder<TupleLayout>();
+        builder3.get<0>() = 5;
+        builder3.get<1>() = 9;
+        builder3.finish();
+
+        EXPECT_TRUE((builder1 == builder2));
+        EXPECT_EQ(builder1.hash(), builder2.hash());
+
+        EXPECT_FALSE((builder1 == builder3));
+        EXPECT_NE(builder1.hash(), builder3.hash());
+
+        EXPECT_FALSE((builder2 == builder3));
+        EXPECT_NE(builder2.hash(), builder3.hash());
+
+
+        auto view1 = View<TupleLayout>(builder1.buffer().data());
+        auto view2 = View<TupleLayout>(builder2.buffer().data());
+        auto view3 = View<TupleLayout>(builder3.buffer().data());
+ 
+        EXPECT_TRUE((view1 == view2));
+        EXPECT_EQ(view1.hash(), view2.hash());
+
+        EXPECT_FALSE((view1 == view3));
+        EXPECT_NE(view1.hash(), view3.hash());
+
+        EXPECT_FALSE((view2 == view3));
+        EXPECT_NE(view2.hash(), view3.hash());
+
+
+        auto const_view1 = ConstView<TupleLayout>(builder1.buffer().data());
+        auto const_view2 = ConstView<TupleLayout>(builder2.buffer().data());
+        auto const_view3 = ConstView<TupleLayout>(builder3.buffer().data());
+
+        EXPECT_TRUE((const_view1 == const_view2));
+        EXPECT_EQ(const_view1.hash(), const_view2.hash());
+
+        EXPECT_FALSE((const_view1 == const_view3));
+        EXPECT_NE(const_view1.hash(), const_view3.hash());
+
+        EXPECT_FALSE((const_view2 == const_view3));
+        EXPECT_NE(const_view2.hash(), const_view3.hash());
+
+    }
 }

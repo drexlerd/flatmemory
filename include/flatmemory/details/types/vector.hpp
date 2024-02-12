@@ -26,11 +26,13 @@
 #include "../view_const.hpp"
 #include "../view.hpp"
 #include "../type_traits.hpp"
+#include "../algorithms/murmurhash3.hpp"
 
 #include <algorithm>
 #include <cassert>
 #include <limits>
 #include <vector>
+#include <iostream>
 
 
 namespace flatmemory
@@ -91,11 +93,11 @@ namespace flatmemory
         private:
             using T_ = typename maybe_builder<T>::type;
 
-            std::vector<T_> m_data;
-            ByteBuffer m_buffer;
-
             using iterator = std::vector<T_>::iterator;
             using const_iterator = std::vector<T_>::const_iterator;
+
+            std::vector<T_> m_data;
+            ByteBuffer m_buffer;
 
             /* Implement IBuilder interface. */
             template<typename>
@@ -105,22 +107,26 @@ namespace flatmemory
                 /* Write header info */
                 // Write vector size
                 m_buffer.write(Layout<Vector<T>>::vector_size_position, m_data.size());
+                m_buffer.write_padding(Layout<Vector<T>>::vector_size_end, Layout<Vector<T>>::vector_size_padding);
 
                 /* Write dynamic info */
                 offset_type buffer_size = Layout<Vector<T>>::vector_data_position;
                 // Write vector data
                 constexpr bool is_trivial = IsTriviallyCopyable<T>;
                 if constexpr (is_trivial) {
+                    /* For trivial type we can write the data without additional padding. */
                     for (size_t i = 0; i < m_data.size(); ++i) {
                         buffer_size += m_buffer.write(buffer_size, m_data[i]);
                     }
                 } else {
-                    /* For dynamic type T, we store the offsets first */
+                    /* For non-trivial type T, we store the offsets first */
                     // position of offset
                     size_t offset_pos = Layout<Vector<T>>::vector_data_position;
                     size_t offset_end = offset_pos + m_data.size() * sizeof(offset_type);
+                    size_t offset_padding = calculate_amount_padding(offset_end, Layout<T>::final_alignment);
+                    m_buffer.write_padding(offset_end, offset_padding);
                     // We have to add padding to ensure that the data is correctly aligned
-                    buffer_size = offset_end + calculate_amount_padding(offset_end, Layout<T>::final_alignment); 
+                    buffer_size = offset_end + offset_padding; 
                     for (size_t i = 0; i < m_data.size(); ++i) {
                         // write offset
                         offset_pos += m_buffer.write(offset_pos, buffer_size);
@@ -131,10 +137,12 @@ namespace flatmemory
                         buffer_size_type nested_buffer_size = nested_builder.buffer().size();
                         m_buffer.write(buffer_size, nested_builder.buffer().data(), nested_buffer_size);
                         buffer_size += nested_buffer_size;
+                        // TODO: find tighter amount of padding
+                        buffer_size += m_buffer.write_padding(buffer_size, calculate_amount_padding(buffer_size, Layout<Vector<T>>::final_alignment));
                     }
                 }
                 // Write final padding to satisfy alignment requirements
-                buffer_size += calculate_amount_padding(buffer_size, Layout<Vector<T>>::final_alignment);
+                buffer_size += m_buffer.write_padding(buffer_size, calculate_amount_padding(buffer_size, Layout<Vector<T>>::final_alignment));
                 
                 /* Write buffer size */
                 m_buffer.write(Layout<Vector<T>>::buffer_size_position, buffer_size);
@@ -149,6 +157,24 @@ namespace flatmemory
             explicit Builder(size_t count) : m_data(count) { }
             explicit Builder(size_t count, const T_& value) : m_data(count, value) { }
 
+
+            /**
+             * Operators
+            */
+
+            [[nodiscard]] bool operator==(const Builder& other) const {
+                if (this != &other) {
+                    if (m_buffer.size() != other.m_buffer.size()) return false;
+                    return std::memcmp(m_buffer.data(), other.m_buffer.data(), m_buffer.size()) == 0;
+                }
+                return true;
+            }
+
+            [[nodiscard]] bool operator!=(const Builder& other) const {
+                return !(*this == other);
+            }
+
+
             /**
              * Element access
             */
@@ -160,6 +186,13 @@ namespace flatmemory
             [[nodiscard]] const T_& operator[](size_t pos) const {
                 assert(pos < m_data.size());
                 return m_data[pos];
+            }
+
+            [[nodiscard]] size_t hash() const {
+                size_t seed = size();
+                int64_t hash[2];
+                MurmurHash3_x64_128(m_buffer.data(), m_buffer.size(), seed, hash);
+                return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
             }
 
 
@@ -229,13 +262,17 @@ namespace flatmemory
             */
 
             [[nodiscard]] bool operator==(const View& other) const {
-                if (this == &other) return true;
-                if (m_buf != other.m_buf) {
-                    if (buffer_size() != other.buffer_size()) return false;
-                    return std::memcmp(m_buf, other.m_buf, buffer_size());
-                    if (size() != other.size()) return false;
+                if (this != &other) {
+                    if (m_buf != other.m_buf) {
+                        if (buffer_size() != other.buffer_size()) return false;
+                        return std::memcmp(m_buf, other.m_buf, buffer_size()) == 0;
+                    }
                 }
                 return true;
+            }
+
+            [[nodiscard]] bool operator!=(const View& other) const {
+                return !(*this == other);
             }
 
 
@@ -253,6 +290,25 @@ namespace flatmemory
                 } else {
                     return View<T>(m_buf + read_value<offset_type>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(offset_type)));
                 }
+            }
+
+            [[nodiscard]] decltype(auto) operator[](size_t pos) const {
+                assert(m_buf);
+                assert(pos < size());
+                constexpr bool is_trivial = IsTriviallyCopyable<T>;
+                if constexpr (is_trivial) {
+                    assert(test_correct_alignment<T>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(T)));
+                    return read_value<T>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(T));
+                } else {
+                    return View<T>(m_buf + read_value<offset_type>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(offset_type)));
+                }
+            }
+
+            [[nodiscard]] size_t hash() const {
+                size_t seed = size();
+                int64_t hash[2];
+                MurmurHash3_x64_128(m_buf, buffer_size(), seed, hash);
+                return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
             }
 
 
@@ -390,13 +446,17 @@ namespace flatmemory
              * Operators
             */
             [[nodiscard]] bool operator==(const ConstView& other) const {
-                if (this == &other) return true;
-                if (m_buf != other.m_buf) {
-                    if (buffer_size() != other.buffer_size()) return false;
-                    return std::memcmp(m_buf, other.m_buf, buffer_size());
-                    if (size() != other.size()) return false;
+                if (this != &other) {
+                    if (m_buf != other.m_buf) {
+                        if (buffer_size() != other.buffer_size()) return false;
+                        return std::memcmp(m_buf, other.m_buf, buffer_size()) == 0;
+                    }
                 }
                 return true;
+            }
+
+            [[nodiscard]] bool operator!=(const ConstView& other) const {
+                return !(*this == other);
             }
 
 
@@ -414,6 +474,13 @@ namespace flatmemory
                 } else {
                     return View<T>(m_buf + read_value<offset_type>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(offset_type)));
                 }
+            }
+
+            [[nodiscard]] size_t hash() const {
+                size_t seed = size();
+                int64_t hash[2];
+                MurmurHash3_x64_128(m_buf, buffer_size(), seed, hash);
+                return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
             }
 
 

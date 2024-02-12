@@ -88,5 +88,63 @@ TEST(FlatmemoryTests, TypesVectorViewTest) {
 }
 
 
+TEST(FlatmemoryTests, TypesVectorEqualityTest) {
+    using VectorLayout = Vector<uint64_t>;
+    EXPECT_EQ((Layout<VectorLayout>::final_alignment), 8);
+    EXPECT_EQ((IsTriviallyCopyable<View<VectorLayout>>), true);
+    EXPECT_EQ((IsTriviallyCopyable<VectorLayout>), false);
+
+    auto builder1 = Builder<VectorLayout>();
+    builder1.push_back(5);
+    builder1.push_back(10);
+    builder1.finish();
+
+    auto builder2 = Builder<VectorLayout>();
+    builder2.push_back(5);
+    builder2.push_back(10);
+    builder2.finish();
+
+    auto builder3 = Builder<VectorLayout>();
+    builder3.push_back(5);
+    builder3.push_back(9);
+    builder3.finish();
+
+    EXPECT_TRUE((builder1 == builder2));
+    EXPECT_EQ(builder1.hash(), builder2.hash());
+
+    EXPECT_FALSE((builder1 == builder3));
+    EXPECT_NE(builder1.hash(), builder3.hash());
+
+    EXPECT_FALSE((builder2 == builder3));
+    EXPECT_NE(builder2.hash(), builder3.hash());
+
+
+    auto view1 = View<VectorLayout>(builder1.buffer().data());
+    auto view2 = View<VectorLayout>(builder2.buffer().data());
+    auto view3 = View<VectorLayout>(builder3.buffer().data());
+
+    EXPECT_TRUE((view1 == view2));
+    EXPECT_EQ(view1.hash(), view2.hash());
+
+    EXPECT_FALSE((view1 == view3));
+    EXPECT_NE(view1.hash(), view3.hash());
+
+    EXPECT_FALSE((view2 == view3));
+    EXPECT_NE(view2.hash(), view3.hash());
+
+
+    auto const_view1 = ConstView<VectorLayout>(builder1.buffer().data());
+    auto const_view2 = ConstView<VectorLayout>(builder2.buffer().data());
+    auto const_view3 = ConstView<VectorLayout>(builder3.buffer().data());
+
+    EXPECT_TRUE((const_view1 == const_view2));
+    EXPECT_EQ(const_view1.hash(), const_view2.hash());
+
+    EXPECT_FALSE((const_view1 == const_view3));
+    EXPECT_NE(const_view1.hash(), const_view3.hash());
+
+    EXPECT_FALSE((const_view2 == const_view3));
+    EXPECT_NE(const_view2.hash(), const_view3.hash());
+}
 
 }
