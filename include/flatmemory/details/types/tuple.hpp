@@ -67,8 +67,18 @@ namespace flatmemory
                 std::array<size_t, sizeof...(Ts) + 1> alignments{};
                 ([&] {
                     using T = std::tuple_element_t<Is, std::tuple<Ts...>>;
-                    // We use offset alignment for non trivial types
                     alignments[Is] = calculate_header_alignment<T>();
+                }(), ...);
+                alignments[sizeof...(Ts)] = final_alignment;
+                return alignments;
+            }
+
+            template<size_t... Is>
+            static consteval std::array<size_t, sizeof...(Ts) + 1> calculate_data_alignments(std::index_sequence<Is...>) {
+                std::array<size_t, sizeof...(Ts) + 1> alignments{};
+                ([&] {
+                    using T = std::tuple_element_t<Is, std::tuple<Ts...>>;
+                    alignments[Is] = calculate_data_alignment<T>();
                 }(), ...);
                 alignments[sizeof...(Ts)] = final_alignment;
                 return alignments;
@@ -89,7 +99,7 @@ namespace flatmemory
                 size_t position;
                 size_t end;
                 size_t padding;
-                size_t data_alignment;
+                size_t next_data_alignment;
 
                 void print() const {
                     std::cout << "position: " << position << " end: " << end << " padding: " << padding << std::endl;
@@ -117,11 +127,12 @@ namespace flatmemory
 
             template<size_t... Is>
             static consteval LayoutData calculate_layout_data(std::index_sequence<Is...> index_sequence) {
-                constexpr std::array<size_t, sizeof...(Ts) + 1> alignments = calculate_header_alignments(index_sequence);
+                std::array<size_t, sizeof...(Ts) + 1> header_alignments = calculate_header_alignments(index_sequence);
+                std::array<size_t, sizeof...(Ts) + 1> data_alignments = calculate_data_alignments(index_sequence);
 
                 size_t buffer_size_position = 0;
                 size_t buffer_size_end = buffer_size_position + sizeof(buffer_size_type);
-                size_t buffer_size_padding = calculate_amount_padding(buffer_size_end, alignments[0]);
+                size_t buffer_size_padding = calculate_amount_padding(buffer_size_end, header_alignments[0]);
 
                 size_t current_position = buffer_size_end + buffer_size_padding;
 
@@ -130,9 +141,9 @@ namespace flatmemory
                     using T = std::tuple_element_t<Is, std::tuple<Ts...>>;
                     size_t position = current_position;
                     size_t end = position + calculate_header_offset_type_size<T>();
-                    size_t padding = calculate_amount_padding(end, alignments[Is + 1]);
-                    size_t alignment = calculate_data_alignment<T>();
-                    element_datas[Is] = ElementData{position, end, padding, alignment};
+                    size_t padding = calculate_amount_padding(end, header_alignments[Is + 1]);
+                    size_t next_data_alignment = data_alignments[Is + 1];
+                    element_datas[Is] = ElementData{position, end, padding, next_data_alignment};
                     current_position = end + padding;
                 }(), ...);
 
@@ -203,10 +214,10 @@ namespace flatmemory
                         buffer_size_type nested_buffer_size = nested_builder.buffer().size();
                         m_buffer.write(buffer_size, nested_builder.buffer().data(), nested_buffer_size);    
                         buffer_size += nested_buffer_size;
-                        buffer_size += m_buffer.write_padding(buffer_size, calculate_amount_padding(buffer_size, element_data.data_alignment));
+                        buffer_size += m_buffer.write_padding(buffer_size, calculate_amount_padding(buffer_size, element_data.next_data_alignment));
                     }            
                 }(), ...);
-                buffer_size += m_buffer.write_padding(buffer_size, calculate_amount_padding(buffer_size, Layout<Tuple<Ts...>>::final_alignment));
+                // No need to write padding because if size=0 then no padding is needed and otherwise, if size>0 then the loop adds final padding.
                 /* Write buffer size */
                 m_buffer.write(Layout<Tuple<Ts...>>::layout_data.buffer_size_position, buffer_size);
                 m_buffer.set_size(buffer_size);
