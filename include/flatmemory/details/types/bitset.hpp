@@ -665,6 +665,104 @@ namespace flatmemory
 
 
         /**
+         * Iterators
+        */
+
+        class const_iterator {
+        private:
+            bool m_default_bit_value;
+            const Builder<Vector<Block>>* m_blocks;
+
+            size_t m_block_index;
+            size_t m_bit_index;
+
+            size_t m_end_pos;
+            size_t m_pos;
+
+            void next_non_default_bit() {
+                do {
+                    ++m_pos;
+                    ++m_bit_index;
+                    if (m_bit_index >= sizeof(Block)) {
+                        m_bit_index = 0;
+                        ++m_block_index;
+                    }
+                    if (((*m_blocks)[m_block_index] & (static_cast<Block>(1) << m_bit_index)) != m_default_bit_value) {
+                        break;
+                    }
+                } while (m_pos < m_end_pos);
+            }
+ 
+            /// @brief Find the last block that differs from the default block
+            size_t find_last_non_default_block() {
+                const auto default_block = m_default_bit_value ? block_ones : block_zeroes;
+                auto last_relevant_block_index = static_cast<int64_t>(m_blocks->size()) - 1;
+                for (; (last_relevant_block_index >= 0) && ((*m_blocks)[last_relevant_block_index] == default_block); --last_relevant_block_index)
+                {
+                }
+                return last_relevant_block_index;
+            }
+
+            /// @brief Find last non default bit that differs from a non default bit value
+            size_t find_last_non_default_bit(size_t block_index) {
+                assert(block_index < m_blocks->size());
+                Block block = (*m_blocks)[block_index];
+                size_t last_non_default_bit_index = sizeof(Block) - 1;
+                for (; (last_non_default_bit_index >= 0) && ((block & (static_cast<Block>(1) << last_non_default_bit_index)) == m_default_bit_value); --last_non_default_bit_index)
+                {
+                }
+                return last_non_default_bit_index;
+            }
+
+        public:
+            using difference_type = size_t;
+            using value_type = bool;
+            using pointer = bool*;
+            using reference = bool&;
+            using iterator_category = std::forward_iterator_tag;
+
+            const_iterator(bool default_bit_value, const Builder<Vector<Block>>& blocks, bool begin)
+                : m_default_bit_value(default_bit_value)
+                , m_blocks(&blocks)
+                , m_block_index(0)
+                , m_bit_index(-1)
+                , m_end_pos(find_last_non_default_block() * sizeof(Block) + find_last_non_default_bit(m_block_index) + 1)
+                , m_pos(begin ? -1 : m_end_pos) 
+            {
+                if (begin) {
+                    next_non_default_bit();
+                } 
+            }
+
+            [[nodiscard]] decltype(auto) operator*() const {
+                // Do not allow interpreting end_pos as a bit.
+                assert(m_pos < m_end_pos);
+                return m_pos;
+            }
+
+            const_iterator& operator++() {
+                next_non_default_bit();
+                return *this;
+            }
+
+            // No postfix increment since it is too costly to copy the iterator
+
+            [[nodiscard]] bool operator==(const const_iterator& other) const {
+                return m_pos == other.m_pos;
+            }
+
+            [[nodiscard]] bool operator!=(const const_iterator& other) const {
+                return !(*this == other);
+            }
+        };
+
+        [[nodiscard]] const_iterator begin() { return const_iterator(m_default_bit_value, m_blocks, true); }
+        [[nodiscard]] const_iterator begin() const { return const_iterator(m_default_bit_value, m_blocks, true); }
+        [[nodiscard]] const_iterator end() { return const_iterator(m_default_bit_value, m_blocks, false); }
+        [[nodiscard]] const_iterator end() const { return const_iterator(m_default_bit_value, m_blocks, false); }
+
+
+        /**
          * Hashing
         */
 
