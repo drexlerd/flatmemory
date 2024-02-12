@@ -289,7 +289,7 @@ namespace flatmemory
         template<size_t I>
         using element_type = std::tuple_element_t<I, std::tuple<Ts...>>;
         template<size_t I>
-        using element_view_type = View<std::tuple_element_t<I, std::tuple<Ts...>>>;
+        using element_view_type = ConstView<std::tuple_element_t<I, std::tuple<Ts...>>>;
 
         const uint8_t* m_buf;
 
