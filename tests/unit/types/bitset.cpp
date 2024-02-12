@@ -95,9 +95,9 @@ TEST(FlatmemoryTests, TypesBitsetNextSetBitTest) {
     size_t num_bits = 10;
     auto bitset = Builder<Bitset<uint64_t>>(num_bits);
 
-    // Test next_set_bit
+    // Test next_non_default_bit
     bitset.set(5);
-    EXPECT_EQ(bitset.next_set_bit(0), 5);
+    EXPECT_EQ(bitset.next_non_default_bit(0), 5);
 }
 
 

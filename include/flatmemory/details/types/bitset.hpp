@@ -24,6 +24,7 @@
 #include "../byte_buffer_utils.hpp"
 #include "../layout_utils.hpp"
 #include "../layout.hpp"
+#include "../operator.hpp"
 #include "../builder.hpp"
 #include "../view.hpp"
 #include "../view_const.hpp"
@@ -51,6 +52,7 @@ namespace flatmemory
         /// @param other
         Bitset(const Bitset &other) {}
     };
+
 
     /**
      * Layout
@@ -80,6 +82,128 @@ namespace flatmemory
                       << "final_alignment: " << final_alignment << std::endl;
         }
     };
+
+
+    /**
+     * Forward declarations
+    */
+    template<typename Block>
+    class View<Bitset<Block>>;
+
+    template<typename Block>
+    class ConstView<Bitset<Block>>;
+
+    template<typename Block>
+    class Builder<Bitset<Block>>;
+
+
+    /**
+     * Concepts
+    */
+    template <typename>
+    struct is_bitset : std::false_type {};
+
+    template <typename Block>
+    struct is_bitset<Builder<Bitset<Block>>> : std::true_type {};
+
+    template <typename Block>
+    struct is_bitset<View<Bitset<Block>>> : std::true_type {};
+
+    template <typename Block>
+    struct is_bitset<ConstView<Bitset<Block>>> : std::true_type {};
+
+    // Concept to check whether T is a Bitset
+    template <typename T>
+    concept IsBitset = is_bitset<T>::value;
+
+    template<typename T>
+    struct block_type_extractor;
+
+    template<typename Block>
+    struct block_type_extractor<Builder<Bitset<Block>>> {
+        using type = Block;
+    };
+
+    template<typename Block>
+    struct block_type_extractor<View<Bitset<Block>>> {
+        using type = Block;
+    };
+
+    template<typename Block>
+    struct block_type_extractor<ConstView<Bitset<Block>>> {
+        using type = Block;
+    };
+
+    template<typename T>
+    using block_type_extractor_t = typename block_type_extractor<T>::type;
+
+    // Concept to check if two types have the same Block type
+    template<typename T1, typename T2>
+    concept SameBlockType = std::is_same_v<block_type_extractor_t<T1>, block_type_extractor_t<T2>>;
+
+
+    /**
+     * Operator
+    */
+    template<typename Block>
+    class Operator<Bitset<Block>> {
+        private:
+            static constexpr std::size_t block_size = sizeof(Block) * 8;
+            static constexpr Block block_zeroes = 0;
+            static constexpr Block block_ones = Block(-1);
+
+        public:
+            template<IsBitset L, IsBitset R>
+            requires SameBlockType<L, R>
+            static bool are_equal(const L& left_bitset, const R& right_bitset) {
+                // Fetch data
+                const auto &blocks = left_bitset.get_blocks();
+                bool default_bit_value = left_bitset.get_default_bit_value();
+                const auto &other_blocks = right_bitset.get_blocks();
+                bool other_default_bit_value = right_bitset.get_default_bit_value();
+
+                std::size_t common_size = std::min(blocks.size(), other_blocks.size());
+                if (std::memcmp(blocks.data(), other_blocks.data(), common_size * sizeof(Block)) != 0) return false;
+
+                std::size_t max_size = std::max(blocks.size(), other_blocks.size());
+
+                for (std::size_t index = common_size; index < max_size; ++index)
+                {
+                    Block this_value = index < blocks.size() ? blocks[index] : (default_bit_value ? block_ones : block_zeroes);
+                    Block other_value = index < other_blocks.size() ? other_blocks[index] : (other_default_bit_value ? block_ones : block_zeroes);
+
+                    if (this_value != other_value)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            template<IsBitset B>
+            static size_t hash(const B& bitset) {
+                // Fetch data
+                const bool default_bit_value = bitset.get_default_bit_value();
+                const auto &blocks = bitset.get_blocks();
+
+                const auto default_block = default_bit_value ? block_ones : block_zeroes;
+                const auto seed = static_cast<uint32_t>(default_block);
+
+                // Find the last block that differs from the default block
+                auto last_relevant_index = static_cast<int64_t>(blocks.size()) - 1;
+                for (; (last_relevant_index >= 0) && (blocks[last_relevant_index] == default_block); --last_relevant_index)
+                {
+                }
+                const auto length = static_cast<std::size_t>(last_relevant_index + 1) * sizeof(Block);
+
+                // Compute a hash value up to and including this block
+                int64_t hash[2];
+                MurmurHash3_x64_128(blocks.data(), length, seed, hash);
+                return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
+            }
+    };
+
 
     /**
      * View
@@ -111,38 +235,38 @@ namespace flatmemory
             assert(m_buf);
         }
 
-        [[nodiscard]] bool operator==(const View& other) const
+        
+        /**
+         * Operators
+        */
+
+        template <IsBitset Other>
+        [[nodiscard]] bool operator==(const Other& other) const
         {
             assert(m_buf);
-            // Fetch data
-            const auto &blocks = get_blocks();
-            bool default_bit_value = get_default_bit_value();
-            const auto &other_blocks = other.get_blocks();
-            bool other_default_bit_value = other.get_default_bit_value();
-
-            std::size_t common_size = std::min(blocks.size(), other_blocks.size());
-            if (std::memcmp(blocks.data(), other_blocks.data(), common_size * sizeof(Block)) != 0) return false;
-
-            std::size_t max_size = std::max(blocks.size(), other_blocks.size());
-
-            for (std::size_t index = common_size; index < max_size; ++index)
-            {
-                Block this_value = index < blocks.size() ? blocks[index] : (default_bit_value ? block_ones : block_zeroes);
-                Block other_value = index < other_blocks.size() ? other_blocks[index] : (other_default_bit_value ? block_ones : block_zeroes);
-
-                if (this_value != other_value)
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return Operator<Bitset<Block>>::are_equal(*this, other);
         }
 
-        [[nodiscard]] bool operator!=(const View& other) const {
+        template <IsBitset Other>
+        [[nodiscard]] bool operator!=(const Other& other) const {
             return !(*this == other);
         }
 
+
+        /**
+         * Hashing
+        */
+
+        [[nodiscard]] size_t hash() const
+        {
+            assert(m_buf);
+            return Operator<Bitset<Block>>::hash(*this);
+        }
+
+
+        /**
+         * Getters
+        */
         [[nodiscard]] size_t buffer_size() const
         {
             assert(m_buf);
@@ -174,30 +298,6 @@ namespace flatmemory
         {
             assert(m_buf);
             return ConstView<Vector<Block>>(m_buf + Layout<Bitset<Block>>::blocks_position);
-        }
-
-        [[nodiscard]] size_t hash() const
-        {
-            assert(m_buf);
-            // Fetch data
-            const bool default_bit_value = get_default_bit_value();
-            const auto &blocks = get_blocks();
-
-            const auto default_block = default_bit_value ? block_ones : block_zeroes;
-            const auto seed = static_cast<uint32_t>(default_block);
-
-            // TODO (dominik): use reverse iterator
-            // Find the last block that differs from the default block
-            auto last_relevant_index = static_cast<int64_t>(blocks.size()) - 1;
-            for (; (last_relevant_index >= 0) && (blocks[last_relevant_index] == default_block); --last_relevant_index)
-            {
-            }
-            const auto length = static_cast<std::size_t>(last_relevant_index + 1) * sizeof(Block);
-
-            // Compute a hash value up to and including this block
-            int64_t hash[2];
-            MurmurHash3_x64_128(m_buf, length, seed, hash);
-            return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
         }
     };
 
@@ -235,37 +335,33 @@ namespace flatmemory
          * Operators
         */
 
-        [[nodiscard]] bool operator==(const ConstView& other) const
+        template <IsBitset Other>
+        [[nodiscard]] bool operator==(const Other& other) const
         {
             assert(m_buf);
-            // Fetch data
-            const auto &blocks = get_blocks();
-            bool default_bit_value = get_default_bit_value();
-            const auto &other_blocks = other.get_blocks();
-            bool other_default_bit_value = other.get_default_bit_value();
-
-            std::size_t common_size = std::min(blocks.size(), other_blocks.size());
-            if (std::memcmp(blocks.data(), other_blocks.data(), common_size * sizeof(Block)) != 0) return false;
-
-            std::size_t max_size = std::max(blocks.size(), other_blocks.size());
-
-            for (std::size_t index = common_size; index < max_size; ++index)
-            {
-                Block this_value = index < blocks.size() ? blocks[index] : (default_bit_value ? block_ones : block_zeroes);
-                Block other_value = index < other_blocks.size() ? other_blocks[index] : (other_default_bit_value ? block_ones : block_zeroes);
-
-                if (this_value != other_value)
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return Operator<Bitset<Block>>::are_equal(*this, other);
         }
 
-        [[nodiscard]] bool operator!=(const ConstView& other) const {
+        template <IsBitset Other>
+        [[nodiscard]] bool operator!=(const Other& other) const {
             return !(*this == other);
         }
+
+
+        /**
+         * Hashing
+        */
+
+        [[nodiscard]] size_t hash() const
+        {
+            assert(m_buf);
+            return Operator<Bitset<Block>>::hash(*this);
+        }
+
+
+        /**
+         * Getters
+        */
 
         [[nodiscard]] size_t buffer_size() const
         {
@@ -286,57 +382,7 @@ namespace flatmemory
             assert(m_buf);
             return ConstView<Vector<Block>>(m_buf + Layout<Bitset<Block>>::blocks_position);
         }
-
-        [[nodiscard]] size_t hash() const
-        {
-            assert(m_buf);
-            // Fetch data
-            const bool default_bit_value = get_default_bit_value();
-            const auto &blocks = get_blocks();
-
-            const auto default_block = default_bit_value ? block_ones : block_zeroes;
-            const auto seed = static_cast<uint32_t>(default_block);
-
-            // TODO (dominik): use reverse iterator
-            // Find the last block that differs from the default block
-            auto last_relevant_index = static_cast<int64_t>(blocks.size()) - 1;
-            for (; (last_relevant_index >= 0) && (blocks[last_relevant_index] == default_block); --last_relevant_index)
-            {
-            }
-            const auto length = static_cast<std::size_t>(last_relevant_index + 1) * sizeof(Block);
-
-            // Compute a hash value up to and including this block
-            int64_t hash[2];
-            MurmurHash3_x64_128(m_buf, length, seed, hash);
-            return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
-        }
     };
-
-    /**
-     * Concepts
-     */
-    template <typename>
-    struct is_bitset : std::false_type
-    {
-    };
-
-    template <typename Block>
-    struct is_bitset<Builder<Bitset<Block>>> : std::true_type
-    {
-    };
-
-    template <typename Block>
-    struct is_bitset<View<Bitset<Block>>> : std::true_type
-    {
-    };
-
-    template <typename Block>
-    struct is_bitset<ConstView<Bitset<Block>>> : std::true_type
-    {
-    };
-
-    template <typename T>
-    concept IsBitset = is_bitset<T>::value;
 
     /**
      * Builder
@@ -453,27 +499,7 @@ namespace flatmemory
         template <IsBitset Other>
         bool operator==(const Other& other) const
         {
-            // Fetch data
-            const auto &other_blocks = other.get_blocks();
-            bool other_default_bit_value = other.get_default_bit_value();
-
-            std::size_t common_size = std::min(m_blocks.size(), other_blocks.size());
-            if (std::memcmp(m_blocks.data(), other_blocks.data(), common_size * sizeof(Block)) != 0) return false;
-
-            std::size_t max_size = std::max(m_blocks.size(), other_blocks.size());
-
-            for (std::size_t index = common_size; index < max_size; ++index)
-            {
-                Block this_value = index < m_blocks.size() ? m_blocks[index] : (m_default_bit_value ? block_ones : block_zeroes);
-                Block other_value = index < other_blocks.size() ? other_blocks[index] : (other_default_bit_value ? block_ones : block_zeroes);
-
-                if (this_value != other_value)
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return Operator<Bitset<Block>>::are_equal(*this, other);
         }
 
         template <IsBitset Other>
@@ -612,7 +638,7 @@ namespace flatmemory
         }
 
         // Find the next set bit, inclusive the given position
-        std::size_t next_set_bit(std::size_t position) const
+        std::size_t next_non_default_bit(std::size_t position) const
         {
             std::size_t index = position / block_size;
             std::size_t offset = position % block_size;
@@ -637,23 +663,14 @@ namespace flatmemory
             return no_position;
         }
 
+
+        /**
+         * Hashing
+        */
+
         [[nodiscard]] size_t hash() const
         {
-            const auto default_block = m_default_bit_value ? block_ones : block_zeroes;
-            const auto seed = static_cast<uint32_t>(default_block);
-
-            // TODO (dominik): use reverse iterator
-            // Find the last block that differs from the default block
-            auto last_relevant_index = static_cast<int64_t>(m_blocks.size()) - 1;
-            for (; (last_relevant_index >= 0) && (m_blocks[last_relevant_index] == default_block); --last_relevant_index)
-            {
-            }
-            const auto length = static_cast<std::size_t>(last_relevant_index + 1) * sizeof(Block);
-
-            // Compute a hash value up to and including this block
-            int64_t hash[2];
-            MurmurHash3_x64_128(&m_blocks[0], length, seed, hash);
-            return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
+            return Operator<Bitset<Block>>::hash(*this);
         }
 
 
@@ -668,6 +685,7 @@ namespace flatmemory
         [[nodiscard]] const auto& get_blocks() const { return m_blocks; }
     };
 }
+
 
 namespace std
 {

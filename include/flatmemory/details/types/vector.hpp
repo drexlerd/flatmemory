@@ -397,6 +397,73 @@ namespace flatmemory
             }
 
 
+            class const_iterator {
+            private:
+                const uint8_t* buf;
+
+            public:
+                using difference_type = std::ptrdiff_t;
+                using value_type = typename maybe_const_view<T>::type;
+                using pointer = typename maybe_const_view<T>::type*;
+                using reference = typename maybe_const_view<T>::type&;
+                using iterator_category = std::forward_iterator_tag;
+
+                const_iterator(const uint8_t* buf) : buf(buf) {}
+
+                [[nodiscard]] decltype(auto) operator*() const {
+                    constexpr bool is_trivial = IsTriviallyCopyable<T>;
+                    if constexpr (is_trivial) {
+                        assert(test_correct_alignment<T>(buf));
+                        return read_value<T>(buf);
+                    } else {
+                        return View<T>(m_buf + read_value<offset_type>(m_buf));
+                    }
+                }
+
+                const_iterator& operator++() {
+                    constexpr bool is_trivial = IsTriviallyCopyable<T>;
+                    if constexpr (is_trivial) {
+                        buf += sizeof(T);
+                    } else {
+                        buf += sizeof(offset_type);
+                    }
+                    return *this;
+                }
+
+                const_iterator operator++(int) {
+                    const_iterator tmp = *this;
+                    ++(*this);
+                    return tmp;
+                }
+
+                [[nodiscard]] bool operator==(const const_iterator& other) const {
+                    return buf == other.buf;
+                }
+
+                [[nodiscard]] bool operator!=(const const_iterator& other) const {
+                    return !(*this == other);
+                }
+            };
+
+            [[nodiscard]] const_iterator begin() const {
+                assert(m_buf);
+                assert(test_correct_alignment<iterator>(m_buf + Layout<Vector<T>>::vector_data_position));
+                return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position);
+            }
+
+            [[nodiscard]] const_iterator end() const {
+                assert(m_buf);
+                constexpr bool is_trivial = IsTriviallyCopyable<T>;
+                if constexpr (is_trivial) {
+                    assert(test_correct_alignment<iterator>(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(T) * size()));
+                    return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(T) * size());
+                } else {
+                    assert(test_correct_alignment<iterator>(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(offset_type) * size()));
+                    return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(offset_type) * size());
+                }
+            }
+
+
             /**
              * Capacity
             */
