@@ -90,9 +90,6 @@ TEST(FlatmemoryTests, TypesVectorViewTest) {
 
 TEST(FlatmemoryTests, TypesVectorEqualityTest) {
     using VectorLayout = Vector<uint64_t>;
-    EXPECT_EQ((Layout<VectorLayout>::final_alignment), 8);
-    EXPECT_EQ((IsTriviallyCopyable<View<VectorLayout>>), true);
-    EXPECT_EQ((IsTriviallyCopyable<VectorLayout>), false);
 
     auto builder1 = Builder<VectorLayout>();
     builder1.push_back(5);

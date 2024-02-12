@@ -224,21 +224,9 @@ namespace flatmemory
             /**
              * Operators
             */
-            template<size_t... Is>
-            [[nodiscard]] bool are_equal_helper(std::index_sequence<Is...>, const Builder& other) const {
-                bool are_equal = true;
-                ([&] {
-                    if (this->get<Is>() != other.get<Is>()) {
-                        are_equal = false;
-                        return;
-                    }
-                }(), ...);
-                return are_equal;
-            }
-
             [[nodiscard]] bool operator==(const Builder& other) const {
                 if (this != &other) {
-                    return are_equal_helper(std::make_index_sequence<sizeof...(Ts)>{}, other); 
+                    return m_data == other.m_data;
                 }
                 return true;
             }
@@ -373,23 +361,11 @@ namespace flatmemory
             }
         }
 
-
-        template<size_t... Is>
-        [[nodiscard]] size_t hash_helper(std::index_sequence<Is...>) const {
-            size_t seed = Layout<Tuple<Ts...>>::size;
-            ([&] {
-                constexpr bool is_trivial = IsTriviallyCopyable<element_type<Is>>;
-                if constexpr (is_trivial) {
-                    hash_combine(seed, std::hash<element_type<Is>>()(get<Is>()));
-                } else { 
-                    hash_combine(seed, get<Is>().hash());
-                }
-            }(), ...);
-            return seed;
-        }
-
         [[nodiscard]] size_t hash() const {
-            return hash_helper(std::make_index_sequence<sizeof...(Ts)>{});
+            size_t seed = Layout<Tuple<Ts...>>::size;
+            int64_t hash[2];
+            MurmurHash3_x64_128(m_buf, buffer_size(), seed, hash);
+            return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
         }
     };
 
@@ -474,23 +450,11 @@ namespace flatmemory
             return read_value<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position); 
         }
 
-
-        template<size_t... Is>
-        [[nodiscard]] size_t hash_helper(std::index_sequence<Is...>) const {
-            size_t seed = Layout<Tuple<Ts...>>::size;
-            ([&] {
-                constexpr bool is_trivial = IsTriviallyCopyable<element_type<Is>>;
-                if constexpr (is_trivial) {
-                    hash_combine(seed, std::hash<element_type<Is>>()(get<Is>()));
-                } else { 
-                    hash_combine(seed, get<Is>().hash());
-                }
-            }(), ...);
-            return seed;
-        }
-
         [[nodiscard]] size_t hash() const {
-            return hash_helper(std::make_index_sequence<sizeof...(Ts)>{});
+            size_t seed = Layout<Tuple<Ts...>>::size;
+            int64_t hash[2];
+            MurmurHash3_x64_128(m_buf, buffer_size(), seed, hash);
+            return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
         }
     };
 }

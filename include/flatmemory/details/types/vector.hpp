@@ -26,6 +26,7 @@
 #include "../view_const.hpp"
 #include "../view.hpp"
 #include "../type_traits.hpp"
+#include "../algorithms/hash.hpp"
 #include "../algorithms/murmurhash3.hpp"
 
 #include <algorithm>
@@ -164,8 +165,7 @@ namespace flatmemory
 
             [[nodiscard]] bool operator==(const Builder& other) const {
                 if (this != &other) {
-                    if (m_buffer.size() != other.m_buffer.size()) return false;
-                    return std::memcmp(m_buffer.data(), other.m_buffer.data(), m_buffer.size()) == 0;
+                    return m_data == other.m_data;
                 }
                 return true;
             }
@@ -189,11 +189,20 @@ namespace flatmemory
             }
 
             [[nodiscard]] size_t hash() const {
-                size_t seed = size();
-                int64_t hash[2];
-                MurmurHash3_x64_128(m_buffer.data(), m_buffer.size(), seed, hash);
-                return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
+                constexpr bool is_trivial = IsTriviallyCopyable<T>;
+                if constexpr (is_trivial) {
+                    return hash_combine(hash_container(m_data));
+                } else {
+                    size_t seed = size();
+                    for (const auto& builder : m_data) {
+                        hash_combine(seed, builder.hash());
+                    }
+                    return seed;
+                }
             }
+
+            [[nodiscard]] T_* data() { return m_data.data(); }
+            [[nodiscard]] const T_* data() const { return m_data.data(); }
 
 
             /**
@@ -241,6 +250,8 @@ namespace flatmemory
     class View<Vector<T>> 
     {
         private:
+            using T_ = typename maybe_builder<T>::type;
+
             uint8_t* m_buf;
 
             /// @brief Default constructor to make view a trivial data type and serializable
@@ -310,6 +321,9 @@ namespace flatmemory
                 MurmurHash3_x64_128(m_buf, buffer_size(), seed, hash);
                 return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
             }
+
+            [[nodiscard]] T_* data() { return reinterpret_cast<T_*>(m_buf + Layout<Vector<T>>::vector_data_position); }
+            [[nodiscard]] const T_* data() const { return reinterpret_cast<const T_*>(m_buf + Layout<Vector<T>>::vector_data_position); }
 
 
             /**
@@ -426,6 +440,8 @@ namespace flatmemory
     class ConstView<Vector<T>> 
     {
         private:
+            using T_ = typename maybe_builder<T>::type;
+
             const uint8_t* m_buf;
 
             /// @brief Default constructor to make view a trivial data type and serializable
@@ -482,6 +498,8 @@ namespace flatmemory
                 MurmurHash3_x64_128(m_buf, buffer_size(), seed, hash);
                 return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
             }
+
+            [[nodiscard]] const T_* data() const { return reinterpret_cast<const T_*>(m_buf + Layout<Vector<T>>::vector_data_position); }
 
 
             /**

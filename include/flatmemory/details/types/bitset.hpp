@@ -111,6 +111,37 @@ namespace flatmemory
             assert(m_buf);
         }
 
+        [[nodiscard]] bool operator==(const View& other) const
+        {
+            // Fetch data
+            const auto &blocks = get_blocks();
+            bool default_bit_value = get_default_bit_value();
+            const auto &other_blocks = other.get_blocks();
+            bool other_default_bit_value = other.get_default_bit_value();
+
+            std::size_t common_size = std::min(blocks.size(), other_blocks.size());
+            if (std::memcmp(blocks.data(), other_blocks.data(), common_size * sizeof(Block)) != 0) return false;
+
+            std::size_t max_size = std::max(blocks.size(), other_blocks.size());
+
+            for (std::size_t index = common_size; index < max_size; ++index)
+            {
+                Block this_value = index < blocks.size() ? blocks[index] : (default_bit_value ? block_ones : block_zeroes);
+                Block other_value = index < other_blocks.size() ? other_blocks[index] : (other_default_bit_value ? block_ones : block_zeroes);
+
+                if (this_value != other_value)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        [[nodiscard]] bool operator!=(const View& other) const {
+            return !(*this == other);
+        }
+
         [[nodiscard]] size_t buffer_size() const
         {
             assert(m_buf);
@@ -125,10 +156,23 @@ namespace flatmemory
             return read_value<bool>(m_buf + Layout<Bitset<Block>>::default_bit_value_position);
         }
 
+        [[nodiscard]] const bool& get_default_bit_value() const
+        {
+            assert(m_buf);
+            assert(test_correct_alignment<bool>(m_buf + Layout<Bitset<Block>>::default_bit_value_position));
+            return read_value<bool>(m_buf + Layout<Bitset<Block>>::default_bit_value_position);
+        }
+
         [[nodiscard]] View<Vector<Block>> get_blocks()
         {
             assert(m_buf);
             return View<Vector<Block>>(m_buf + Layout<Bitset<Block>>::blocks_position);
+        }
+
+        [[nodiscard]] ConstView<Vector<Block>> get_blocks() const
+        {
+            assert(m_buf);
+            return ConstView<Vector<Block>>(m_buf + Layout<Bitset<Block>>::blocks_position);
         }
 
         [[nodiscard]] size_t hash() const
@@ -182,6 +226,41 @@ namespace flatmemory
         ConstView(const uint8_t *data) : m_buf(data)
         {
             assert(m_buf);
+        }
+
+        /**
+         * Operators
+        */
+
+        [[nodiscard]] bool operator==(const ConstView& other) const
+        {
+            // Fetch data
+            const auto &blocks = get_blocks();
+            bool default_bit_value = get_default_bit_value();
+            const auto &other_blocks = other.get_blocks();
+            bool other_default_bit_value = other.get_default_bit_value();
+
+            std::size_t common_size = std::min(blocks.size(), other_blocks.size());
+            if (std::memcmp(blocks.data(), other_blocks.data(), common_size * sizeof(Block)) != 0) return false;
+
+            std::size_t max_size = std::max(blocks.size(), other_blocks.size());
+
+            for (std::size_t index = common_size; index < max_size; ++index)
+            {
+                Block this_value = index < blocks.size() ? blocks[index] : (default_bit_value ? block_ones : block_zeroes);
+                Block other_value = index < other_blocks.size() ? other_blocks[index] : (other_default_bit_value ? block_ones : block_zeroes);
+
+                if (this_value != other_value)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        [[nodiscard]] bool operator!=(const ConstView& other) const {
+            return !(*this == other);
         }
 
         [[nodiscard]] size_t buffer_size() const
@@ -373,14 +452,7 @@ namespace flatmemory
             bool other_default_bit_value = other.get_default_bit_value();
 
             std::size_t common_size = std::min(m_blocks.size(), other_blocks.size());
-
-            for (std::size_t index = 0; index < common_size; ++index)
-            {
-                if (m_blocks[index] != other_blocks[index])
-                {
-                    return false;
-                }
-            }
+            if (std::memcmp(m_blocks.data(), other_blocks.data(), common_size * sizeof(Block)) != 0) return false;
 
             std::size_t max_size = std::max(m_blocks.size(), other_blocks.size());
 
@@ -396,6 +468,11 @@ namespace flatmemory
             }
 
             return true;
+        }
+
+        template <IsBitset Other>
+        [[nodiscard]] bool operator!=(const Other& other) const {
+            return !(*this == other);
         }
 
 

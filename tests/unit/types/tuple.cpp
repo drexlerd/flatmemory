@@ -164,9 +164,6 @@ namespace flatmemory::tests
 
     TEST(FlatmemoryTests, TypesTupleEqualityTest) {
         using TupleLayout = Tuple<uint64_t, uint32_t>;
-        EXPECT_EQ((Layout<TupleLayout>::final_alignment), 8);
-        EXPECT_EQ((IsTriviallyCopyable<View<TupleLayout>>), true);
-        EXPECT_EQ((IsTriviallyCopyable<TupleLayout>), false);
 
         auto builder1 = Builder<TupleLayout>();
         builder1.get<0>() = 5;
@@ -219,6 +216,5 @@ namespace flatmemory::tests
 
         EXPECT_FALSE((const_view2 == const_view3));
         EXPECT_NE(const_view2.hash(), const_view3.hash());
-
     }
 }
