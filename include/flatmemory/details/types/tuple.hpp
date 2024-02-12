@@ -102,8 +102,7 @@ namespace flatmemory
                 std::array<ElementData, sizeof...(Ts)> element_datas;
 
                 void print() const {
-                    std::cout << "LayoutData:\n"
-                              << "buffer_size_position: " << buffer_size_position << "\n"
+                    std::cout << "buffer_size_position: " << buffer_size_position << "\n"
                               << "buffer_size_end: " << buffer_size_end << "\n"
                               << "buffer_size_padding: " << buffer_size_padding << "\n"
                               << "element_datas_position: " << element_datas_position << std::endl;
@@ -154,8 +153,8 @@ namespace flatmemory
             static constexpr LayoutData layout_data = calculate_layout_data(std::make_index_sequence<sizeof...(Ts)>{});
 
             void print() const {
-                std::cout << "final_alignment: " << final_alignment << std::endl;
                 layout_data.print();
+                std::cout << "final_alignment: " << final_alignment << std::endl;
             }
 
     };
