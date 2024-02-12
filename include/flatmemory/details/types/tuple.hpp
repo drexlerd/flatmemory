@@ -460,4 +460,37 @@ namespace flatmemory
 }
 
 
+
+namespace std
+{
+    // Inject hash into the std namespace
+    template <flatmemory::IsTriviallyCopyableOrCustom... Ts>
+    struct hash<flatmemory::View<flatmemory::Tuple<Ts...>>>
+    {
+        std::size_t operator()(const flatmemory::View<flatmemory::Tuple<Ts...>> &tuple) const
+        {
+            return tuple.hash();
+        }
+    };
+
+    template <flatmemory::IsTriviallyCopyableOrCustom... Ts>
+    struct hash<flatmemory::ConstView<flatmemory::Tuple<Ts...>>>
+    {
+        std::size_t operator()(const flatmemory::ConstView<flatmemory::Tuple<Ts...>> &tuple) const
+        {
+            return tuple.hash();
+        }
+    };
+
+    template <flatmemory::IsTriviallyCopyableOrCustom... Ts>
+    struct hash<flatmemory::Builder<flatmemory::Tuple<Ts...>>>
+    {
+        std::size_t operator()(const flatmemory::Builder<flatmemory::Tuple<Ts...>> &tuple) const
+        {
+            return tuple.hash();
+        }
+    };
+}
+
+
 #endif

@@ -43,7 +43,7 @@ private:
     }
 
 public:
-    // ByteBuffer() : m_data(std::vector<uint8_t>(128)) { }
+    ByteBuffer() : m_size(0) { }
 
     size_t write(size_t pos, const uint8_t* data, size_t amount) {
         resize_to_fit(pos, amount);

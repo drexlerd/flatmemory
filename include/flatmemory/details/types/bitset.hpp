@@ -113,6 +113,7 @@ namespace flatmemory
 
         [[nodiscard]] bool operator==(const View& other) const
         {
+            assert(m_buf);
             // Fetch data
             const auto &blocks = get_blocks();
             bool default_bit_value = get_default_bit_value();
@@ -177,6 +178,8 @@ namespace flatmemory
 
         [[nodiscard]] size_t hash() const
         {
+            assert(m_buf);
+            // Fetch data
             const bool default_bit_value = get_default_bit_value();
             const auto &blocks = get_blocks();
 
@@ -234,6 +237,7 @@ namespace flatmemory
 
         [[nodiscard]] bool operator==(const ConstView& other) const
         {
+            assert(m_buf);
             // Fetch data
             const auto &blocks = get_blocks();
             bool default_bit_value = get_default_bit_value();
@@ -285,6 +289,8 @@ namespace flatmemory
 
         [[nodiscard]] size_t hash() const
         {
+            assert(m_buf);
+            // Fetch data
             const bool default_bit_value = get_default_bit_value();
             const auto &blocks = get_blocks();
 
