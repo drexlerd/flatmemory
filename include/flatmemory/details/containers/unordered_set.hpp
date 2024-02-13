@@ -4,6 +4,7 @@
 
 #include "../byte_buffer_segmented.hpp"
 #include "../builder.hpp"
+#include "../view.hpp"
 #include "../view_const.hpp"
 #include "../type_traits.hpp"
 
@@ -80,6 +81,38 @@ public:
             return *it;
         }
         auto result = m_data.insert(view);
+        return *result.first;
+    }
+
+
+    [[nodiscard]] ConstView<T> insert(const ConstView<T>& view) {
+        const uint8_t* data = view.buffer();
+        size_t amount = view.get_buffer_size();
+        const uint8_t* new_data = m_storage.write(data, amount);
+        auto result_view = ConstView<T>(new_data);
+        auto it = m_data.find(result_view);
+        if (it != m_data.end()) {
+            // not unique, mark the storage as free again
+            m_storage.undo_last_write();
+            return *it;
+        }
+        auto result = m_data.insert(result_view);
+        return *result.first;
+    }
+
+
+    [[nodiscard]] ConstView<T> insert(const View<T>& view) {
+        const uint8_t* data = view.buffer();
+        size_t amount = view.get_buffer_size();
+        const uint8_t* new_data = m_storage.write(data, amount);
+        auto result_view = ConstView<T>(new_data);
+        auto it = m_data.find(result_view);
+        if (it != m_data.end()) {
+            // not unique, mark the storage as free again
+            m_storage.undo_last_write();
+            return *it;
+        }
+        auto result = m_data.insert(result_view);
         return *result.first;
     }
 

@@ -51,6 +51,12 @@ EXPECT_EQ(view.size(), 2);
 EXPECT_EQ(view[0][0], 5);
 EXPECT_EQ(view[1][0], 6);
 EXPECT_EQ(view[1][1], 7);
+
+// 5. Insert into a set either using builder or view
+auto unordered_set = UnorderedSet<TwoDimVecUint16>();
+auto view1 = unordered_set.insert(builder);
+auto view2 = unordered_set.insert(view);
+EXPECT_EQ(view1, view2);
 ```
 
 

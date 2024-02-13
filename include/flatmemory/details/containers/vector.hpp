@@ -97,6 +97,14 @@ public:
     void push_back(const Builder<T>& builder) {
         m_data.push_back(View<T>(m_storage.write(builder.buffer().data(), builder.buffer().size())));
     }
+
+    void push_back(const View<T>& view) {
+        m_data.push_back(View<T>(m_storage.write(view.buffer(), view.get_buffer_size())));
+    }
+
+    void push_back(const ConstView<T>& view) {
+        m_data.push_back(View<T>(m_storage.write(view.buffer(), view.get_buffer_size())));
+    }
 };
 
 /**
@@ -188,6 +196,14 @@ public:
 
     void push_back(const Builder<T>& builder) {
         m_data.push_back(View<T>(m_storage.write(builder.get_data(), builder.size())));
+    }
+
+    void push_back(const View<T>& view) {
+        m_data.push_back(View<T>(m_storage.write(view.buffer(), view.get_buffer_size())));
+    }
+
+    void push_back(const ConstView<T>& view) {
+        m_data.push_back(View<T>(m_storage.write(view.buffer(), view.get_buffer_size())));
     }
 
     void resize(size_t count) {

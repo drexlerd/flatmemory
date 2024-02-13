@@ -333,17 +333,6 @@ namespace flatmemory
 
 
         /**
-         * Capacity
-        */
-
-        [[nodiscard]] size_t buffer_size() const { 
-            assert(m_buf);
-            assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position));
-            return read_value<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position); 
-        }
-
-
-        /**
          * Lookup
         */
 
@@ -375,6 +364,26 @@ namespace flatmemory
                 return element_view_type<I>(m_buf + read_value<offset_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position));
             }
         }
+
+        [[nodiscard]] uint8_t* buffer() { return m_buf; }
+        [[nodiscard]] const uint8_t* buffer() const { return m_buf; }
+
+        [[nodiscard]] size_t buffer_size() const { 
+            assert(m_buf);
+            assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position));
+            return read_value<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position); 
+        }
+
+
+        /**
+         * Capacity
+        */
+        [[nodiscard]] size_t size() const { return Layout<Tuple<Ts...>>::size; }
+
+
+        /**
+         * Hashing
+        */
 
         [[nodiscard]] size_t hash() const {
             size_t seed = Layout<Tuple<Ts...>>::size;
@@ -455,15 +464,25 @@ namespace flatmemory
             }
         }
 
-
-        /**
-         * Capacity
-        */
         [[nodiscard]] size_t buffer_size() const { 
             assert(m_buf);
             assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position));
             return read_value<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position); 
         }
+
+        [[nodiscard]] const uint8_t* buffer() const { return m_buf; }
+
+
+        /**
+         * Capacity
+        */
+
+        [[nodiscard]] size_t size() const { return Layout<Tuple<Ts...>>::size; }
+
+
+        /**
+         * Hashing
+        */
 
         [[nodiscard]] size_t hash() const {
             size_t seed = Layout<Tuple<Ts...>>::size;

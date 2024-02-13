@@ -385,6 +385,9 @@ namespace flatmemory
         /**
          * Getters
         */
+        [[nodiscard]] uint8_t* buffer() { return m_buf; }
+        [[nodiscard]] const uint8_t* buffer() const { return m_buf; }
+
         [[nodiscard]] size_t buffer_size() const
         {
             assert(m_buf);
@@ -488,6 +491,8 @@ namespace flatmemory
         /**
          * Getters
         */
+
+        [[nodiscard]] uint8_t* buffer() { return m_buf; }
 
         [[nodiscard]] size_t buffer_size() const
         {

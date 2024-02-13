@@ -351,6 +351,9 @@ namespace flatmemory
             [[nodiscard]] T_* data() { return reinterpret_cast<T_*>(m_buf + Layout<Vector<T>>::vector_data_position); }
             [[nodiscard]] const T_* data() const { return reinterpret_cast<const T_*>(m_buf + Layout<Vector<T>>::vector_data_position); }
 
+            [[nodiscard]] uint8_t* buffer() { return m_buf; }
+            [[nodiscard]] const uint8_t* buffer() const { return m_buf; }
+
 
             /**
              * Iterators
@@ -593,6 +596,8 @@ namespace flatmemory
             }
 
             [[nodiscard]] const T_* data() const { return reinterpret_cast<const T_*>(m_buf + Layout<Vector<T>>::vector_data_position); }
+
+            [[nodiscard]] const uint8_t* buffer() const { return m_buf; }
 
 
             /**

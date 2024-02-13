@@ -130,6 +130,9 @@ namespace flatmemory
             assert(m_buf);
             return sizeof(T);
         }
+
+        [[nodiscard]] uint8_t* buffer() { return m_buf; }
+        [[nodiscard]] const uint8_t* buffer() const { return m_buf; }
     };
 
 
@@ -173,6 +176,8 @@ namespace flatmemory
             assert(m_buf);
             return sizeof(T);
         }
+
+        [[nodiscard]] uint8_t* buffer() { return m_buf; }
     };
 }
 
