@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1707851551323,
+  "lastUpdate": 1707853603197,
   "repoUrl": "https://github.com/drexlerd/flatmemory",
   "entries": {
     "Benchmark": [
@@ -4128,6 +4128,102 @@ window.BENCHMARK_DATA = {
             "value": 196647604.3333311,
             "unit": "ns/iter",
             "extra": "iterations: 3\ncpu: 196635466.66666675 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dominik.drexler@gmx.net",
+            "name": "Dominik Drexler",
+            "username": "drexlerd"
+          },
+          "committer": {
+            "email": "dominik.drexler@gmx.net",
+            "name": "Dominik Drexler",
+            "username": "drexlerd"
+          },
+          "distinct": true,
+          "id": "25d19517c6d8de3653c9070a08f7dedf40e65665",
+          "message": "improved iterator",
+          "timestamp": "2024-02-13T20:45:33+01:00",
+          "tree_id": "1aa4336b167002a095d79489d838867d7d8b3008",
+          "url": "https://github.com/drexlerd/flatmemory/commit/25d19517c6d8de3653c9070a08f7dedf40e65665"
+        },
+        "date": 1707853602324,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "flatmemory::benchmarks::BM_BitsetBuilderCreate/1000000/1",
+            "value": 39367473.928571425,
+            "unit": "ns/iter",
+            "extra": "iterations: 14\ncpu: 39365400 ns\nthreads: 1"
+          },
+          {
+            "name": "flatmemory::benchmarks::BM_BitsetBuilderCreate/1000000/10",
+            "value": 45757928.200000234,
+            "unit": "ns/iter",
+            "extra": "iterations: 15\ncpu: 45757100 ns\nthreads: 1"
+          },
+          {
+            "name": "flatmemory::benchmarks::BM_BitsetBuilderCreate/1000000/100",
+            "value": 403442633.0000045,
+            "unit": "ns/iter",
+            "extra": "iterations: 2\ncpu: 402572100 ns\nthreads: 1"
+          },
+          {
+            "name": "flatmemory::benchmarks::BM_BitsetBuilderAccess/1000000/1",
+            "value": 132047503.39999977,
+            "unit": "ns/iter",
+            "extra": "iterations: 5\ncpu: 132046599.99999997 ns\nthreads: 1"
+          },
+          {
+            "name": "flatmemory::benchmarks::BM_BitsetBuilderAccess/1000000/10",
+            "value": 148932171.60000062,
+            "unit": "ns/iter",
+            "extra": "iterations: 5\ncpu: 148924800 ns\nthreads: 1"
+          },
+          {
+            "name": "flatmemory::benchmarks::BM_BitsetBuilderAccess/1000000/100",
+            "value": 351635106.4999981,
+            "unit": "ns/iter",
+            "extra": "iterations: 2\ncpu: 351622849.9999996 ns\nthreads: 1"
+          },
+          {
+            "name": "flatmemory::benchmarks::BM_BitsetViewCreate/1000000/1",
+            "value": 28304785.208333645,
+            "unit": "ns/iter",
+            "extra": "iterations: 24\ncpu: 28301637.500000004 ns\nthreads: 1"
+          },
+          {
+            "name": "flatmemory::benchmarks::BM_BitsetViewCreate/1000000/10",
+            "value": 65431174.63636282,
+            "unit": "ns/iter",
+            "extra": "iterations: 11\ncpu: 65426945.454545446 ns\nthreads: 1"
+          },
+          {
+            "name": "flatmemory::benchmarks::BM_BitsetViewCreate/1000000/100",
+            "value": 461657471.0000023,
+            "unit": "ns/iter",
+            "extra": "iterations: 2\ncpu: 461606300.0000001 ns\nthreads: 1"
+          },
+          {
+            "name": "flatmemory::benchmarks::BM_BitsetViewAccess/1000000/1",
+            "value": 17925285.205128223,
+            "unit": "ns/iter",
+            "extra": "iterations: 39\ncpu: 17924284.615384627 ns\nthreads: 1"
+          },
+          {
+            "name": "flatmemory::benchmarks::BM_BitsetViewAccess/1000000/10",
+            "value": 43535476.499999784,
+            "unit": "ns/iter",
+            "extra": "iterations: 16\ncpu: 43534224.999999985 ns\nthreads: 1"
+          },
+          {
+            "name": "flatmemory::benchmarks::BM_BitsetViewAccess/1000000/100",
+            "value": 187679437.2500008,
+            "unit": "ns/iter",
+            "extra": "iterations: 4\ncpu: 187676350.00000006 ns\nthreads: 1"
           }
         ]
       }
