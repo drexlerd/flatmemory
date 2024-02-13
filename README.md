@@ -7,8 +7,9 @@ Flatmemory currently provides the following non-trivial composite types:
 - Tuple
 - Vector
 - Bitset
+- Trivial (for serializing a trivial type without a size prefix)
 
-All non-trivial types support all non-trivial types and types `T` that satisfy `std::is_trivially_copyable_v<T>` as nested types. The data of non-trivial types are stored with an offset of type `uint16_t` and all other types `T` are stored in-place.
+The supported nested types are all non-trivial types and types `T` that satisfy `std::is_trivially_copyable_v<T>`. The data of non-trivial types are stored with an offset of type `uint16_t` and all other types `T` are stored in-place. All types are prefixed with a `uint32_t` that represents the size of the buffer with the exception of `Trivial` where `sizeof(T)` represents the buffer size.
 
 Comparison to related libraries such as flatbuffers or cap'n'proto:
 
