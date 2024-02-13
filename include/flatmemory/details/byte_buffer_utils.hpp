@@ -25,6 +25,7 @@
 #include <cstddef>
 #include <iostream>
 #include <iomanip>
+#include <bitset>
 
 
 namespace flatmemory
@@ -78,6 +79,14 @@ inline void print(const uint8_t* data, size_t num_bytes) {
     std::cout << std::dec << std::endl; // Reset to decimal output
 }
 
+
+inline void printBits(const uint8_t* data, size_t num_bytes) {
+    for (size_t i = 0; i < num_bytes; ++i) {
+        // Print each byte as a series of bits
+        std::cout << std::bitset<8>(data[i]) << " ";
+    }
+    std::cout << std::endl; // New line at the end
+}
 
 
 

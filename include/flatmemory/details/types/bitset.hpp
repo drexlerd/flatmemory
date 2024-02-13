@@ -210,7 +210,6 @@ namespace flatmemory
 
             class const_iterator {
             private:
-                bool m_default_bit_value;
                 const Block* m_blocks;
                 size_t m_num_blocks;
 
@@ -224,35 +223,30 @@ namespace flatmemory
                     do {
                         ++m_pos;
                         ++m_bit_index;
-                        if (m_bit_index >= sizeof(Block)) {
+                        if (m_bit_index == block_size) {
                             m_bit_index = 0;
                             ++m_block_index;
                         }
-                        if ((m_blocks[m_block_index] & (static_cast<Block>(1) << m_bit_index)) != m_default_bit_value) {
+                        if ((m_blocks[m_block_index] & (static_cast<Block>(1) << m_bit_index))) {
                             break;
                         }
                     } while (m_pos < m_end_pos);
                 }
     
-                /// @brief Find the last block that differs from the default block
-                size_t find_last_non_default_block() const {
-                    const auto default_block = m_default_bit_value ? block_ones : block_zeroes;
+                size_t find_end_pos() const {
+                    // Find the last block that differs from the default block
                     auto last_relevant_block_index = static_cast<int64_t>(m_num_blocks) - 1;
-                    for (; (last_relevant_block_index >= 0) && (m_blocks[last_relevant_block_index] == default_block); --last_relevant_block_index)
+                    for (; (last_relevant_block_index >= 0) && (m_blocks[last_relevant_block_index] == block_ones); --last_relevant_block_index)
                     {
                     }
-                    return last_relevant_block_index;
-                }
-
-                /// @brief Find last non default bit that differs from a non default bit value
-                size_t find_last_non_default_bit(size_t block_index) const {
-                    assert(block_index < m_num_blocks);
-                    Block block = m_blocks[block_index];
-                    size_t last_non_default_bit_index = sizeof(Block) - 1;
-                    for (; (last_non_default_bit_index >= 0) && ((block & (static_cast<Block>(1) << last_non_default_bit_index)) == m_default_bit_value); --last_non_default_bit_index)
+                    // Find last non default bit that differs from a non default bit value
+                    Block block = m_blocks[last_relevant_block_index];
+                    size_t last_non_default_bit_index = block_size - 1;
+                    for (; (last_non_default_bit_index >= 0) && (!(block & (static_cast<Block>(1) << last_non_default_bit_index))); --last_non_default_bit_index)
                     {
                     }
-                    return last_non_default_bit_index;
+                    // +1 to point after the last non default bit value
+                    return last_relevant_block_index * block_size + last_non_default_bit_index + 1;
                 }
 
             public:
@@ -263,17 +257,20 @@ namespace flatmemory
                 using iterator_category = std::forward_iterator_tag;
 
                 const_iterator(bool default_bit_value, const Block* blocks, size_t num_blocks, bool begin)
-                    : m_default_bit_value(default_bit_value)
-                    , m_blocks(blocks)
+                    : m_blocks(blocks)
                     , m_num_blocks(num_blocks)
                     , m_block_index(0)
                     , m_bit_index(-1)
-                    , m_end_pos(find_last_non_default_block() * sizeof(Block) + find_last_non_default_bit(m_block_index) + 1)
+                    , m_end_pos(find_end_pos())
                     , m_pos(begin ? -1 : m_end_pos) 
                 {
+                    // Iteration is only well-defined on non default_bit_value
+                    assert(!default_bit_value);
                     if (begin) {
                         next_non_default_bit();
                     } 
+                    printBits(reinterpret_cast<const uint8_t*>(m_blocks), m_num_blocks * sizeof(Block));
+                    std::cout << "m_end_pos: " << m_end_pos << std::endl;
                 }
 
                 [[nodiscard]] decltype(auto) operator*() const {
