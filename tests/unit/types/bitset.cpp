@@ -219,15 +219,12 @@ namespace flatmemory::tests
     }
 
     TEST(FlatmemoryTests, TypesBitsetIteratorTest) {
-        size_t num_bits = 100;
+        size_t num_bits = 200;
         auto builder = Builder<Bitset<uint64_t>>(num_bits, false);
         builder.set(0);
         builder.set(2);
         builder.set(4);
         builder.set(99);
-
-        // Iteration is only well-defined on non default_bit_value
-        EXPECT_FALSE(builder.get_default_bit_value());
 
         auto it = builder.begin();
         auto end = builder.end();
@@ -267,6 +264,15 @@ namespace flatmemory::tests
         ++it;
         EXPECT_EQ(*it, 99);
         ++it;
+        EXPECT_EQ(it, end);
+    }
+
+    TEST(FlatmemoryTests, TypesBitsetIterator2Test) {
+        size_t num_bits = 0;
+        auto builder = Builder<Bitset<uint64_t>>(num_bits, false);
+
+        auto it = builder.begin();
+        auto end = builder.end();
         EXPECT_EQ(it, end);
     }
 }

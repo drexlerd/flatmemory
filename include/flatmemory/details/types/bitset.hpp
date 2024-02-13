@@ -220,9 +220,10 @@ namespace flatmemory
                 const Block* m_blocks;
                 size_t m_num_blocks;
 
-                // The position in blocks
+                // The current block to be worked on
                 size_t m_block_index;
                 size_t m_bit_index;
+                size_t m_cur_block;
 
                 // The iterator positions
                 size_t m_end_pos;
@@ -231,34 +232,40 @@ namespace flatmemory
                 void next_set_bit() 
                 {
                     do {
+                        /* Advance step */
                         ++m_pos;
                         ++m_bit_index;
-                        if (m_bit_index == block_size) {
-                            m_bit_index = 0;
+
+                        /* Skip step */
+                        if (m_cur_block == block_zeroes) {
+                            // Skip remaining zero bits; set pos to last position in current block for advance step
+                            m_pos += block_size - m_bit_index - 1;
+                            // Move to next block; set bit_index to -1 for advance step
+                            m_bit_index = -1;
                             ++m_block_index;
+                            m_cur_block = m_blocks[m_block_index];
+                            continue;
                         }
-                        if ((m_blocks[m_block_index] & (static_cast<Block>(1) << m_bit_index))) {
+
+                        /* Test step */
+                        if (m_cur_block & Block(1)) {
+                            m_cur_block >>= 1;
                             break;
                         }
+                        m_cur_block >>= 1;
                     } while (m_pos < m_end_pos);
                 }
     
                 size_t find_end_pos() const 
                 {
+                    assert(m_num_blocks > 0);
                     // Find the last block that differs from the default block
-                    size_t last_relevant_block_index = static_cast<int64_t>(m_num_blocks) - 1;
+                    int32_t last_relevant_block_index = static_cast<int64_t>(m_num_blocks) - 1;
                     for (; (last_relevant_block_index >= 0) && (m_blocks[last_relevant_block_index] == block_ones); --last_relevant_block_index)
                     {
                     }
-                    // Find last non default bit that differs from a non default bit value
-                    Block block = m_blocks[last_relevant_block_index];
-                    size_t last_set_bit_index = block_size - 1;
-                    // Use block_msb_one and shift by just 1 in each iteration
-                    for (; (last_set_bit_index >= 0) && (!(block & block_msb_one)); --last_set_bit_index, block <<= 1)
-                    {
-                    }
-                    // +1 to point after the last non default bit value
-                    return last_relevant_block_index * block_size + last_set_bit_index + 1;
+                    // Point to the last position of the next block (it must not exist)
+                    return (last_relevant_block_index + 1) * block_size - 1;
                 }
 
             public:
@@ -272,9 +279,10 @@ namespace flatmemory
                     : m_blocks(blocks)
                     , m_num_blocks(num_blocks)
                     , m_block_index(0)
-                    , m_bit_index(-1)
-                    , m_end_pos(find_end_pos())
-                    , m_pos(begin ? -1 : m_end_pos) 
+                    , m_bit_index(-1)  // set bit_index to -1 for advance step
+                    , m_cur_block(num_blocks > 0 ? blocks[m_block_index] : block_zeroes)
+                    , m_end_pos(num_blocks > 0 ? find_end_pos() : 0)
+                    , m_pos(begin ? -1 : m_end_pos)  // set to -1 for advance step
                 {
                     // Iteration is only well-defined on non default_bit_value
                     assert(!default_bit_value);
@@ -284,7 +292,7 @@ namespace flatmemory
                 }
 
                 [[nodiscard]] decltype(auto) operator*() const {
-                    // Do not allow interpreting end_pos as a bit.
+                    // Do not allow interpreting begin or end as position.
                     assert(m_pos < m_end_pos);
                     return m_pos;
                 }
