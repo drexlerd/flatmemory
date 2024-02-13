@@ -291,7 +291,7 @@ namespace flatmemory
                     } 
                 }
 
-                [[nodiscard]] decltype(auto) operator*() const {
+                [[nodiscard]] size_t operator*() const {
                     // Do not allow interpreting begin or end as position.
                     assert(m_pos < m_end_pos);
                     return m_pos;
