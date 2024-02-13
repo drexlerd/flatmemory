@@ -281,7 +281,7 @@ namespace flatmemory
                     , m_block_index(0)
                     , m_bit_index(-1)  // set bit_index to -1 for advance step
                     , m_cur_block(num_blocks > 0 ? blocks[m_block_index] : block_zeroes)
-                    , m_end_pos(num_blocks > 0 ? find_end_pos() : 0)
+                    , m_end_pos(find_end_pos())
                     , m_pos(begin ? -1 : m_end_pos)  // set to -1 for advance step
                 {
                     // Iteration is only well-defined on non default_bit_value
