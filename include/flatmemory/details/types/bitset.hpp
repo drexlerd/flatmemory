@@ -149,8 +149,14 @@ namespace flatmemory
     class Operator<Bitset<Block>> {
         private:
             static constexpr std::size_t block_size = sizeof(Block) * 8;
+            // 000...
             static constexpr Block block_zeroes = 0;
+            // 111...
             static constexpr Block block_ones = Block(-1);
+            // 100...
+            static constexpr Block block_msb_one = Block(1) << (block_size - 1);
+            // 011...
+            static constexpr Block block_msb_zero = block_ones & (~block_msb_one);
 
         public:
             template<IsBitset L, IsBitset R>
@@ -210,16 +216,19 @@ namespace flatmemory
 
             class const_iterator {
             private:
+                // Underlying data
                 const Block* m_blocks;
                 size_t m_num_blocks;
 
+                // The position in blocks
                 size_t m_block_index;
                 size_t m_bit_index;
 
+                // The iterator positions
                 size_t m_end_pos;
                 size_t m_pos;
 
-                void next_non_default_bit() {
+                void next_set_bit() {
                     do {
                         ++m_pos;
                         ++m_bit_index;
@@ -235,14 +244,15 @@ namespace flatmemory
     
                 size_t find_end_pos() const {
                     // Find the last block that differs from the default block
-                    auto last_relevant_block_index = static_cast<int64_t>(m_num_blocks) - 1;
+                    size_t last_relevant_block_index = static_cast<int64_t>(m_num_blocks) - 1;
                     for (; (last_relevant_block_index >= 0) && (m_blocks[last_relevant_block_index] == block_ones); --last_relevant_block_index)
                     {
                     }
                     // Find last non default bit that differs from a non default bit value
                     Block block = m_blocks[last_relevant_block_index];
                     size_t last_non_default_bit_index = block_size - 1;
-                    for (; (last_non_default_bit_index >= 0) && (!(block & (static_cast<Block>(1) << last_non_default_bit_index))); --last_non_default_bit_index)
+                    // Use block_msb_one and shift by just 1 in each iteration
+                    for (; (last_non_default_bit_index >= 0) && (!(block & block_msb_one)); --last_non_default_bit_index, block <<= 1)
                     {
                     }
                     // +1 to point after the last non default bit value
@@ -267,10 +277,8 @@ namespace flatmemory
                     // Iteration is only well-defined on non default_bit_value
                     assert(!default_bit_value);
                     if (begin) {
-                        next_non_default_bit();
+                        next_set_bit();
                     } 
-                    printBits(reinterpret_cast<const uint8_t*>(m_blocks), m_num_blocks * sizeof(Block));
-                    std::cout << "m_end_pos: " << m_end_pos << std::endl;
                 }
 
                 [[nodiscard]] decltype(auto) operator*() const {
@@ -280,7 +288,7 @@ namespace flatmemory
                 }
 
                 const_iterator& operator++() {
-                    next_non_default_bit();
+                    next_set_bit();
                     return *this;
                 }
 
@@ -756,7 +764,7 @@ namespace flatmemory
         }
 
         // Find the next set bit, inclusive the given position
-        std::size_t next_non_default_bit(std::size_t position) const
+        std::size_t next_set_bit(std::size_t position) const
         {
             std::size_t index = position / block_size;
             std::size_t offset = position % block_size;
