@@ -22,6 +22,7 @@
 #include "../byte_buffer_utils.hpp" 
 #include "../layout_utils.hpp"
 #include "../layout.hpp"
+#include "../operator.hpp"
 #include "../builder.hpp"
 #include "../view_const.hpp"
 #include "../view.hpp"
@@ -55,6 +56,7 @@ namespace flatmemory
     */
     using vector_size_type = uint32_t;
 
+
     /**
      * Layout
     */
@@ -82,6 +84,30 @@ namespace flatmemory
                           << "vector_size_padding: " << vector_size_padding << "\n"
                           << "final_alignment: " << final_alignment << std::endl;
             }
+    };
+
+
+    /**
+     * Forward declarations
+    */
+    template<IsTriviallyCopyableOrCustom T>
+    class View<Vector<T>>;
+
+    template<IsTriviallyCopyableOrCustom T>
+    class ConstView<Vector<T>>;
+
+    template<IsTriviallyCopyableOrCustom T>
+    class Builder<Vector<T>>;
+
+
+    /**
+     * Operator
+    */
+    template<IsTriviallyCopyableOrCustom T>
+    class Operator<Vector<T>> 
+    {
+        private:
+        public:
     };
 
 
