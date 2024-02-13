@@ -14,7 +14,7 @@ Comparison to related libraries such as flatbuffers or cap'n'proto:
 
 Advantages:
   - Availability of useful non-trivial types with reduced size of vtables
-  - Availability of standard containers to store byte sequences: vector (with limitations due to inability to increase the size after serialization), unordered_set
+  - Availability of general containers to store byte sequences: FixedSizedTypeVector, VariableSizedTypeVector, UnorderedSet
   - No code generator is needed
 
 Disadvantages:
