@@ -18,7 +18,7 @@ Advantages:
   - No code generator is needed
 
 Disadvantages:
-  - Compatibility is restricted to in-memory computations, i.e., it is generally not safe to interpret the data in other enviroments and not possible to extend layouts while supporting backward compatibility
+  - Memory layouts cannot be extended while supporting backward compatibility
 
 
 ## Example

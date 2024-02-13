@@ -334,10 +334,6 @@ namespace flatmemory
         template <typename>
         friend class Builder;
 
-        static constexpr std::size_t block_size = sizeof(Block) * 8;
-        static constexpr Block block_zeroes = 0;
-        static constexpr Block block_ones = Block(-1);
-
     public:
         /**
          * Constructor to interpret raw data created by its corresponding builder
@@ -441,10 +437,6 @@ namespace flatmemory
 
         template <typename>
         friend class Builder;
-
-        static constexpr std::size_t block_size = sizeof(Block) * 8;
-        static constexpr Block block_zeroes = 0;
-        static constexpr Block block_ones = Block(-1);
 
     public:
         /**
