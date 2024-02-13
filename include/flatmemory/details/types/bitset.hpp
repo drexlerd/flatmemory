@@ -228,7 +228,8 @@ namespace flatmemory
                 size_t m_end_pos;
                 size_t m_pos;
 
-                void next_set_bit() {
+                void next_set_bit() 
+                {
                     do {
                         ++m_pos;
                         ++m_bit_index;
@@ -242,7 +243,8 @@ namespace flatmemory
                     } while (m_pos < m_end_pos);
                 }
     
-                size_t find_end_pos() const {
+                size_t find_end_pos() const 
+                {
                     // Find the last block that differs from the default block
                     size_t last_relevant_block_index = static_cast<int64_t>(m_num_blocks) - 1;
                     for (; (last_relevant_block_index >= 0) && (m_blocks[last_relevant_block_index] == block_ones); --last_relevant_block_index)
@@ -250,13 +252,13 @@ namespace flatmemory
                     }
                     // Find last non default bit that differs from a non default bit value
                     Block block = m_blocks[last_relevant_block_index];
-                    size_t last_non_default_bit_index = block_size - 1;
+                    size_t last_set_bit_index = block_size - 1;
                     // Use block_msb_one and shift by just 1 in each iteration
-                    for (; (last_non_default_bit_index >= 0) && (!(block & block_msb_one)); --last_non_default_bit_index, block <<= 1)
+                    for (; (last_set_bit_index >= 0) && (!(block & block_msb_one)); --last_set_bit_index, block <<= 1)
                     {
                     }
                     // +1 to point after the last non default bit value
-                    return last_relevant_block_index * block_size + last_non_default_bit_index + 1;
+                    return last_relevant_block_index * block_size + last_set_bit_index + 1;
                 }
 
             public:
