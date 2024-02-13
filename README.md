@@ -29,13 +29,13 @@ In this example, we use a `Builder`to serialize a 2-dimensional `Vector` of `uin
 #include <flatmemory/flatmemory.hpp>
 
 // 1. Type the dispatcher.
-using 2DVecUint16 = Vector<Vector<uint16_t>>;
+using TwoDimVecUint16 = Vector<Vector<uint16_t>>;
 
 // 2. Print the static layout
-Layout<2DVecUint16>().print()
+Layout<TwoDimVecUint16>().print()
 
 // 3. Construct a builder, feed it with data, and finish the byte sequence.
-auto builder = Builder<2DVecUint16>();
+auto builder = Builder<TwoDimVecUint16>();
 builder.resize(2);
 builder[0].push_back(5);
 builder[1].push_back(6);
@@ -44,7 +44,7 @@ builder.finish();
 EXPECT_EQ(builder.get_size(), 36);
 
 // 4. Construct a view to interpret the byte sequence.
-auto view = View<2DVecUint16>(builder.get_data());
+auto view = View<TwoDimVecUint16>(builder.get_data());
 EXPECT_EQ(view.buffer_size(), 36);  // storing views contiguously satisfies alignment requirements
 EXPECT_EQ(view.size(), 2);
 EXPECT_EQ(view[0][0], 5);
