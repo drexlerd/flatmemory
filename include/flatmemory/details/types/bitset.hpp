@@ -277,30 +277,31 @@ namespace flatmemory
 
                 void next_set_bit() 
                 {
-                    do {
-
-                        /* Advance step */
-                        ++m_pos;
-                        ++m_bit_index;
-
-                        /* Skip step */
-                        if (m_cur_block == block_zeroes) {
-                            // Skip remaining zero bits; set pos to last position in current block for advance step
-                            m_pos += block_size - m_bit_index - 1;
-                            // Move to next block; set bit_index to -1 for advance step
-                            m_bit_index = -1;
-                            ++m_block_index;
-                            m_cur_block = m_blocks[m_block_index];
-                            continue;
-                        }
-
-                        /* Test step */
-                        if (m_cur_block & Block(1)) {
-                            m_cur_block >>= 1;
+                    ++m_pos;
+                    while (m_pos < m_end_pos) {                     
+                        if (m_cur_block)
+                        {
+                            // If there are set bits in the current value
+                            const auto lsb_position = get_lsb_position(m_cur_block);
+                            std::cout << "lsb_position=" << lsb_position << std::endl;
+                            m_bit_index += lsb_position + 1;
+                            m_pos += lsb_position;
+                            // shift by + 1 to advance further
+                            m_cur_block >>= lsb_position + 1;
+                            printBits(reinterpret_cast<const uint8_t*>(&m_cur_block), sizeof(8));
+                            std::cout << "m_pos=" << m_pos << " m_block_index=" << m_block_index << " m_bit_index=" << m_bit_index << std::endl;
                             break;
-                        }
-                        m_cur_block >>= 1;
-                    } while (m_pos < m_end_pos);
+                        } else {
+                            // Skip the remaining bits, point to first position in next block
+                            m_pos += block_size - m_bit_index;
+                            ++m_block_index;
+                            m_bit_index = 0;
+                            // Fetch next data block or zeroes
+                            m_cur_block = m_block_index < m_num_blocks ? m_blocks[m_block_index] : block_zeroes;
+                            printBits(reinterpret_cast<const uint8_t*>(&m_cur_block), sizeof(8));
+                            std::cout << "m_pos=" << m_pos << " m_block_index=" << m_block_index << " m_bit_index=" << m_bit_index << std::endl;
+                        }   
+                    }
                 }
     
                 size_t find_end_pos() const 
@@ -312,7 +313,7 @@ namespace flatmemory
                     {
                     }
                     // Point to the last position of the next block (it must not exist)
-                    return (last_relevant_block_index + 1) * block_size - 1;
+                    return (last_relevant_block_index + 1) * block_size;
                 }
 
             public:
@@ -326,11 +327,13 @@ namespace flatmemory
                     : m_blocks(blocks)
                     , m_num_blocks(num_blocks)
                     , m_block_index(0)
-                    , m_bit_index(-1)  // set bit_index to -1 for advance step
+                    , m_bit_index(0)  // set bit_index to -1 for advance step
                     , m_cur_block(num_blocks > 0 ? blocks[m_block_index] : block_zeroes)
                     , m_end_pos(find_end_pos())
                     , m_pos(begin ? -1 : m_end_pos)  // set to -1 for advance step
-                {
+                {   
+                    printBits(reinterpret_cast<const uint8_t*>(&m_cur_block), sizeof(8));
+                    std::cout << "m_pos=" << m_pos << " m_block_index=" << m_block_index << " m_bit_index=" << m_bit_index << std::endl;
                     // Iteration is only well-defined on non default_bit_value
                     assert(!default_bit_value);
                     if (begin) {
