@@ -277,43 +277,41 @@ namespace flatmemory
 
                 void next_set_bit() 
                 {
-                    ++m_pos;
-                    while (m_pos < m_end_pos) {                     
+                    assert(m_pos != m_end_pos);
+                    do {   
+                        // Advance position
+                        ++m_pos;    
+                        ++m_bit_index;           
                         if (m_cur_block)
                         {
                             // If there are set bits in the current value
                             const auto lsb_position = get_lsb_position(m_cur_block);
-                            std::cout << "lsb_position=" << lsb_position << std::endl;
-                            m_bit_index += lsb_position + 1;
+                            m_bit_index += lsb_position;
                             m_pos += lsb_position;
                             // shift by + 1 to advance further
                             m_cur_block >>= lsb_position + 1;
-                            printBits(reinterpret_cast<const uint8_t*>(&m_cur_block), sizeof(8));
-                            std::cout << "m_pos=" << m_pos << " m_block_index=" << m_block_index << " m_bit_index=" << m_bit_index << std::endl;
                             break;
                         } else {
-                            // Skip the remaining bits, point to first position in next block
-                            m_pos += block_size - m_bit_index;
+                            // Skip the remaining bits, point to last position in the current block
+                            m_pos += block_size - m_bit_index - 1;
                             ++m_block_index;
-                            m_bit_index = 0;
+                            m_bit_index = -1;
                             // Fetch next data block or zeroes
                             m_cur_block = m_block_index < m_num_blocks ? m_blocks[m_block_index] : block_zeroes;
-                            printBits(reinterpret_cast<const uint8_t*>(&m_cur_block), sizeof(8));
-                            std::cout << "m_pos=" << m_pos << " m_block_index=" << m_block_index << " m_bit_index=" << m_bit_index << std::endl;
                         }   
-                    }
+                    } while (m_pos < m_end_pos);
                 }
     
                 size_t find_end_pos() const 
                 {
                     assert(m_num_blocks > 0);
                     // Find the last block that differs from the default block
-                    int32_t last_relevant_block_index = static_cast<int64_t>(m_num_blocks) - 1;
-                    for (; (last_relevant_block_index >= 0) && (m_blocks[last_relevant_block_index] == block_ones); --last_relevant_block_index)
+                    int32_t last_relevant_block_index = static_cast<int64_t>(m_num_blocks) - 1  ;
+                    for (; (last_relevant_block_index >= 0) && (m_blocks[last_relevant_block_index] == block_zeroes); --last_relevant_block_index)
                     {
                     }
                     // Point to the last position of the next block (it must not exist)
-                    return (last_relevant_block_index + 1) * block_size;
+                    return (last_relevant_block_index + 1) * block_size - 1;
                 }
 
             public:
@@ -327,16 +325,14 @@ namespace flatmemory
                     : m_blocks(blocks)
                     , m_num_blocks(num_blocks)
                     , m_block_index(0)
-                    , m_bit_index(0)  // set bit_index to -1 for advance step
+                    , m_bit_index(-1)  // set bit_index to -1 for advance step
                     , m_cur_block(num_blocks > 0 ? blocks[m_block_index] : block_zeroes)
                     , m_end_pos(find_end_pos())
                     , m_pos(begin ? -1 : m_end_pos)  // set to -1 for advance step
                 {   
-                    printBits(reinterpret_cast<const uint8_t*>(&m_cur_block), sizeof(8));
-                    std::cout << "m_pos=" << m_pos << " m_block_index=" << m_block_index << " m_bit_index=" << m_bit_index << std::endl;
                     // Iteration is only well-defined on non default_bit_value
                     assert(!default_bit_value);
-                    if (begin) {
+                    if (begin && m_pos != m_end_pos) {
                         next_set_bit();
                     } 
                 }
@@ -372,7 +368,7 @@ namespace flatmemory
             {
                 assert(n != 0);
                 const Block v = n & (-n);
-                return static_cast<std::size_t>(log2(v));
+                return std::bit_width(v) - 1;  // bit_width uses more efficient specialized cpu instructions
             }
 
             static size_t get_index(size_t position) noexcept 

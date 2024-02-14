@@ -275,4 +275,5 @@ namespace flatmemory::tests
         auto end = builder.end();
         EXPECT_EQ(it, end);
     }
+    
 }
