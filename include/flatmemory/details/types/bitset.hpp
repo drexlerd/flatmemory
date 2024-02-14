@@ -316,9 +316,9 @@ namespace flatmemory
 
             public:
                 using difference_type = size_t;
-                using value_type = bool;
-                using pointer = bool*;
-                using reference = bool&;
+                using value_type = size_t;
+                using pointer = size_t*;
+                using reference = size_t&;
                 using iterator_category = std::forward_iterator_tag;
 
                 const_iterator(bool default_bit_value, const Block* blocks, size_t num_blocks, bool begin)
