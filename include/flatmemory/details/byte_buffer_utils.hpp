@@ -40,6 +40,10 @@ bool test_correct_alignment(const uint8_t* buf) {
     return (reinterpret_cast<uintptr_t>(buf) % alignof(T)) == 0;
 }
 
+inline bool test_correct_alignment(const uint8_t* buf, size_t alignment) {
+    return (reinterpret_cast<uintptr_t>(buf) % alignment) == 0;
+}
+
 
 /**
  * Read values from raw data.
