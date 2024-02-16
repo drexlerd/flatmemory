@@ -224,7 +224,7 @@ namespace flatmemory
                 }(), ...);
                 // No need to write padding because if size=0 then no padding is needed and otherwise, if size>0 then the loop adds final padding.
                 /* Write buffer size */
-                m_buffer.write(Layout<Tuple<Ts...>>::layout_data.buffer_size_position, buffer_size);
+                m_buffer.write(Layout<Tuple<Ts...>>::layout_data.buffer_size_position, static_cast<buffer_size_type>(buffer_size));
                 m_buffer.set_size(buffer_size);
             }
 

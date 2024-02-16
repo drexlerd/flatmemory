@@ -146,7 +146,7 @@ namespace flatmemory
                 } else {
                     /* For non-trivial type T, we store the offsets first */
                     // position of offset
-                    size_t offset_pos = Layout<Vector<T>>::vector_data_position;
+                    offset_type offset_pos = Layout<Vector<T>>::vector_data_position;
                     size_t offset_end = offset_pos + m_data.size() * sizeof(offset_type);
                     size_t offset_padding = calculate_amount_padding(offset_end, Layout<T>::final_alignment);
                     m_buffer.write_padding(offset_end, offset_padding);
@@ -162,7 +162,6 @@ namespace flatmemory
                         buffer_size_type nested_buffer_size = nested_builder.buffer().size();
                         m_buffer.write(buffer_size, nested_builder.buffer().data(), nested_buffer_size);
                         buffer_size += nested_buffer_size;
-                        // TODO: find tighter amount of padding
                         buffer_size += m_buffer.write_padding(buffer_size, calculate_amount_padding(buffer_size, Layout<Vector<T>>::final_alignment));
                     }
                 }
@@ -170,7 +169,7 @@ namespace flatmemory
                 buffer_size += m_buffer.write_padding(buffer_size, calculate_amount_padding(buffer_size, Layout<Vector<T>>::final_alignment));
                 
                 /* Write buffer size */
-                m_buffer.write(Layout<Vector<T>>::buffer_size_position, buffer_size);
+                m_buffer.write(Layout<Vector<T>>::buffer_size_position, static_cast<buffer_size_type>(buffer_size));
                 m_buffer.set_size(buffer_size);
             }
 

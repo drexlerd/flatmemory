@@ -617,7 +617,6 @@ namespace flatmemory
             // Write blocks
             m_blocks.finish();
             buffer_size += m_buffer.write(Layout<Bitset<Block>>::blocks_position, m_blocks.buffer().data(), m_blocks.buffer().size());
-
             // Write final padding
             buffer_size += m_buffer.write_padding(buffer_size, calculate_amount_padding(buffer_size, Layout<Bitset<Block>>::final_alignment));
             
