@@ -35,7 +35,7 @@ private:
     std::vector<uint8_t> m_data;
     size_t m_size;
 
-    void resize_to_fit(size_t pos, size_t amount) {
+    inline void resize_to_fit(size_t pos, size_t amount) {
         size_t final_size = pos + amount;
         if (final_size > m_data.size()) {
             m_data.resize(final_size);

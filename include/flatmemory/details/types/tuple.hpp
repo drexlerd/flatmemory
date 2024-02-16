@@ -211,6 +211,7 @@ namespace flatmemory
                     } else {
                         // write offset
                         m_buffer.write(element_data.position, buffer_size);
+                        m_buffer.write_padding(element_data.end, element_data.padding);
         
                         // write data
                         auto& nested_builder = std::get<Is>(m_data);
@@ -219,7 +220,7 @@ namespace flatmemory
                         m_buffer.write(buffer_size, nested_builder.buffer().data(), nested_buffer_size);    
                         buffer_size += nested_buffer_size;
                         buffer_size += m_buffer.write_padding(buffer_size, calculate_amount_padding(buffer_size, element_data.next_data_alignment));
-                    }            
+                    }          
                 }(), ...);
                 // No need to write padding because if size=0 then no padding is needed and otherwise, if size>0 then the loop adds final padding.
                 /* Write buffer size */
