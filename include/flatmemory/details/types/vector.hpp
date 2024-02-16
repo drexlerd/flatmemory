@@ -142,9 +142,7 @@ namespace flatmemory
                 constexpr bool is_trivial = IsTriviallyCopyable<T>;
                 if constexpr (is_trivial) {
                     /* For trivial type we can write the data without additional padding. */
-                    for (size_t i = 0; i < m_data.size(); ++i) {
-                        buffer_size += m_buffer.write(buffer_size, m_data[i]);
-                    }
+                    buffer_size += m_buffer.write(buffer_size, reinterpret_cast<const uint8_t*>(m_data.data()), sizeof(T_) * m_data.size());
                 } else {
                     /* For non-trivial type T, we store the offsets first */
                     // position of offset
