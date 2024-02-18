@@ -29,13 +29,13 @@ In this example, we use a `Builder`to serialize a 2-dimensional `Vector` of `uin
 ```cpp
 #include <flatmemory/flatmemory.hpp>
 
-// 1. Type the dispatcher.
+// 1. Type def the Dispatcher.
 using TwoDimVecUint16 = Vector<Vector<uint16_t>>;
 
-// 2. Print the static layout
+// 2. Print the static Layout
 Layout<TwoDimVecUint16>().print()
 
-// 3. Construct a builder, feed it with data, and finish the byte sequence.
+// 3. Construct a Builder, feed it with data, and finish the byte sequence.
 auto builder = Builder<TwoDimVecUint16>();
 builder.resize(2);
 builder[0].push_back(5);
@@ -44,7 +44,7 @@ builder[1].push_back(7);
 builder.finish();
 EXPECT_EQ(builder.get_size(), 36);
 
-// 4. Construct a mutable view to interpret and modify (with limitations) the byte sequence.
+// 4. Construct a mutable View to interpret and modify (with limitations) the byte sequence.
 auto view = View<TwoDimVecUint16>(builder.get_data());
 EXPECT_EQ(view.buffer_size(), 36);
 EXPECT_EQ(view.size(), 2);
@@ -52,7 +52,7 @@ EXPECT_EQ(view[0][0], 5);
 EXPECT_EQ(view[1][0], 6);
 EXPECT_EQ(view[1][1], 7);
 
-// 5. Construct a immutable view to interpret the byte sequence.
+// 5. Construct a immutable ConstView to interpret the byte sequence.
 auto const_view = ConstView<TwoDimVecUint16>(builder.get_data());
 EXPECT_EQ(const_view.buffer_size(), 36);
 EXPECT_EQ(const_view.size(), 2);
@@ -60,7 +60,7 @@ EXPECT_EQ(const_view[0][0], 5);
 EXPECT_EQ(const_view[1][0], 6);
 EXPECT_EQ(const_view[1][1], 7);
 
-// 6. Insert into a set either using builder or view
+// 6. Insert a buffer into a set either using Builder, View, or ConstView
 auto unordered_set = UnorderedSet<TwoDimVecUint16>();
 auto const_view1 = unordered_set.insert(builder);
 auto const_view2 = unordered_set.insert(view);
