@@ -44,19 +44,29 @@ builder[1].push_back(7);
 builder.finish();
 EXPECT_EQ(builder.get_size(), 36);
 
-// 4. Construct a view to interpret the byte sequence.
+// 4. Construct a mutable view to interpret and modify (with limitations) the byte sequence.
 auto view = View<TwoDimVecUint16>(builder.get_data());
-EXPECT_EQ(view.buffer_size(), 36);  // storing views contiguously satisfies alignment requirements
+EXPECT_EQ(view.buffer_size(), 36);
 EXPECT_EQ(view.size(), 2);
 EXPECT_EQ(view[0][0], 5);
 EXPECT_EQ(view[1][0], 6);
 EXPECT_EQ(view[1][1], 7);
 
-// 5. Insert into a set either using builder or view
+// 5. Construct a immutable view to interpret the byte sequence.
+auto const_view = ConstView<TwoDimVecUint16>(builder.get_data());
+EXPECT_EQ(const_view.buffer_size(), 36);
+EXPECT_EQ(const_view.size(), 2);
+EXPECT_EQ(const_view[0][0], 5);
+EXPECT_EQ(const_view[1][0], 6);
+EXPECT_EQ(const_view[1][1], 7);
+
+// 6. Insert into a set either using builder or view
 auto unordered_set = UnorderedSet<TwoDimVecUint16>();
-auto view1 = unordered_set.insert(builder);
-auto view2 = unordered_set.insert(view);
-EXPECT_EQ(view1, view2);
+auto const_view1 = unordered_set.insert(builder);
+auto const_view2 = unordered_set.insert(view);
+auto const_view3 = unordered_set.insert(const_view);
+EXPECT_EQ(const_view1, const_view2);
+EXPECT_EQ(const_view2, const_view3);
 ```
 
 
