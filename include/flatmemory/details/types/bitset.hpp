@@ -65,7 +65,7 @@ namespace flatmemory
         static constexpr size_t final_alignment = calculate_final_alignment<buffer_size_type, bool, Vector<Block>>();
 
         static constexpr size_t buffer_size_position = 0;
-        static constexpr size_t buffer_size_end = buffer_size_position + sizeof(buffer_size_type); 
+        static constexpr size_t buffer_size_end = buffer_size_position + sizeof(buffer_size_type);
         static constexpr size_t buffer_size_padding = calculate_amount_padding(buffer_size_end, calculate_header_alignment<bool>());
         static constexpr size_t default_bit_value_position = buffer_size_end + buffer_size_padding;
         static constexpr size_t default_bit_value_end = default_bit_value_position + sizeof(bool);
@@ -162,7 +162,7 @@ namespace flatmemory
             static constexpr std::size_t no_position = std::size_t(-1);
 
             /**
-             * Operators 
+             * Operators
             */
             template<IsBitset L, IsBitset R>
             requires SameBlockType<L, R>
@@ -228,7 +228,7 @@ namespace flatmemory
                 return false;
             }
 
-            
+
             /**
              * Hashing
             */
@@ -257,6 +257,29 @@ namespace flatmemory
 
 
             /**
+             * Lookup
+            */
+
+            template<IsBitset B>
+            static bool get(const B& bitset, std::size_t position) {
+                {
+                    const std::size_t index = get_index(position);
+
+                    const auto& blocks = bitset.get_blocks();
+                    if (index < blocks.size())
+                    {
+                        const std::size_t offset = get_offset(position);
+                        return (blocks[index] & (static_cast<Block>(1) << offset)) != 0;
+                    }
+                    else
+                    {
+                        return bitset.get_default_bit_value();
+                    }
+                }
+            }
+
+
+            /**
              * Iterators
             */
 
@@ -275,13 +298,13 @@ namespace flatmemory
                 size_t m_end_pos;
                 size_t m_pos;
 
-                void next_set_bit() 
+                void next_set_bit()
                 {
                     assert(m_pos != m_end_pos);
-                    do {   
+                    do {
                         // Advance position
-                        ++m_pos;    
-                        ++m_bit_index;           
+                        ++m_pos;
+                        ++m_bit_index;
                         if (m_cur_block)
                         {
                             // If there are set bits in the current value
@@ -298,11 +321,11 @@ namespace flatmemory
                             m_bit_index = -1;
                             // Fetch next data block or zeroes
                             m_cur_block = m_block_index < m_num_blocks ? m_blocks[m_block_index] : block_zeroes;
-                        }   
+                        }
                     } while (m_pos < m_end_pos);
                 }
-    
-                size_t find_end_pos() const 
+
+                size_t find_end_pos() const
                 {
                     assert(m_num_blocks > 0);
                     // Find the last block that differs from the default block
@@ -329,12 +352,12 @@ namespace flatmemory
                     , m_cur_block(num_blocks > 0 ? blocks[m_block_index] : block_zeroes)
                     , m_end_pos(find_end_pos())
                     , m_pos(begin ? -1 : m_end_pos)  // set to -1 for advance step
-                {   
+                {
                     // Iteration is only well-defined on non default_bit_value
                     assert(!default_bit_value);
                     if (begin && m_pos != m_end_pos) {
                         next_set_bit();
-                    } 
+                    }
                 }
 
                 [[nodiscard]] size_t operator*() const {
@@ -371,12 +394,12 @@ namespace flatmemory
                 return std::bit_width(v) - 1;  // bit_width uses more efficient specialized cpu instructions
             }
 
-            static size_t get_index(size_t position) noexcept 
+            static size_t get_index(size_t position) noexcept
             {
                 return position / block_size;
             }
 
-            static size_t get_offset(size_t position) noexcept 
+            static size_t get_offset(size_t position) noexcept
             {
                 return position % block_size;
             }
@@ -412,7 +435,7 @@ namespace flatmemory
             assert(m_buf);
         }
 
-        
+
         /**
          * Operators
         */
@@ -431,9 +454,18 @@ namespace flatmemory
 
 
         /**
+         * Lookup
+        */
+
+        bool get(std::size_t position) const {
+            return BitsetOperator::get(*this, position);
+        }
+
+
+        /**
          * Iterators
         */
-       
+
         [[nodiscard]] const_iterator begin() { return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true); }
         [[nodiscard]] const_iterator begin() const { return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true); }
         [[nodiscard]] const_iterator end() { return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), false); }
@@ -538,9 +570,18 @@ namespace flatmemory
 
 
         /**
+         * Lookup
+        */
+
+        bool get(std::size_t position) const {
+            return BitsetOperator::get(*this, position);
+        }
+
+
+        /**
          * Iterators
         */
-       
+
         [[nodiscard]] const_iterator begin() { return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true); }
         [[nodiscard]] const_iterator begin() const { return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true); }
         [[nodiscard]] const_iterator end() { return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), false); }
@@ -619,7 +660,7 @@ namespace flatmemory
             buffer_size += m_buffer.write(Layout<Bitset<Block>>::blocks_position, m_blocks.buffer().data(), m_blocks.buffer().size());
             // Write final padding
             buffer_size += m_buffer.write_padding(buffer_size, calculate_amount_padding(buffer_size, Layout<Bitset<Block>>::final_alignment));
-            
+
             /* Write buffer size */
             m_buffer.write(Layout<Bitset<Block>>::buffer_size_position, buffer_size);
             m_buffer.set_size(buffer_size);
@@ -641,7 +682,7 @@ namespace flatmemory
     public:
         Builder() : m_default_bit_value(false) {}
         // Initialize the bitset with a certain size
-        Builder(std::size_t size) 
+        Builder(std::size_t size)
             : m_default_bit_value(false)
             , m_blocks((size / BitsetOperator::block_size) + 1, BitsetOperator::block_zeroes) {}
 
@@ -649,7 +690,7 @@ namespace flatmemory
             : m_default_bit_value(default_bit_value)
             , m_blocks((size / BitsetOperator::block_size) + 1, default_bit_value ? BitsetOperator::block_ones : BitsetOperator::block_zeroes) { }
 
-        
+
         /**
          * Operators
         */
@@ -827,7 +868,7 @@ namespace flatmemory
             return BitsetOperator::no_position;
         }
 
-    
+
         /**
          * Iterators
         */
