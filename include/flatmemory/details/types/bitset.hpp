@@ -458,6 +458,7 @@ namespace flatmemory
         */
 
         bool get(std::size_t position) const {
+            assert(m_buf);
             return BitsetOperator::get(*this, position);
         }
 
@@ -574,6 +575,7 @@ namespace flatmemory
         */
 
         bool get(std::size_t position) const {
+            assert(m_buf);
             return BitsetOperator::get(*this, position);
         }
 
