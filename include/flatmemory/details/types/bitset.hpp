@@ -194,7 +194,7 @@ namespace flatmemory
 
 
             template <IsBitset L, IsBitset R>
-            bool less(const L& left_bitset, const R& right_bitset) const
+            static bool less(const L& left_bitset, const R& right_bitset)
             {
                 // Fetch data
                 const auto &blocks = left_bitset.get_blocks();
@@ -226,6 +226,98 @@ namespace flatmemory
                 }
 
                 return false;
+            }
+
+
+            template <IsBitset L, IsBitset R>
+            static bool is_superseteq(const L& left_bitset, const R& right_bitset)
+            {
+                // Fetch data
+                const auto &blocks = left_bitset.get_blocks();
+                bool default_bit_value = left_bitset.get_default_bit_value();
+                const auto &other_blocks = right_bitset.get_blocks();
+                bool other_default_bit_value = right_bitset.get_default_bit_value();
+
+                if (other_default_bit_value && !default_bit_value)
+                {
+                    // blocks has finitely many and other blocks has infinitely many set bits.
+                    // Hence blocks cannot be a superseteq of other_blocks.
+                    return false;
+                }
+
+                std::size_t common_size = std::min(blocks.size(), other_blocks.size());
+
+                for (std::size_t index = 0; index < common_size; ++index)
+                {
+                    if (blocks[index] & other_blocks[index] != other_blocks[index])
+                    {
+                        // There exists a set bit in block that is not set in block.
+                        return false;
+                    }
+                }
+
+                if (other_blocks.size() <= blocks.size()) {
+                    // blocks can only contain additional set bits
+                    return true;
+                }
+
+                if (default_bit_value) {
+                    return true;
+                }
+
+                for (std::size_t index = common_size; index < other_blocks.size(); ++index)
+                {
+                    if (other_blocks[index])
+                    {
+                        // other_block contains additional set bits
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+
+            template <IsBitset L, IsBitset R>
+            static bool are_disjoint(const L& left_bitset, const R& right_bitset)
+            {
+                // Fetch data
+                const auto &blocks = left_bitset.get_blocks();
+                bool default_bit_value = left_bitset.get_default_bit_value();
+                const auto &other_blocks = right_bitset.get_blocks();
+                bool other_default_bit_value = right_bitset.get_default_bit_value();
+
+                if (default_bit_value && other_default_bit_value) {
+                    // blocks and other blocks have infinitely many set bits after finite sized explicit bitsets.
+                    // Hence blocks and other_blocks cannot be disjoint.
+                    return false;
+                }
+
+                std::size_t common_size = std::min(blocks.size(), other_blocks.size());
+
+                for (std::size_t index = 0; index < common_size; ++index)
+                {
+                    if (blocks[index] & other_blocks[index] > 0)
+                    {
+                        // block and other_block have set bits in common
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+
+            /**
+             * Helpers
+            */
+
+            static int64_t find_last_relevant_block(const std::vector<Block>& blocks, bool default_bit_value)
+            {
+                int64_t last_relevant_block_index = static_cast<int64_t>(blocks.size()) - 1;
+                for (; (last_relevant_block_index >= 0) && (blocks[last_relevant_block_index] == (default_bit_value ? block_ones : block_zeroes)); --last_relevant_block_index)
+                {
+                }
+                return last_relevant_block_index;
             }
 
 
@@ -353,8 +445,9 @@ namespace flatmemory
                     , m_end_pos(find_end_pos())
                     , m_pos(begin ? -1 : m_end_pos)  // set to -1 for advance step
                 {
-                    // Iteration is only well-defined on non default_bit_value
-                    assert(!default_bit_value);
+                    if (default_bit_value) {
+                        throw std::runtime_error("Cannot iterate over infinite set.");
+                    }
                     if (begin && m_pos != m_end_pos) {
                         next_set_bit();
                     }
@@ -444,12 +537,27 @@ namespace flatmemory
         [[nodiscard]] bool operator==(const Other& other) const
         {
             assert(m_buf);
+            assert(other.m_buf);
             return BitsetOperator::are_equal(*this, other);
         }
 
         template <IsBitset Other>
         [[nodiscard]] bool operator!=(const Other& other) const {
             return !(*this == other);
+        }
+
+        template <IsBitset Other>
+        bool is_superseteq(const Other& other) const {
+            assert(m_buf);
+            assert(other.m_buf);
+            return BitsetOperator::is_superseteq(*this, other);
+        }
+
+        template <IsBitset Other>
+        bool are_disjoint(const Other& other) const {
+            assert(m_buf);
+            assert(other.m_buf);
+            return BitsetOperator::are_disjoint(*this, other);
         }
 
 
@@ -567,12 +675,27 @@ namespace flatmemory
         [[nodiscard]] bool operator==(const Other& other) const
         {
             assert(m_buf);
+            assert(other.m_buf);
             return BitsetOperator::are_equal(*this, other);
         }
 
         template <IsBitset Other>
         [[nodiscard]] bool operator!=(const Other& other) const {
             return !(*this == other);
+        }
+
+        template <IsBitset Other>
+        bool is_superseteq(const Other& other) const {
+            assert(m_buf);
+            assert(other.m_buf);
+            return BitsetOperator::is_superseteq(*this, other);
+        }
+
+        template <IsBitset Other>
+        bool are_disjoint(const Other& other) const {
+            assert(m_buf);
+            assert(other.m_buf);
+            return BitsetOperator::are_disjoint(*this, other);
         }
 
 
@@ -718,6 +841,16 @@ namespace flatmemory
         template <IsBitset Other>
         [[nodiscard]] bool operator!=(const Other& other) const {
             return !(*this == other);
+        }
+
+        template <IsBitset Other>
+        bool is_superseteq(const Other& other) const {
+            return BitsetOperator::is_superseteq(*this, other);
+        }
+
+        template <IsBitset Other>
+        bool are_disjoint(const Other& other) const {
+            return BitsetOperator::are_disjoint(*this, other);
         }
 
 
