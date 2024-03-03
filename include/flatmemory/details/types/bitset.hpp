@@ -194,6 +194,7 @@ namespace flatmemory
 
 
             template <IsBitset L, IsBitset R>
+            requires SameBlockType<L, R>
             static bool less(const L& left_bitset, const R& right_bitset)
             {
                 // Fetch data
@@ -230,6 +231,7 @@ namespace flatmemory
 
 
             template <IsBitset L, IsBitset R>
+            requires SameBlockType<L, R>
             static bool is_superseteq(const L& left_bitset, const R& right_bitset)
             {
                 // Fetch data
@@ -279,6 +281,7 @@ namespace flatmemory
 
 
             template <IsBitset L, IsBitset R>
+            requires SameBlockType<L, R>
             static bool are_disjoint(const L& left_bitset, const R& right_bitset)
             {
                 // Fetch data
