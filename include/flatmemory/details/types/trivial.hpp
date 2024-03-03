@@ -42,7 +42,7 @@ namespace flatmemory
     template<IsTriviallyCopyable T>
     struct Trivial : public Custom {
         /// @brief Non-trivial copy-constructor
-        /// @param other 
+        /// @param other
         Trivial(const Trivial& other) {}
     };
 
@@ -51,7 +51,7 @@ namespace flatmemory
      * Layout
     */
     template<IsTriviallyCopyable T>
-    class Layout<Trivial<T>> {     
+    class Layout<Trivial<T>> {
         public:
             // we do not add size prefix since we can use sizeof for trivial types T
 
@@ -63,7 +63,7 @@ namespace flatmemory
      * Builder
     */
     template<IsTriviallyCopyable T>
-    class Builder<Trivial<T>> : public IBuilder<Builder<Trivial<T>>> 
+    class Builder<Trivial<T>> : public IBuilder<Builder<Trivial<T>>>
     {
         private:
             T m_trivial;
@@ -93,7 +93,7 @@ namespace flatmemory
      * View
     */
     template<IsTriviallyCopyable T>
-    class View<Trivial<T>> 
+    class View<Trivial<T>>
     {
     private:
         uint8_t* m_buf;
@@ -114,19 +114,19 @@ namespace flatmemory
             assert(m_buf);
         }
 
-        [[nodiscard]] T& operator*() { 
+        [[nodiscard]] T& operator*() {
             assert(m_buf);
             assert(test_correct_alignment<T>(m_buf));
-            return read_value<T>(m_buf); 
+            return read_value<T>(m_buf);
         }
 
-        [[nodiscard]] T* operator->() { 
+        [[nodiscard]] T* operator->() {
             assert(m_buf);
             assert(test_correct_alignment<T>(m_buf));
-            return &read_value<T>(m_buf); 
+            return &read_value<T>(m_buf);
         }
 
-        [[nodiscard]] size_t buffer_size() const { 
+        [[nodiscard]] size_t buffer_size() const {
             assert(m_buf);
             return sizeof(T);
         }
@@ -160,19 +160,25 @@ namespace flatmemory
             assert(m_buf);
         }
 
-        [[nodiscard]] const T& operator*() const { 
+        /**
+         * Conversion constructor
+        */
+        ConstView(const View<Trivial<T>>& view) : m_buf(view.buffer()) {}
+
+
+        [[nodiscard]] const T& operator*() const {
             assert(m_buf);
             assert(test_correct_alignment<T>(m_buf));
-            return read_value<T>(m_buf); 
+            return read_value<T>(m_buf);
         }
 
-        [[nodiscard]] const T* operator->() const { 
+        [[nodiscard]] const T* operator->() const {
             assert(m_buf);
             assert(test_correct_alignment<T>(m_buf));
-            return &read_value<T>(m_buf); 
+            return &read_value<T>(m_buf);
         }
 
-        [[nodiscard]] size_t buffer_size() const { 
+        [[nodiscard]] size_t buffer_size() const {
             assert(m_buf);
             return sizeof(T);
         }

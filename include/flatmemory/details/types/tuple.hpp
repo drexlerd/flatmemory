@@ -43,10 +43,10 @@ namespace flatmemory
      * Dispatcher for Tuple.
     */
     template<IsTriviallyCopyableOrCustom... Ts>
-    struct Tuple : public Custom 
+    struct Tuple : public Custom
     {
         /// @brief Non-trivial copy-constructor
-        /// @param other 
+        /// @param other
         Tuple(const Tuple& other) {}
     };
 
@@ -55,7 +55,7 @@ namespace flatmemory
      * Layout
     */
     template<IsTriviallyCopyableOrCustom... Ts>
-    class Layout<Tuple<Ts...>> 
+    class Layout<Tuple<Ts...>>
     {
         private:
             /**
@@ -154,14 +154,14 @@ namespace flatmemory
                 size_t element_datas_position = current_position;
 
                 return LayoutData{
-                    buffer_size_position, 
-                    buffer_size_end, 
+                    buffer_size_position,
+                    buffer_size_end,
                     buffer_size_padding,
                     element_datas_position,
                     element_datas};
             }
 
-           
+
 
         public:
             static constexpr size_t size = sizeof...(Ts);
@@ -181,8 +181,8 @@ namespace flatmemory
     /**
      * Builder
     */
-    template<IsTriviallyCopyableOrCustom... Ts> 
-    class Builder<Tuple<Ts...>> : public IBuilder<Builder<Tuple<Ts...>>> 
+    template<IsTriviallyCopyableOrCustom... Ts>
+    class Builder<Tuple<Ts...>> : public IBuilder<Builder<Tuple<Ts...>>>
     {
         private:
             template<size_t I>
@@ -212,15 +212,15 @@ namespace flatmemory
                         // write offset
                         m_buffer.write(element_data.position, buffer_size);
                         m_buffer.write_padding(element_data.end, element_data.padding);
-        
+
                         // write data
                         auto& nested_builder = std::get<Is>(m_data);
                         nested_builder.finish();
                         buffer_size_type nested_buffer_size = nested_builder.buffer().size();
-                        m_buffer.write(buffer_size, nested_builder.buffer().data(), nested_buffer_size);    
+                        m_buffer.write(buffer_size, nested_builder.buffer().data(), nested_buffer_size);
                         buffer_size += nested_buffer_size;
                         buffer_size += m_buffer.write_padding(buffer_size, calculate_amount_padding(buffer_size, element_data.next_data_alignment));
-                    }          
+                    }
                 }(), ...);
                 // No need to write padding because if size=0 then no padding is needed and otherwise, if size>0 then the loop adds final padding.
                 /* Write buffer size */
@@ -251,7 +251,7 @@ namespace flatmemory
                 return !(*this == other);
             }
 
-    
+
             /**
              * Lookup
             */
@@ -273,7 +273,7 @@ namespace flatmemory
                     constexpr bool is_trivial = IsTriviallyCopyable<element_type<Is>>;
                     if constexpr (is_trivial) {
                         hash_combine(seed, std::hash<element_type<Is>>()(get<Is>()));
-                    } else { 
+                    } else {
                         hash_combine(seed, get<Is>().hash());
                     }
                 }(), ...);
@@ -290,7 +290,7 @@ namespace flatmemory
      * View
     */
     template<IsTriviallyCopyableOrCustom... Ts>
-    class View<Tuple<Ts...>> 
+    class View<Tuple<Ts...>>
     {
     private:
         template<size_t I>
@@ -338,7 +338,7 @@ namespace flatmemory
         */
 
         /// @brief Returns a View to the I-th element.
-        /// 
+        ///
         /// If the I-th type is dynamic we must add the offset to the actual data first.
         template<std::size_t I>
         decltype(auto) get() {
@@ -369,10 +369,10 @@ namespace flatmemory
         [[nodiscard]] uint8_t* buffer() { return m_buf; }
         [[nodiscard]] const uint8_t* buffer() const { return m_buf; }
 
-        [[nodiscard]] size_t buffer_size() const { 
+        [[nodiscard]] size_t buffer_size() const {
             assert(m_buf);
             assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position));
-            return read_value<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position); 
+            return read_value<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position);
         }
 
 
@@ -396,10 +396,10 @@ namespace flatmemory
 
 
     /**
-     * View
+     * ConstView
     */
     template<IsTriviallyCopyableOrCustom... Ts>
-    class ConstView<Tuple<Ts...>> 
+    class ConstView<Tuple<Ts...>>
     {
     private:
         template<size_t I>
@@ -424,6 +424,11 @@ namespace flatmemory
         ConstView(const uint8_t* data) : m_buf(data) {
             assert(m_buf);
         }
+
+        /**
+         * Conversion constructor
+        */
+        ConstView(const View<Tuple<Ts...>>& view) : m_buf(view.buffer()) {}
 
 
         /**
@@ -450,7 +455,7 @@ namespace flatmemory
         */
 
         /// @brief Returns a View to the I-th element.
-        /// 
+        ///
         /// If the I-th type is dynamic we must add the offset to the actual data first.
         template<std::size_t I>
         decltype(auto) get() const {
@@ -465,10 +470,10 @@ namespace flatmemory
             }
         }
 
-        [[nodiscard]] size_t buffer_size() const { 
+        [[nodiscard]] size_t buffer_size() const {
             assert(m_buf);
             assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position));
-            return read_value<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position); 
+            return read_value<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position);
         }
 
         [[nodiscard]] const uint8_t* buffer() const { return m_buf; }

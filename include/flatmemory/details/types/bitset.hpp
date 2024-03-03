@@ -554,6 +554,12 @@ namespace flatmemory
         }
 
         /**
+         * Conversion constructor
+        */
+        ConstView(const View<Bitset<Block>>& view) : m_buf(view.buffer()) {}
+
+
+        /**
          * Operators
         */
 

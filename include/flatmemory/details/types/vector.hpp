@@ -19,7 +19,7 @@
 #define FLATMEMORY_TYPES_VECTOR_HPP_
 
 #include "../byte_buffer.hpp"
-#include "../byte_buffer_utils.hpp" 
+#include "../byte_buffer_utils.hpp"
 #include "../layout_utils.hpp"
 #include "../layout.hpp"
 #include "../operator.hpp"
@@ -43,10 +43,10 @@ namespace flatmemory
      * Dispatcher for Vector.
     */
     template<IsTriviallyCopyableOrCustom T>
-    struct Vector : public Custom 
+    struct Vector : public Custom
     {
         /// @brief Non-trivial copy-constructor
-        /// @param other 
+        /// @param other
         Vector(const Vector& other) {}
     };
 
@@ -61,11 +61,11 @@ namespace flatmemory
      * Layout
     */
     template<IsTriviallyCopyableOrCustom T>
-    class Layout<Vector<T>> 
+    class Layout<Vector<T>>
     {
         public:
             static constexpr size_t final_alignment = calculate_final_alignment<buffer_size_type, offset_type, vector_size_type, T>();
-            
+
             static constexpr size_t buffer_size_position = 0;
             static constexpr size_t buffer_size_end = buffer_size_position + sizeof(buffer_size_type);
             static constexpr size_t buffer_size_padding = calculate_amount_padding(buffer_size_end, calculate_header_alignment<vector_size_type>());
@@ -104,7 +104,7 @@ namespace flatmemory
      * Operator
     */
     template<IsTriviallyCopyableOrCustom T>
-    class Operator<Vector<T>> 
+    class Operator<Vector<T>>
     {
         private:
         public:
@@ -115,7 +115,7 @@ namespace flatmemory
      * Builder
     */
     template<IsTriviallyCopyableOrCustom T>
-    class Builder<Vector<T>> : public IBuilder<Builder<Vector<T>>> 
+    class Builder<Vector<T>> : public IBuilder<Builder<Vector<T>>>
     {
         private:
             using T_ = typename maybe_builder<T>::type;
@@ -151,7 +151,7 @@ namespace flatmemory
                     size_t offset_padding = calculate_amount_padding(offset_end, Layout<T>::final_alignment);
                     m_buffer.write_padding(offset_end, offset_padding);
                     // We have to add padding to ensure that the data is correctly aligned
-                    buffer_size = offset_end + offset_padding; 
+                    buffer_size = offset_end + offset_padding;
                     for (size_t i = 0; i < m_data.size(); ++i) {
                         // write offset
                         offset_pos += m_buffer.write(offset_pos, buffer_size);
@@ -167,7 +167,7 @@ namespace flatmemory
                 }
                 // Write final padding to satisfy alignment requirements
                 buffer_size += m_buffer.write_padding(buffer_size, calculate_amount_padding(buffer_size, Layout<Vector<T>>::final_alignment));
-                
+
                 /* Write buffer size */
                 m_buffer.write(Layout<Vector<T>>::buffer_size_position, static_cast<buffer_size_type>(buffer_size));
                 m_buffer.set_size(buffer_size);
@@ -245,22 +245,22 @@ namespace flatmemory
                 return m_data.empty();
             }
 
-            [[nodiscard]] constexpr size_t size() const { 
-                return m_data.size(); 
+            [[nodiscard]] constexpr size_t size() const {
+                return m_data.size();
             }
 
-            
+
             /**
-             * Modifiers 
+             * Modifiers
             */
             void push_back(T_&& element) { m_data.push_back(std::move(element)) ;}
             void push_back(const T_& element) { m_data.push_back(element) ;}
- 
-            /// @brief 
+
+            /// @brief
             ///
-            /// Resizing a vector of views needs additional caution 
+            /// Resizing a vector of views needs additional caution
             /// since the default constructed views are not meaningful.
-            /// @param count 
+            /// @param count
             void resize(size_t count) { m_data.resize(count, T_()); }
             void resize(size_t count, const T_& value) { m_data.resize(count, value); }
     };
@@ -270,7 +270,7 @@ namespace flatmemory
      * View
     */
     template<IsTriviallyCopyableOrCustom T>
-    class View<Vector<T>> 
+    class View<Vector<T>>
     {
         private:
             using T_ = typename maybe_builder<T>::type;
@@ -285,10 +285,10 @@ namespace flatmemory
 
         public:
             /// @brief Constructor to interpret raw data created by its corresponding builder.
-            /// @param buf 
+            /// @param buf
             View(uint8_t* buf) : m_buf(buf) {
                 assert(buf);
-            } 
+            }
 
 
             /**
@@ -493,34 +493,34 @@ namespace flatmemory
             /**
              * Capacity
             */
-            
-            /// @brief 
+
+            /// @brief
             ///
             /// Notes: This operation is more costly than std::vector empty() because it is not constexpr.
-            /// @return 
+            /// @return
             [[nodiscard]] bool empty() const {
                 return size() == 0;
             }
 
-            [[nodiscard]] size_t buffer_size() const { 
+            [[nodiscard]] size_t buffer_size() const {
                 assert(m_buf);
                 assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_position));
-                return read_value<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_position); 
+                return read_value<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_position);
             }
 
-            /// @brief 
+            /// @brief
             ///
             /// Notes: This operation is more costly than std::vector size() because it is not constexpr.
-            /// @return 
-            [[nodiscard]] size_t size() const { 
+            /// @return
+            [[nodiscard]] size_t size() const {
                 assert(m_buf);
                 assert(test_correct_alignment<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_position));
-                return read_value<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_position); 
+                return read_value<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_position);
             }
 
             /**
              * Modifiers
-             * 
+             *
              * Views cannot be modified!
             */
     };
@@ -530,7 +530,7 @@ namespace flatmemory
      * ConstView
     */
     template<IsTriviallyCopyableOrCustom T>
-    class ConstView<Vector<T>> 
+    class ConstView<Vector<T>>
     {
         private:
             using T_ = typename maybe_builder<T>::type;
@@ -545,10 +545,15 @@ namespace flatmemory
 
         public:
             /// @brief Constructor to interpret raw data created by its corresponding builder
-            /// @param buf 
+            /// @param buf
             ConstView(const uint8_t* buf) : m_buf(buf) {
                 assert(buf);
-            } 
+            }
+
+            /**
+             * Conversion constructor
+            */
+            ConstView(const View<Vector<T>>& view) : m_buf(view.buffer()) {}
 
 
             /**
@@ -672,34 +677,34 @@ namespace flatmemory
              * Capacity
             */
 
-            /// @brief 
+            /// @brief
             ///
             /// Note: This operation is more costly than std::vector empty() because it is not constexpr.
-            /// @return 
+            /// @return
             [[nodiscard]] bool empty() const {
                 return size() == 0;
             }
 
-            [[nodiscard]] size_t buffer_size() const { 
+            [[nodiscard]] size_t buffer_size() const {
                 assert(m_buf);
                 assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_position));
-                return read_value<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_position); 
+                return read_value<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_position);
             }
 
-            /// @brief 
+            /// @brief
             ///
             /// Note: This operation is more costly than std::vector size() because it is not constexpr.
-            /// @return 
-            [[nodiscard]] size_t size() const { 
+            /// @return
+            [[nodiscard]] size_t size() const {
                 assert(m_buf);
                 assert(test_correct_alignment<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_position));
-                return read_value<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_position); 
+                return read_value<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_position);
             }
 
 
             /**
              * Modifiers
-             * 
+             *
              * Views cannot be modified!
             */
     };
