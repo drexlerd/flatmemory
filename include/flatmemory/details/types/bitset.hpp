@@ -306,6 +306,29 @@ namespace flatmemory
                         return false;
                     }
                 }
+
+                if (default_bit_value && !other_default_bit_value) {
+                    for (std::size_t index = common_size; index < other_blocks.size(); ++index)
+                    {
+                        if (other_blocks[index] > 0)
+                        {
+                            // other_blocks has a set bit in common with blocks in the infinite part.
+                            return false;
+                        }
+                    }
+                }
+
+                if (!default_bit_value && other_default_bit_value) {
+                    for (std::size_t index = common_size; index < blocks.size(); ++index)
+                    {
+                        if (blocks[index] > 0)
+                        {
+                            // blocks has a set bit in common with other_blocks in the infinite part.
+                            return false;
+                        }
+                    }
+                }
+
                 return true;
             }
 
