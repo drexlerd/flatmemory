@@ -711,36 +711,4 @@ namespace flatmemory
 }
 
 
-namespace std
-{
-    // Inject hash into the std namespace
-    template <flatmemory::IsTriviallyCopyableOrCustom T>
-    struct hash<flatmemory::View<flatmemory::Vector<T>>>
-    {
-        std::size_t operator()(const flatmemory::View<flatmemory::Vector<T>> &vector) const
-        {
-            return vector.hash();
-        }
-    };
-
-    template <flatmemory::IsTriviallyCopyableOrCustom T>
-    struct hash<flatmemory::ConstView<flatmemory::Vector<T>>>
-    {
-        std::size_t operator()(const flatmemory::ConstView<flatmemory::Vector<T>> &vector) const
-        {
-            return vector.hash();
-        }
-    };
-
-    template <flatmemory::IsTriviallyCopyableOrCustom T>
-    struct hash<flatmemory::Builder<flatmemory::Vector<T>>>
-    {
-        std::size_t operator()(const flatmemory::Builder<flatmemory::Vector<T>> &vector) const
-        {
-            return vector.hash();
-        }
-    };
-}
-
-
 #endif

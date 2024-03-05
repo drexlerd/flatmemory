@@ -102,22 +102,14 @@ public:
 
 
     [[nodiscard]] ConstView<T> insert(const ConstView<T>& view) {
-        std::cout << "unordered_set written: ";
-        print(view.buffer(), view.buffer_size());
         const uint8_t* data = view.buffer();
         size_t amount = view.buffer_size();
         const uint8_t* new_data = m_storage.write(data, amount);
         auto result_view = ConstView<T>(new_data);
-        std::cout << "data: " << data << " result_view_ptr: " << &result_view << std::endl;
         auto it = m_data.find(result_view);
-
         if (it != m_data.end()) {
             // not unique, mark the storage as free again
-            //m_storage.undo_last_write();
-            std::cout << "not unique!" << std::endl;
-            auto obtained_view = *it;
-            std::cout << "unordered_set obtained: ";
-            print(obtained_view.buffer(), obtained_view.buffer_size());
+            m_storage.undo_last_write();
             return *it;
         }
 

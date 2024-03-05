@@ -1068,36 +1068,4 @@ namespace flatmemory
     };
 }
 
-
-namespace std
-{
-    // Inject hash into the std namespace
-    template <typename Block>
-    struct hash<flatmemory::View<flatmemory::Bitset<Block>>>
-    {
-        std::size_t operator()(const flatmemory::View<flatmemory::Bitset<Block>> &bitset) const
-        {
-            return bitset.hash();
-        }
-    };
-
-    template <typename Block>
-    struct hash<flatmemory::ConstView<flatmemory::Bitset<Block>>>
-    {
-        std::size_t operator()(const flatmemory::ConstView<flatmemory::Bitset<Block>> &bitset) const
-        {
-            return bitset.hash();
-        }
-    };
-
-    template <typename Block>
-    struct hash<flatmemory::Builder<flatmemory::Bitset<Block>>>
-    {
-        std::size_t operator()(const flatmemory::Builder<flatmemory::Bitset<Block>> &bitset) const
-        {
-            return bitset.hash();
-        }
-    };
-}
-
 #endif
