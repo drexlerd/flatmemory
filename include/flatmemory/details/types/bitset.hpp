@@ -837,7 +837,7 @@ namespace flatmemory
         }
 
     public:
-        Builder() : m_default_bit_value(false) {}
+        Builder() : Builder(0) {}
         // Initialize the bitset with a certain size
         Builder(std::size_t size)
             : m_default_bit_value(false)

@@ -30,7 +30,7 @@ namespace flatmemory::tests
 
         auto builder = Builder<Bitset<uint64_t>>();
         builder.get_default_bit_value() = true;
-        builder.get_blocks().resize(5); 
+        builder.get_blocks().resize(5);
         builder.finish();
 
         EXPECT_EQ(builder.buffer().size(), 56);
@@ -39,7 +39,7 @@ namespace flatmemory::tests
         EXPECT_EQ(view.get_default_bit_value(), true);
         EXPECT_EQ(view.get_blocks().size(), 5);
         for (auto block : view.get_blocks()) {
-            
+
         }
     }
 
@@ -48,7 +48,7 @@ namespace flatmemory::tests
         // Test default constructor bitset
         auto bitset = Builder<Bitset<uint64_t>>();
         EXPECT_FALSE(bitset.get_default_bit_value());
-        EXPECT_EQ(bitset.get_blocks().size(), 0);
+        EXPECT_EQ(bitset.get_blocks().size(), 1);
     }
 
 
@@ -164,7 +164,7 @@ namespace flatmemory::tests
 
     TEST(FlatmemoryTests, TypesBitsetEqualityTest) {
         using BitsetLayout = Bitset<uint64_t>;
-        
+
         auto builder1 = Builder<BitsetLayout>(3);
         builder1.get_default_bit_value() = false;
         builder1.set(1);
@@ -192,7 +192,7 @@ namespace flatmemory::tests
         auto view1 = View<BitsetLayout>(builder1.buffer().data());
         auto view2 = View<BitsetLayout>(builder2.buffer().data());
         auto view3 = View<BitsetLayout>(builder3.buffer().data());
- 
+
         EXPECT_TRUE((view1 == view2));
         EXPECT_EQ(view1.hash(), view2.hash());
 
@@ -215,7 +215,7 @@ namespace flatmemory::tests
 
         EXPECT_FALSE((const_view2 == const_view3));
         EXPECT_NE(const_view2.hash(), const_view3.hash());
-    
+
     }
 
     TEST(FlatmemoryTests, TypesBitsetIteratorTest) {
@@ -275,5 +275,5 @@ namespace flatmemory::tests
         auto end = builder.end();
         EXPECT_EQ(it, end);
     }
-    
+
 }
