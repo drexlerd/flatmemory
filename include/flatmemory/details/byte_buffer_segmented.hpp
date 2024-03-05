@@ -91,7 +91,7 @@ namespace flatmemory
             memcpy(result_data, data, amount);
             cur_segment_pos += amount;
             m_size += amount;
-            last_written += amount;
+            last_written = amount;
             return result_data;
         }
 

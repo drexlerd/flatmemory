@@ -20,20 +20,19 @@
 
 
 /**
- * Containers
-*/
-
-#include "details/containers/unordered_set.hpp"
-#include "details/containers/vector.hpp"
-
-
-/**
  * Types
 */
 
 #include "details/types/bitset.hpp"
 #include "details/types/trivial.hpp"
 #include "details/types/tuple.hpp"
-#include "details/types/vector.hpp" 
+#include "details/types/vector.hpp"
 
-#endif 
+/**
+ * Containers
+*/
+
+#include "details/containers/unordered_set.hpp"
+#include "details/containers/vector.hpp"
+
+#endif

@@ -17,7 +17,7 @@ namespace flatmemory {
 
 /**
  * VariableSizedTypeVector can handle different sized objects
- * but does not support resize since the exact 
+ * but does not support resize since the exact
  * amount of needed bytes is not known in advance.
  */
 template<typename T>
@@ -34,7 +34,7 @@ private:
     using const_iterator = std::vector<View<T>>::const_iterator;
 
 public:
-    explicit VariableSizedTypeVector(NumBytes n = 1000000) 
+    explicit VariableSizedTypeVector(NumBytes n = 1000000)
         : m_storage(ByteBufferSegmented(n)) { }
     // Move only
     VariableSizedTypeVector(const VariableSizedTypeVector& other) = delete;
@@ -56,9 +56,9 @@ public:
         return m_data[pos];
     }
 
-    [[nodiscard]] View<T> back() { 
+    [[nodiscard]] View<T> back() {
         assert(!m_data.empty());
-        return m_data.back(); 
+        return m_data.back();
     }
 
     [[nodiscard]] ConstView<T> back() const {
@@ -99,11 +99,11 @@ public:
     }
 
     void push_back(const View<T>& view) {
-        m_data.push_back(View<T>(m_storage.write(view.buffer(), view.get_buffer_size())));
+        m_data.push_back(View<T>(m_storage.write(view.buffer(), view.buffer_size())));
     }
 
     void push_back(const ConstView<T>& view) {
-        m_data.push_back(View<T>(m_storage.write(view.buffer(), view.get_buffer_size())));
+        m_data.push_back(View<T>(m_storage.write(view.buffer(), view.buffer_size())));
     }
 };
 
@@ -127,9 +127,9 @@ private:
     using const_iterator = std::vector<View<T>>::const_iterator;
 
 public:
-    FixedSizedTypeVector(Builder<T>&& default_builder, NumBytes n = 1000000) 
+    FixedSizedTypeVector(Builder<T>&& default_builder, NumBytes n = 1000000)
         : m_storage(ByteBufferSegmented(n))
-        , m_default_builder(std::move(default_builder)) { 
+        , m_default_builder(std::move(default_builder)) {
         if (m_default_builder.buffer().data() == nullptr) {
             throw std::runtime_error("Builder is not fully initialized! Did you forget to call finish()?");
         }

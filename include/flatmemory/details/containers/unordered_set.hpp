@@ -7,18 +7,34 @@
 #include "../view.hpp"
 #include "../view_const.hpp"
 #include "../type_traits.hpp"
+#include "../byte_buffer_utils.hpp"
 
 #include <unordered_set>
+#include <iostream>
 
 
 namespace flatmemory {
+
+template<typename T>
+struct CustomHash {
+    size_t operator()(const T& element) const {
+        return element.hash();
+    }
+};
+
+template<typename T>
+struct CustomEqual {
+    bool operator()(const T& left_element, const T& right_element) const {
+        return left_element == right_element;
+    }
+};
 
 /**
  * UnorderedSet behaves like std::unordered_set
  * but without the functionality to erase elements
  * since m_storage would keep growing.
 */
-template<typename T, typename Hash = std::hash<ConstView<T>>, typename Equal = std::equal_to<ConstView<T>>, typename Allocator = std::allocator<ConstView<T>>>
+template<typename T>
 class UnorderedSet
 {
 private:
@@ -26,13 +42,13 @@ private:
     ByteBufferSegmented m_storage;
 
     // Data to be accessed
-    std::unordered_set<ConstView<T>, Hash, Equal, Allocator> m_data;
+    std::unordered_set<ConstView<T>, CustomHash<ConstView<T>>, CustomEqual<ConstView<T>>> m_data;
 
-    using iterator = std::unordered_set<ConstView<T>, Hash, Equal, Allocator>::iterator;
-    using const_iterator = std::unordered_set<ConstView<T>, Hash, Equal, Allocator>::const_iterator;
+    using iterator = std::unordered_set<ConstView<T>>::iterator;
+    using const_iterator = std::unordered_set<ConstView<T>>::const_iterator;
 
 public:
-    explicit UnorderedSet(NumBytes n = 1000000) 
+    explicit UnorderedSet(NumBytes n = 1000000)
         : m_storage(ByteBufferSegmented(n)) { }
     // Move only
     UnorderedSet(const UnorderedSet& other) = delete;
@@ -86,16 +102,25 @@ public:
 
 
     [[nodiscard]] ConstView<T> insert(const ConstView<T>& view) {
+        std::cout << "unordered_set written: ";
+        print(view.buffer(), view.buffer_size());
         const uint8_t* data = view.buffer();
-        size_t amount = view.get_buffer_size();
+        size_t amount = view.buffer_size();
         const uint8_t* new_data = m_storage.write(data, amount);
         auto result_view = ConstView<T>(new_data);
+        std::cout << "data: " << data << " result_view_ptr: " << &result_view << std::endl;
         auto it = m_data.find(result_view);
+
         if (it != m_data.end()) {
             // not unique, mark the storage as free again
-            m_storage.undo_last_write();
+            //m_storage.undo_last_write();
+            std::cout << "not unique!" << std::endl;
+            auto obtained_view = *it;
+            std::cout << "unordered_set obtained: ";
+            print(obtained_view.buffer(), obtained_view.buffer_size());
             return *it;
         }
+
         auto result = m_data.insert(result_view);
         return *result.first;
     }
@@ -103,7 +128,7 @@ public:
 
     [[nodiscard]] ConstView<T> insert(const View<T>& view) {
         const uint8_t* data = view.buffer();
-        size_t amount = view.get_buffer_size();
+        size_t amount = view.buffer_size();
         const uint8_t* new_data = m_storage.write(data, amount);
         auto result_view = ConstView<T>(new_data);
         auto it = m_data.find(result_view);

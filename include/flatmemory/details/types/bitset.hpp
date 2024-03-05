@@ -368,7 +368,7 @@ namespace flatmemory
                 const auto length = static_cast<std::size_t>(last_relevant_index + 1) * sizeof(Block);
 
                 // Compute a hash value up to and including this block
-                int64_t hash[2];
+                int64_t hash[2] = {0, 0};
                 MurmurHash3_x64_128(blocks.data(), length, seed, hash);
                 return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
             }

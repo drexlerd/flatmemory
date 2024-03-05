@@ -211,6 +211,7 @@ namespace flatmemory
                     } else {
                         // write offset
                         m_buffer.write(element_data.position, buffer_size);
+                        std::cout << "offset: " << buffer_size << std::endl;
                         m_buffer.write_padding(element_data.end, element_data.padding);
 
                         // write data
@@ -321,6 +322,7 @@ namespace flatmemory
          * Operators
         */
         [[nodiscard]] bool operator==(const View& other) const {
+            std::cout << "operator==" << std::endl;
             if (this != &other) {
                 if (buffer_size() != other.buffer_size()) return false;
                 return std::memcmp(m_buf, other.m_buf, buffer_size()) == 0;
@@ -436,6 +438,7 @@ namespace flatmemory
         */
 
         [[nodiscard]] bool operator==(const ConstView& other) const {
+            std::cout << "operator==" << std::endl;
             if (this != &other) {
                 if (m_buf != other.m_buf) {
                     if (buffer_size() != other.buffer_size()) return false;
@@ -466,6 +469,7 @@ namespace flatmemory
                 assert(test_correct_alignment<element_type<I>>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position));
                 return read_value<element_type<I>>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position);
             } else {
+                std::cout << "get: " << read_value<offset_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position) << std::endl;
                 return element_view_type<I>(m_buf + read_value<offset_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position));
             }
         }
@@ -503,12 +507,33 @@ namespace flatmemory
 
 namespace std
 {
-    // Inject hash into the std namespace
+    // Inject comparison and hash into the std namespace
+    template<flatmemory::IsTriviallyCopyableOrCustom... Ts>
+    struct equal_to<flatmemory::View<flatmemory::Tuple<Ts...>>>
+    {
+        bool operator()(const flatmemory::View<flatmemory::Tuple<Ts...>>& view_left, const flatmemory::View<flatmemory::Tuple<Ts...>>& view_right) const
+        {
+            std::cout << "equal_to" << std::endl;
+            return view_left == view_right;
+        }
+    };
+
+    template<flatmemory::IsTriviallyCopyableOrCustom... Ts>
+    struct equal_to<flatmemory::ConstView<flatmemory::Tuple<Ts...>>>
+    {
+        bool operator()(const flatmemory::ConstView<flatmemory::Tuple<Ts...>>& view_left, const flatmemory::ConstView<flatmemory::Tuple<Ts...>>& view_right) const
+        {
+            std::cout << "equal_to" << std::endl;
+            return view_left == view_right;
+        }
+    };
+
     template <flatmemory::IsTriviallyCopyableOrCustom... Ts>
     struct hash<flatmemory::View<flatmemory::Tuple<Ts...>>>
     {
         std::size_t operator()(const flatmemory::View<flatmemory::Tuple<Ts...>> &tuple) const
         {
+            std::cout << "hash" << std::endl;
             return tuple.hash();
         }
     };
@@ -518,6 +543,7 @@ namespace std
     {
         std::size_t operator()(const flatmemory::ConstView<flatmemory::Tuple<Ts...>> &tuple) const
         {
+            std::cout << "hash" << std::endl;
             return tuple.hash();
         }
     };
@@ -527,6 +553,7 @@ namespace std
     {
         std::size_t operator()(const flatmemory::Builder<flatmemory::Tuple<Ts...>> &tuple) const
         {
+            std::cout << "hash" << std::endl;
             return tuple.hash();
         }
     };
