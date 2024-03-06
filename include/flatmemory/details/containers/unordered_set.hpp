@@ -17,14 +17,14 @@ namespace flatmemory {
 
 template<typename T>
 struct CustomHash {
-    size_t operator()(const T& element) const {
+    size_t operator()(const ConstView<T>& element) const {
         return element.hash();
     }
 };
 
 template<typename T>
 struct CustomEqual {
-    bool operator()(const T& left_element, const T& right_element) const {
+    bool operator()(const ConstView<T>& left_element, const ConstView<T>& right_element) const {
         return left_element == right_element;
     }
 };
@@ -34,7 +34,7 @@ struct CustomEqual {
  * but without the functionality to erase elements
  * since m_storage would keep growing.
 */
-template<typename T>
+template<typename T, typename Hash = CustomHash<T>, typename Equal = CustomEqual<T>>
 class UnorderedSet
 {
 private:
@@ -42,10 +42,10 @@ private:
     ByteBufferSegmented m_storage;
 
     // Data to be accessed
-    std::unordered_set<ConstView<T>, CustomHash<ConstView<T>>, CustomEqual<ConstView<T>>> m_data;
+    std::unordered_set<ConstView<T>, Hash, Equal> m_data;
 
-    using iterator = std::unordered_set<ConstView<T>>::iterator;
-    using const_iterator = std::unordered_set<ConstView<T>>::const_iterator;
+    using iterator = std::unordered_set<ConstView<T>, Hash, Equal>::iterator;
+    using const_iterator = std::unordered_set<ConstView<T>, Hash, Equal>::const_iterator;
 
 public:
     explicit UnorderedSet(NumBytes n = 1000000)
