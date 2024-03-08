@@ -152,10 +152,10 @@ public:
     }
 
     [[nodiscard]] ConstView<T> operator[](size_t pos) const {
-        if (pos >= size()) {
-            resize(pos);
+        if (pos < size()) {
+            return m_data[pos];
         }
-        return m_data[pos];
+        throw std::runtime_error("invalid argument");
     }
 
     [[nodiscard]] View<T> back() {
