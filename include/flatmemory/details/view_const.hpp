@@ -20,30 +20,32 @@
 
 #include <type_traits>
 
-
-namespace flatmemory 
+namespace flatmemory
 {
-    /**
-     * Implementation class.
-     * 
-     * Provide overload with your Tag.
-    */
-    template<typename Tag>
-    class ConstView {};
+/**
+ * Implementation class.
+ *
+ * Provide overload with your Tag.
+ */
+template<typename Tag>
+class ConstView
+{
+};
 
+/**
+ * Concepts
+ */
+template<IsTriviallyCopyableOrCustom T, bool = IsTriviallyCopyable<T>>
+struct maybe_const_view
+{
+    using type = T;
+};
 
-    /**
-     * Concepts
-    */
-    template<IsTriviallyCopyableOrCustom T, bool = IsTriviallyCopyable<T>>
-    struct maybe_const_view {
-        using type = T;
-    };
-
-    template<IsTriviallyCopyableOrCustom T>
-    struct maybe_const_view<T, false> {
-        using type = ConstView<T>;
-    };
+template<IsTriviallyCopyableOrCustom T>
+struct maybe_const_view<T, false>
+{
+    using type = ConstView<T>;
+};
 }
 
-#endif 
+#endif

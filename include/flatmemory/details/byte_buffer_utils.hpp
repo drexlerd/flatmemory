@@ -18,82 +18,80 @@
 #ifndef FLATMEMORY_BYTE_BUFFER_UTILS_HPP_
 #define FLATMEMORY_BYTE_BUFFER_UTILS_HPP_
 
-#include "type_traits.hpp"
+#include "flatmemory/details/type_traits.hpp"
 
-#include <cassert>
-#include <cstdint>
-#include <cstddef>
-#include <iostream>
-#include <iomanip>
 #include <bitset>
-
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <iomanip>
+#include <iostream>
 
 namespace flatmemory
 {
 
 /**
  * Assertion logic
-*/
+ */
 
 template<typename T>
-bool test_correct_alignment(const uint8_t* buf) {
+bool test_correct_alignment(const uint8_t* buf)
+{
     return (reinterpret_cast<uintptr_t>(buf) % alignof(T)) == 0;
 }
 
-inline bool test_correct_alignment(const uint8_t* buf, size_t alignment) {
-    return (reinterpret_cast<uintptr_t>(buf) % alignment) == 0;
-}
-
+inline bool test_correct_alignment(const uint8_t* buf, size_t alignment) { return (reinterpret_cast<uintptr_t>(buf) % alignment) == 0; }
 
 /**
  * Read values from raw data.
-*/
+ */
 
 template<IsTriviallyCopyable T>
-T& read_value(uint8_t* buf) {
+T& read_value(uint8_t* buf)
+{
     assert(test_correct_alignment<T>(buf));
     return *reinterpret_cast<T*>(buf);
 }
 
 template<IsTriviallyCopyable T>
-const T& read_value(const uint8_t* buf) {
+const T& read_value(const uint8_t* buf)
+{
     assert(test_correct_alignment<T>(buf));
     return *reinterpret_cast<const T*>(buf);
 }
 
-
 /**
  * Write values to raw data.
-*/
+ */
 
 template<IsTriviallyCopyable T>
-void write_value(uint8_t* buf, const T& value) {
+void write_value(uint8_t* buf, const T& value)
+{
     *reinterpret_cast<T*>(buf) = value;
 }
 
-
 /**
  * Pretty printing
-*/
-inline void print(const uint8_t* data, size_t num_bytes) {
-    for (size_t i = 0; i < num_bytes; ++i) {
+ */
+inline void print(const uint8_t* data, size_t num_bytes)
+{
+    for (size_t i = 0; i < num_bytes; ++i)
+    {
         // Print each byte in hexadecimal format with leading zeros
         std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(data[i]) << " ";
     }
-    std::cout << std::dec << std::endl; // Reset to decimal output
+    std::cout << std::dec << std::endl;  // Reset to decimal output
 }
 
-
-inline void printBits(const uint8_t* data, size_t num_bytes) {
-    for (size_t i = 0; i < num_bytes; ++i) {
+inline void printBits(const uint8_t* data, size_t num_bytes)
+{
+    for (size_t i = 0; i < num_bytes; ++i)
+    {
         // Print each byte as a series of bits
         std::cout << std::bitset<8>(data[i]) << " ";
     }
-    std::cout << std::endl; // New line at the end
+    std::cout << std::endl;  // New line at the end
 }
-
-
-
 
 }
 

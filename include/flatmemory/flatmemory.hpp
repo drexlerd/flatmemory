@@ -18,21 +18,20 @@
 #ifndef FLATMEMORY_FLATMEMORY_HPP_
 #define FLATMEMORY_FLATMEMORY_HPP_
 
-
 /**
  * Types
-*/
+ */
 
-#include "details/types/bitset.hpp"
-#include "details/types/trivial.hpp"
-#include "details/types/tuple.hpp"
-#include "details/types/vector.hpp"
+#include "flatmemory/details/types/bitset.hpp"
+#include "flatmemory/details/types/trivial.hpp"
+#include "flatmemory/details/types/tuple.hpp"
+#include "flatmemory/details/types/vector.hpp"
 
 /**
  * Containers
-*/
+ */
 
-#include "details/containers/unordered_set.hpp"
-#include "details/containers/vector.hpp"
+#include "flatmemory/details/containers/unordered_set.hpp"
+#include "flatmemory/details/containers/vector.hpp"
 
 #endif

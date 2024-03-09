@@ -20,32 +20,34 @@
 
 #include <type_traits>
 
-
-namespace flatmemory 
+namespace flatmemory
 {
-    /**
-     * Implementation class.
-     * 
-     * Provide overload with your Tag.
-     * 
-     * Define operations to access the underlying raw data.
-    */
-    template<typename Tag>
-    class View {};
+/**
+ * Implementation class.
+ *
+ * Provide overload with your Tag.
+ *
+ * Define operations to access the underlying raw data.
+ */
+template<typename Tag>
+class View
+{
+};
 
+/**
+ * Concepts
+ */
+template<IsTriviallyCopyableOrCustom T, bool = IsTriviallyCopyable<T>>
+struct maybe_view
+{
+    using type = T;
+};
 
-    /**
-     * Concepts
-    */
-    template<IsTriviallyCopyableOrCustom T, bool = IsTriviallyCopyable<T>>
-    struct maybe_view {
-        using type = T;
-    };
-
-    template<IsTriviallyCopyableOrCustom T>
-    struct maybe_view<T, false> {
-        using type = View<T>;
-    };
+template<IsTriviallyCopyableOrCustom T>
+struct maybe_view<T, false>
+{
+    using type = View<T>;
+};
 }
 
-#endif 
+#endif

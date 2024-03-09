@@ -18,64 +18,65 @@
 #ifndef FLATMEMORY_BUILDER_HPP_
 #define FLATMEMORY_BUILDER_HPP_
 
-#include "type_traits.hpp"
+#include "flatmemory/details/type_traits.hpp"
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <type_traits>
 
-
-namespace flatmemory 
+namespace flatmemory
 {
-    /**
-     * Forward declarations
-    */
-    class ByteBuffer;
+/**
+ * Forward declarations
+ */
+class ByteBuffer;
 
+/**
+ * Interface class.
+ */
+template<typename Derived>
+class IBuilder
+{
+private:
+    /// @brief Helper to cast to Derived.
+    constexpr const auto& self() const { return static_cast<const Derived&>(*this); }
+    constexpr auto& self() { return static_cast<Derived&>(*this); }
 
-    /**
-     * Interface class.
-    */
-    template<typename Derived>
-    class IBuilder {
-        private:
-            /// @brief Helper to cast to Derived.
-            constexpr const auto& self() const { return static_cast<const Derived&>(*this); }
-            constexpr auto& self() { return static_cast<Derived&>(*this); }
+public:
+    /// @brief Write serialized data to the stream.
+    void finish() { self().finish_impl(); }
 
-        public:
-            /// @brief Write serialized data to the stream.
-            void finish() { self().finish_impl(); }
+    /// @brief Access the serialized buffer
+    auto& buffer() { return self().get_buffer_impl(); }
+    const auto& buffer() const { return self().get_buffer_impl(); }
+};
 
-            /// @brief Access the serialized buffer
-            auto& buffer() { return self().get_buffer_impl(); }
-            const auto& buffer() const { return self().get_buffer_impl(); }
-    };
+/**
+ * Implementation class.
+ *
+ * Provide overload with your Tag.
+ *
+ * Define operations to feed data for serialization.
+ */
+template<typename Tag>
+class Builder : IBuilder<Builder<Tag>>
+{
+};
 
-    
-    /**
-     * Implementation class.
-     * 
-     * Provide overload with your Tag.
-     * 
-     * Define operations to feed data for serialization.
-    */
-    template<typename Tag>
-    class Builder : IBuilder<Builder<Tag>> {};
+/**
+ * Concepts
+ */
+template<IsTriviallyCopyableOrCustom T, bool = IsTriviallyCopyable<T>>
+struct maybe_builder
+{
+    using type = T;
+};
 
-
-    /**
-     * Concepts
-    */
-    template<IsTriviallyCopyableOrCustom T, bool = IsTriviallyCopyable<T>>
-    struct maybe_builder {
-        using type = T;
-    };
-
-    template<IsTriviallyCopyableOrCustom T>
-    struct maybe_builder<T, false> {
-        using type = Builder<T>;
-    };
+template<IsTriviallyCopyableOrCustom T>
+struct maybe_builder<T, false>
+{
+    using type = Builder<T>;
+};
 }
 
-#endif 
+#endif

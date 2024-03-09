@@ -16,49 +16,41 @@
  */
 
 #include <flatmemory/flatmemory.hpp>
-
 #include <gtest/gtest.h>
-
 #include <string>
 
-
-namespace flatmemory 
+namespace flatmemory
 {
-    using State = Tuple<uint32_t, Bitset<uint64_t>>;
-    using StateView = ConstView<State>;
+using State = Tuple<uint32_t, Bitset<uint64_t>>;
+using StateView = ConstView<State>;
 }
 
-
-namespace std 
+namespace std
 {
-    template<>
-    struct hash<flatmemory::StateView>
-    {
-        std::size_t operator()(const flatmemory::StateView& view) const {
-            return 0;
-        }
-    };
+template<>
+struct hash<flatmemory::StateView>
+{
+    std::size_t operator()(const flatmemory::StateView& view) const { return 0; }
+};
 
-    template<>
-    struct equal_to<flatmemory::StateView>
-    {
-        bool operator()(const flatmemory::StateView& view_left, const flatmemory::StateView& view_right) const {
-            return true;
-        }
-    };
+template<>
+struct equal_to<flatmemory::StateView>
+{
+    bool operator()(const flatmemory::StateView& view_left, const flatmemory::StateView& view_right) const { return true; }
+};
 }
-
 
 namespace flatmemory::tests
 {
-    TEST(FlatmemoryTests, ContainersUnorderedSetTest) {
-        Builder<Tuple<uint32_t, Bitset<uint64_t>>> builder;
-        builder.get<0>() = 9;
-        builder.finish();
+TEST(FlatmemoryTests, ContainersUnorderedSetTest)
+{
+    Builder<Tuple<uint32_t, Bitset<uint64_t>>> builder;
+    builder.get<0>() = 9;
+    builder.finish();
 
-        UnorderedSet<Tuple<uint32_t, Bitset<uint64_t>>> unordered_set;
-        auto const_view = unordered_set.insert(builder);
+    UnorderedSet<Tuple<uint32_t, Bitset<uint64_t>>> unordered_set;
+    auto const_view = unordered_set.insert(builder);
 
-        EXPECT_EQ(const_view.get<0>(), 9);
-    }
+    EXPECT_EQ(const_view.get<0>(), 9);
+}
 }

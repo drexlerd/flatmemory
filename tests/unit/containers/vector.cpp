@@ -16,28 +16,28 @@
  */
 
 #include <flatmemory/flatmemory.hpp>
-
 #include <gtest/gtest.h>
-
 #include <string>
-
 
 namespace flatmemory::tests
 {
-    TEST(FlatmemoryTests, ContainersVariableSizedTypeVectorTest) {
-        VariableSizedTypeVector<Bitset<uint64_t>> views;
-        auto builder = Builder<Bitset<uint64_t>>();
-        builder.get_blocks().resize(5);
-        builder.finish();
-        for (size_t i = 0; i < 5; ++i) {
-            views.push_back(builder);
-        }
+TEST(FlatmemoryTests, ContainersVariableSizedTypeVectorTest)
+{
+    VariableSizedTypeVector<Bitset<uint64_t>> views;
+    auto builder = Builder<Bitset<uint64_t>>();
+    builder.get_blocks().resize(5);
+    builder.finish();
+    for (size_t i = 0; i < 5; ++i)
+    {
+        views.push_back(builder);
     }
+}
 
-    TEST(FlatmemoryTests, ContainersFixedSizedTypeVectorTest) {
-        auto builder = Builder<Tuple<uint16_t, uint32_t>>();
-        builder.finish();
-        FixedSizedTypeVector<Tuple<uint16_t, uint32_t>> vector(std::move(builder));
-        vector.resize(5);
-    }
+TEST(FlatmemoryTests, ContainersFixedSizedTypeVectorTest)
+{
+    auto builder = Builder<Tuple<uint16_t, uint32_t>>();
+    builder.finish();
+    FixedSizedTypeVector<Tuple<uint16_t, uint32_t>> vector(std::move(builder));
+    vector.resize(5);
+}
 }

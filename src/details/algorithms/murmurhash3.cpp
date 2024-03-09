@@ -11,7 +11,7 @@
 
 //-----------------------------------------------------------------------------
 
-namespace flatmemory 
+namespace flatmemory
 {
 
 // Platform-specific functions and macros

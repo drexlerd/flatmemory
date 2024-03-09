@@ -16,33 +16,32 @@
  */
 
 #include <flatmemory/flatmemory.hpp>
-
 #include <gtest/gtest.h>
-
 #include <string>
-
 
 namespace flatmemory::tests
 {
-    struct TrivialType {
-        bool x;
-        uint64_t y;
-    };
+struct TrivialType
+{
+    bool x;
+    uint64_t y;
+};
 
-    TEST(FlatmemoryTests, TypesTrivialTest) {
-        EXPECT_EQ((Layout<Trivial<TrivialType>>::final_alignment), 16);
-        EXPECT_EQ(IsTriviallyCopyable<View<Trivial<TrivialType>>>, true);
+TEST(FlatmemoryTests, TypesTrivialTest)
+{
+    EXPECT_EQ((Layout<Trivial<TrivialType>>::final_alignment), 16);
+    EXPECT_EQ(IsTriviallyCopyable<View<Trivial<TrivialType>>>, true);
 
-        auto builder = Builder<Trivial<TrivialType>>();
-        builder->x = true;
-        builder->y = 4;
-        builder.finish();
+    auto builder = Builder<Trivial<TrivialType>>();
+    builder->x = true;
+    builder->y = 4;
+    builder.finish();
 
-        EXPECT_EQ(builder.buffer().size(), 16);
-        EXPECT_EQ(sizeof(TrivialType), 16);
+    EXPECT_EQ(builder.buffer().size(), 16);
+    EXPECT_EQ(sizeof(TrivialType), 16);
 
-        auto view = View<Trivial<TrivialType>>(builder.buffer().data());
-        EXPECT_EQ(view->x, true);
-        EXPECT_EQ(view->y, 4);
-    }
+    auto view = View<Trivial<TrivialType>>(builder.buffer().data());
+    EXPECT_EQ(view->x, true);
+    EXPECT_EQ(view->y, 4);
+}
 }

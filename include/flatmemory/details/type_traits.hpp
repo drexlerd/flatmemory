@@ -18,31 +18,31 @@
 #ifndef FLATMEMORY_TYPE_TRAITS_HPP_
 #define FLATMEMORY_TYPE_TRAITS_HPP_
 
-#include "layout.hpp"
+#include "flatmemory/details/layout.hpp"
 
 #include <concepts>
-#include <type_traits>
 #include <cstddef>
+#include <type_traits>
 
-
-namespace flatmemory 
+namespace flatmemory
 {
-    /**
-     * Base ID class for custom types.
-    */
-    struct Custom {};
+/**
+ * Base ID class for custom types.
+ */
+struct Custom
+{
+};
 
-    template<typename T>
-    concept IsCustom = std::derived_from<T, Custom>;
+template<typename T>
+concept IsCustom = std::derived_from<T, Custom>;
 
-    template<typename T>
-    concept IsTriviallyCopyable = std::is_trivially_copyable_v<T>;
+template<typename T>
+concept IsTriviallyCopyable = std::is_trivially_copyable_v<T>;
 
-    template<typename T>
-    concept IsTriviallyCopyableOrCustom = (IsTriviallyCopyable<T> || IsCustom<T>);
-    
+template<typename T>
+concept IsTriviallyCopyableOrCustom = (IsTriviallyCopyable<T> || IsCustom<T>);
 
-    using NumBytes = size_t;
+using NumBytes = size_t;
 }
 
-#endif 
+#endif

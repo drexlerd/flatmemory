@@ -18,13 +18,13 @@
 #ifndef FLATMEMORY_ALGORITHMS_HASH_HPP_
 #define FLATMEMORY_ALGORITHMS_HASH_HPP_
 
-#include <functional>
 #include <cstddef>
+#include <functional>
 #include <set>
 #include <vector>
 
-
-namespace flatmemory {
+namespace flatmemory
+{
 
 // --------------
 // Hash functions
@@ -65,12 +65,11 @@ inline std::size_t hash_container(const Container& container)
 }
 
 template<typename Container>
-struct hash_container_type {
-    size_t operator()(const Container& container) const {
-        return hash_container(container);
-    }
+struct hash_container_type
+{
+    size_t operator()(const Container& container) const { return hash_container(container); }
 };
 
-} 
+}
 
 #endif

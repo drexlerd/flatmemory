@@ -18,18 +18,19 @@
 #ifndef FLATMEMORY_LAYOUT_HPP_
 #define FLATMEMORY_LAYOUT_HPP_
 
-
-namespace flatmemory 
+namespace flatmemory
 {
-    /**
-     * Implementation class.
-     * 
-     * Provide overload with your Tag.
-     * 
-     * Define the memory layout at compile time.
-    */
-    template<typename Tag>
-    class Layout {};
+/**
+ * Implementation class.
+ *
+ * Provide overload with your Tag.
+ *
+ * Define the memory layout at compile time.
+ */
+template<typename Tag>
+class Layout
+{
+};
 }
 
-#endif 
+#endif

@@ -18,7 +18,4 @@
 // Test flatmemory include
 #include <flatmemory/flatmemory.hpp>
 
-
-int main() {
-    return 0;
-}
+int main() { return 0; }

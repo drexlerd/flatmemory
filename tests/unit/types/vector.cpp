@@ -16,16 +16,14 @@
  */
 
 #include <flatmemory/flatmemory.hpp>
-
 #include <gtest/gtest.h>
-
 #include <string>
-
 
 namespace flatmemory::tests
 {
 
-TEST(FlatmemoryTests, TypesVectorTest) {
+TEST(FlatmemoryTests, TypesVectorTest)
+{
     EXPECT_EQ((Layout<Vector<uint16_t>>::final_alignment), 4);
 
     auto builder = Builder<Vector<uint16_t>>();
@@ -42,8 +40,8 @@ TEST(FlatmemoryTests, TypesVectorTest) {
     EXPECT_EQ(view[1], 6);
 }
 
-
-TEST(FlatmemoryTests, TypesVector2Test) {
+TEST(FlatmemoryTests, TypesVector2Test)
+{
     EXPECT_EQ((Layout<Vector<uint16_t>>::final_alignment), 4);
 
     auto builder = Builder<Vector<uint16_t>>();
@@ -54,8 +52,8 @@ TEST(FlatmemoryTests, TypesVector2Test) {
     EXPECT_EQ(builder.buffer().size(), 16);
 }
 
-
-TEST(FlatmemoryTests, TypesVectorVectorTest) {
+TEST(FlatmemoryTests, TypesVectorVectorTest)
+{
     EXPECT_EQ((Layout<Vector<Vector<uint16_t>>>::final_alignment), 4);
 
     auto builder = Builder<Vector<Vector<uint16_t>>>();
@@ -75,8 +73,8 @@ TEST(FlatmemoryTests, TypesVectorVectorTest) {
     EXPECT_EQ(view[1][1], 7);
 }
 
-
-TEST(FlatmemoryTests, TypesVectorViewTest) {
+TEST(FlatmemoryTests, TypesVectorViewTest)
+{
     EXPECT_EQ((Layout<Vector<View<Vector<uint16_t>>>>::final_alignment), 8);
 
     auto builder = Builder<Vector<View<Vector<uint16_t>>>>();
@@ -87,8 +85,8 @@ TEST(FlatmemoryTests, TypesVectorViewTest) {
     EXPECT_EQ(builder.buffer().size(), 32);
 }
 
-
-TEST(FlatmemoryTests, TypesVectorEqualityTest) {
+TEST(FlatmemoryTests, TypesVectorEqualityTest)
+{
     using VectorLayout = Vector<uint64_t>;
 
     auto builder1 = Builder<VectorLayout>();
@@ -115,7 +113,6 @@ TEST(FlatmemoryTests, TypesVectorEqualityTest) {
     EXPECT_FALSE((builder2 == builder3));
     EXPECT_NE(builder2.hash(), builder3.hash());
 
-
     auto view1 = View<VectorLayout>(builder1.buffer().data());
     auto view2 = View<VectorLayout>(builder2.buffer().data());
     auto view3 = View<VectorLayout>(builder3.buffer().data());
@@ -128,7 +125,6 @@ TEST(FlatmemoryTests, TypesVectorEqualityTest) {
 
     EXPECT_FALSE((view2 == view3));
     EXPECT_NE(view2.hash(), view3.hash());
-
 
     auto const_view1 = ConstView<VectorLayout>(builder1.buffer().data());
     auto const_view2 = ConstView<VectorLayout>(builder2.buffer().data());
