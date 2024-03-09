@@ -263,6 +263,8 @@ namespace flatmemory
             /// @param count
             void resize(size_t count) { m_data.resize(count, T_()); }
             void resize(size_t count, const T_& value) { m_data.resize(count, value); }
+
+            void clear() { m_data.clear(); }
     };
 
 
