@@ -18,7 +18,6 @@
 #ifndef FLATMEMORY_BYTE_BUFFER_SEGMENTED_HPP_
 #define FLATMEMORY_BYTE_BUFFER_SEGMENTED_HPP_
 
-#include "flatmemory/details/layout_utils.hpp"
 #include "flatmemory/details/type_traits.hpp"
 
 #include <cassert>

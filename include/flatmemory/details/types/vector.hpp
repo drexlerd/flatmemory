@@ -33,7 +33,6 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
-#include <limits>
 #include <vector>
 
 namespace flatmemory
@@ -115,8 +114,8 @@ class Builder<Vector<T>> : public IBuilder<Builder<Vector<T>>>
 private:
     using T_ = typename maybe_builder<T>::type;
 
-    using iterator = std::vector<T_>::iterator;
-    using const_iterator = std::vector<T_>::const_iterator;
+    using iterator = typename std::vector<T_>::iterator;
+    using const_iterator = typename std::vector<T_>::const_iterator;
 
     std::vector<T_> m_data;
     ByteBuffer m_buffer;
@@ -365,7 +364,7 @@ public:
     class iterator
     {
     private:
-        uint8_t* buf;
+        uint8_t* m_buf;
 
     public:
         using difference_type = std::ptrdiff_t;
@@ -374,15 +373,15 @@ public:
         using reference = typename maybe_view<T>::type&;
         using iterator_category = std::forward_iterator_tag;
 
-        iterator(uint8_t* buf) : buf(buf) {}
+        iterator(uint8_t* buf) : m_buf(buf) {}
 
         [[nodiscard]] decltype(auto) operator*() const
         {
             constexpr bool is_trivial = IsTriviallyCopyable<T>;
             if constexpr (is_trivial)
             {
-                assert(test_correct_alignment<T>(buf));
-                return read_value<T>(buf);
+                assert(test_correct_alignment<T>(m_buf));
+                return read_value<T>(m_buf);
             }
             else
             {
@@ -395,11 +394,11 @@ public:
             constexpr bool is_trivial = IsTriviallyCopyable<T>;
             if constexpr (is_trivial)
             {
-                buf += sizeof(T);
+                m_buf += sizeof(T);
             }
             else
             {
-                buf += sizeof(offset_type);
+                m_buf += sizeof(offset_type);
             }
             return *this;
         }
@@ -411,7 +410,7 @@ public:
             return tmp;
         }
 
-        [[nodiscard]] bool operator==(const iterator& other) const { return buf == other.buf; }
+        [[nodiscard]] bool operator==(const iterator& other) const { return m_buf == other.m_buf; }
 
         [[nodiscard]] bool operator!=(const iterator& other) const { return !(*this == other); }
     };
@@ -463,7 +462,7 @@ public:
             }
             else
             {
-                return View<T>(m_buf + read_value<offset_type>(m_buf));
+                return View<T>(buf + read_value<offset_type>(buf));
             }
         }
 
@@ -657,7 +656,7 @@ public:
             }
             else
             {
-                return View<T>(m_buf + read_value<offset_type>(m_buf));
+                return View<T>(buf + read_value<offset_type>(buf));
             }
         }
 

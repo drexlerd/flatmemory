@@ -22,16 +22,11 @@
 #include "flatmemory/details/byte_buffer.hpp"
 #include "flatmemory/details/byte_buffer_utils.hpp"
 #include "flatmemory/details/layout.hpp"
-#include "flatmemory/details/layout_utils.hpp"
 #include "flatmemory/details/type_traits.hpp"
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
 
-#include <algorithm>
 #include <cassert>
-#include <iostream>
-#include <string>
-#include <tuple>
 
 namespace flatmemory
 {
@@ -183,7 +178,7 @@ public:
         return sizeof(T);
     }
 
-    [[nodiscard]] uint8_t* buffer() { return m_buf; }
+    [[nodiscard]] const uint8_t* buffer() const { return m_buf; }
 };
 }
 

@@ -30,8 +30,8 @@ private:
     // Data to be accessed
     std::vector<View<T>> m_data;
 
-    using iterator = std::vector<View<T>>::iterator;
-    using const_iterator = std::vector<View<T>>::const_iterator;
+    using iterator = typename std::vector<View<T>>::iterator;
+    using const_iterator = typename std::vector<View<T>>::const_iterator;
 
 public:
     explicit VariableSizedTypeVector(NumBytes n = 1000000) : m_storage(ByteBufferSegmented(n)) {}
@@ -113,8 +113,8 @@ private:
 
     const Builder<T> m_default_builder;
 
-    using iterator = std::vector<View<T>>::iterator;
-    using const_iterator = std::vector<View<T>>::const_iterator;
+    using iterator = typename std::vector<View<T>>::iterator;
+    using const_iterator = typename std::vector<View<T>>::const_iterator;
 
 public:
     FixedSizedTypeVector(Builder<T>&& default_builder, NumBytes n = 1000000) : m_storage(ByteBufferSegmented(n)), m_default_builder(std::move(default_builder))

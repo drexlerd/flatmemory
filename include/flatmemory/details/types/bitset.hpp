@@ -33,10 +33,7 @@
 #include <algorithm>
 #include <bit>
 #include <cassert>
-#include <cmath>
 #include <iostream>
-#include <string>
-#include <tuple>
 
 namespace flatmemory
 {
@@ -257,7 +254,7 @@ public:
 
         for (std::size_t index = 0; index < common_size; ++index)
         {
-            if (blocks[index] & other_blocks[index] != other_blocks[index])
+            if (blocks[index] & (other_blocks[index] != other_blocks[index]))
             {
                 // There exists a set bit in block that is not set in block.
                 return false;
@@ -308,7 +305,7 @@ public:
 
         for (std::size_t index = 0; index < common_size; ++index)
         {
-            if (blocks[index] & other_blocks[index] > 0)
+            if (blocks[index] & (other_blocks[index] > 0))
             {
                 // block and other_block have set bits in common
                 return false;
@@ -535,7 +532,7 @@ class View<Bitset<Block>>
 {
 private:
     using BitsetOperator = Operator<Bitset<Block>>;
-    using const_iterator = BitsetOperator::const_iterator;
+    using const_iterator = typename BitsetOperator::const_iterator;
 
     uint8_t* m_buf;
 
@@ -664,7 +661,7 @@ class ConstView<Bitset<Block>>
 {
 private:
     using BitsetOperator = Operator<Bitset<Block>>;
-    using const_iterator = BitsetOperator::const_iterator;
+    using const_iterator = typename BitsetOperator::const_iterator;
 
     const uint8_t* m_buf;
 
@@ -754,7 +751,7 @@ public:
      * Getters
      */
 
-    [[nodiscard]] uint8_t* buffer() { return m_buf; }
+    [[nodiscard]] const uint8_t* buffer() const { return m_buf; }
 
     [[nodiscard]] size_t buffer_size() const
     {
@@ -785,7 +782,7 @@ class Builder<Bitset<Block>> : public IBuilder<Builder<Bitset<Block>>>
 {
 private:
     using BitsetOperator = Operator<Bitset<Block>>;
-    using const_iterator = BitsetOperator::const_iterator;
+    using const_iterator = typename BitsetOperator::const_iterator;
 
     bool m_default_bit_value;
     Builder<Vector<Block>> m_blocks;

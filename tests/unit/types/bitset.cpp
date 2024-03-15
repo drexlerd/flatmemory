@@ -17,7 +17,6 @@
 
 #include <flatmemory/flatmemory.hpp>
 #include <gtest/gtest.h>
-#include <string>
 
 namespace flatmemory::tests
 {

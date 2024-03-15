@@ -4,12 +4,10 @@
 
 #include "flatmemory/details/builder.hpp"
 #include "flatmemory/details/byte_buffer_segmented.hpp"
-#include "flatmemory/details/byte_buffer_utils.hpp"
 #include "flatmemory/details/type_traits.hpp"
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
 
-#include <iostream>
 #include <unordered_set>
 
 namespace flatmemory
@@ -42,8 +40,8 @@ private:
     // Data to be accessed
     std::unordered_set<ConstView<T>, Hash, Equal> m_data;
 
-    using iterator = std::unordered_set<ConstView<T>, Hash, Equal>::iterator;
-    using const_iterator = std::unordered_set<ConstView<T>, Hash, Equal>::const_iterator;
+    using iterator = typename std::unordered_set<ConstView<T>, Hash, Equal>::iterator;
+    using const_iterator = typename std::unordered_set<ConstView<T>, Hash, Equal>::const_iterator;
 
 public:
     explicit UnorderedSet(NumBytes n = 1000000) : m_storage(ByteBufferSegmented(n)) {}
