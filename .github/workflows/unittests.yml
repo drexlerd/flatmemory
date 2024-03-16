@@ -19,12 +19,12 @@ jobs:
       run: |
         cd dependencies
         cmake -S . -B build -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/dependencies/installs"
-        cmake --build build -j$(nproc)
+        cmake --build build
 
     - name: Configure, and Build flatmemory
       run: |
         cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON -S . -B build -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/dependencies/installs"
-        cmake --build build -j$(nproc)
+        cmake --build build
 
     - name: Test
       working-directory: build/tests/unit
