@@ -26,9 +26,9 @@
 #include "flatmemory/details/layout_utils.hpp"
 #include "flatmemory/details/operator.hpp"
 #include "flatmemory/details/type_traits.hpp"
+#include "flatmemory/details/types/vector.hpp"
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
-#include "vector.hpp"
 
 #include <algorithm>
 #include <bit>

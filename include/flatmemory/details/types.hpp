@@ -15,30 +15,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef FLATMEMORY_TYPE_TRAITS_HPP_
-#define FLATMEMORY_TYPE_TRAITS_HPP_
+#ifndef FLATMEMORY_TYPES_HPP_
+#define FLATMEMORY_TYPES_HPP_
 
 #include <concepts>
 #include <cstddef>
-#include <type_traits>
 
 namespace flatmemory
 {
-/**
- * Base ID class for custom types.
- */
-struct Custom
-{
-};
 
-template<typename T>
-concept IsCustom = std::derived_from<T, Custom>;
-
-template<typename T>
-concept IsTriviallyCopyable = std::is_trivially_copyable_v<T>;
-
-template<typename T>
-concept IsTriviallyCopyableOrCustom = (IsTriviallyCopyable<T> || IsCustom<T>);
+using NumBytes = size_t;
 }
 
 #endif

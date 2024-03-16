@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef FLATMEMORY_TYPES_STRUCT_HPP_
-#define FLATMEMORY_TYPES_STRUCT_HPP_
+#ifndef FLATMEMORY_TYPES_TRIVIAL_HPP_
+#define FLATMEMORY_TYPES_TRIVIAL_HPP_
 
 #include "flatmemory/details/builder.hpp"
 #include "flatmemory/details/byte_buffer.hpp"
