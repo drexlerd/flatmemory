@@ -979,6 +979,30 @@ public:
         return *this;
     }
 
+    template<IsBitset Other>
+    Builder& operator-=(const Other& other)
+    {
+        // Fetch data
+        const auto& other_blocks = other.get_blocks();
+        bool other_default_bit_value = other.get_default_bit_value();
+
+        // Update default bit value
+        m_default_bit_value &= !other_default_bit_value;
+
+        // Update blocks
+        resize_to_fit(other);
+        auto it = m_blocks.begin();
+        auto other_it = other_blocks.begin();
+        while (it != m_blocks.end())
+        {
+            *it &= ~(*other_it);
+            ++it;
+            ++other_it;
+        }
+
+        return *this;
+    }
+
     /**
      * Lookup
      */
