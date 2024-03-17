@@ -19,38 +19,42 @@
 #include <gtest/gtest.h>
 #include <string>
 
-namespace flatmemory
-{
-using State = Tuple<uint32_t, Bitset<uint64_t>>;
-using StateView = ConstView<State>;
-}
-
-namespace std
-{
-template<>
-struct hash<flatmemory::StateView>
-{
-    std::size_t operator()(const flatmemory::StateView& view) const { return 0; }
-};
-
-template<>
-struct equal_to<flatmemory::StateView>
-{
-    bool operator()(const flatmemory::StateView& view_left, const flatmemory::StateView& view_right) const { return true; }
-};
-}
-
 namespace flatmemory::tests
 {
+using StateLayout = Tuple<uint32_t, Bitset<uint64_t>>;
+using StateView = ConstView<StateLayout>;
+
+struct CustomHash
+{
+    std::size_t operator()(const StateView& view) const { return view.get<1>().hash(); }
+};
+
+struct CustomEqual
+{
+    bool operator()(const StateView& view_left, const StateView& view_right) const { return view_left.get<1>() == view_right.get<1>(); }
+};
+
 TEST(FlatmemoryTests, ContainersUnorderedSetTest)
 {
-    Builder<Tuple<uint32_t, Bitset<uint64_t>>> builder;
+    UnorderedSet<StateLayout, CustomHash, CustomEqual> unordered_set;
+
+    Builder<StateLayout> builder;
+
     builder.get<0>() = 9;
+    builder.get<1>().set(1);
     builder.finish();
+    auto const_view1 = unordered_set.insert(builder);
+    builder.get<0>() = 8;
+    builder.finish();
+    auto const_view2 = unordered_set.insert(builder);
 
-    UnorderedSet<Tuple<uint32_t, Bitset<uint64_t>>> unordered_set;
-    auto const_view = unordered_set.insert(builder);
+    EXPECT_EQ(const_view1.buffer(), const_view2.buffer());
 
-    EXPECT_EQ(const_view.get<0>(), 9);
+    builder.get<0>() = 9;
+    builder.get<1>().unset_all();
+    builder.finish();
+    auto const_view3 = unordered_set.insert(builder);
+
+    EXPECT_NE(const_view1.buffer(), const_view3.buffer());
 }
 }
