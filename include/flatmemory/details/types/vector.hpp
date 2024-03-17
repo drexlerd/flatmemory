@@ -686,14 +686,14 @@ public:
         [[nodiscard]] bool operator!=(const const_iterator& other) const { return !(*this == other); }
     };
 
-    [[nodiscard]] const_iterator begin()
+    [[nodiscard]] const_iterator begin() const
     {
         assert(m_buf);
         assert(test_correct_alignment<const_iterator>(m_buf + Layout<Vector<T>>::vector_data_position));
         return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position);
     }
 
-    [[nodiscard]] const_iterator end()
+    [[nodiscard]] const_iterator end() const
     {
         assert(m_buf);
         constexpr bool is_trivial = IsTriviallyCopyable<T>;
