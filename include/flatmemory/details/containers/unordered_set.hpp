@@ -78,7 +78,7 @@ public:
         m_data.clear();
     }
 
-    [[nodiscard]] ConstView<T> insert(const Builder<T>& builder)
+    [[nodiscard]] std::pair<const_iterator, bool> insert(const Builder<T>& builder)
     {
         const uint8_t* data = builder.buffer().data();
         size_t amount = builder.buffer().size();
@@ -89,13 +89,13 @@ public:
         {
             // not unique, mark the storage as free again
             m_storage.undo_last_write();
-            return *it;
+            return std::make_pair(it, false);
         }
         auto result = m_data.insert(view);
-        return *result.first;
+        return std::make_pair(result.first, true);
     }
 
-    [[nodiscard]] ConstView<T> insert(const ConstView<T>& view)
+    [[nodiscard]] std::pair<const_iterator, bool> insert(ConstView<T>& view)
     {
         const uint8_t* data = view.buffer();
         size_t amount = view.buffer_size();
@@ -106,14 +106,14 @@ public:
         {
             // not unique, mark the storage as free again
             m_storage.undo_last_write();
-            return *it;
+            return std::make_pair(it, false);
         }
 
         auto result = m_data.insert(result_view);
-        return *result.first;
+        return std::make_pair(result.first, true);
     }
 
-    [[nodiscard]] ConstView<T> insert(const View<T>& view)
+    [[nodiscard]] std::pair<const_iterator, bool> insert(View<T>& view)
     {
         const uint8_t* data = view.buffer();
         size_t amount = view.buffer_size();
@@ -124,10 +124,10 @@ public:
         {
             // not unique, mark the storage as free again
             m_storage.undo_last_write();
-            return *it;
+            return std::make_pair(it, false);
         }
         auto result = m_data.insert(result_view);
-        return *result.first;
+        return std::make_pair(result.first, true);
     }
 
     /**

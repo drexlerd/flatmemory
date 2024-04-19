@@ -43,17 +43,17 @@ TEST(FlatmemoryTests, ContainersUnorderedSetTest)
     builder.get<0>() = 9;
     builder.get<1>().set(1);
     builder.finish();
-    auto const_view1 = unordered_set.insert(builder);
+    auto const_view1 = *unordered_set.insert(builder).first;
     builder.get<0>() = 8;
     builder.finish();
-    auto const_view2 = unordered_set.insert(builder);
+    auto const_view2 = *unordered_set.insert(builder).first;
 
     EXPECT_EQ(const_view1.buffer(), const_view2.buffer());
 
     builder.get<0>() = 9;
     builder.get<1>().unset_all();
     builder.finish();
-    auto const_view3 = unordered_set.insert(builder);
+    auto const_view3 = *unordered_set.insert(builder).first;
 
     EXPECT_NE(const_view1.buffer(), const_view3.buffer());
 }

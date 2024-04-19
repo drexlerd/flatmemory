@@ -228,7 +228,7 @@ TEST(FlatmemoryTests, TypesTupleStateTest)
     Layout<BitsetLayout>().print();
     std::cout << std::endl;
 
-    auto vec = UnorderedSet();
+    auto set = UnorderedSet();
 
     std::random_device rd;   // Obtain a random number from hardware
     std::mt19937 eng(rd());  // Seed the generator
@@ -244,7 +244,7 @@ TEST(FlatmemoryTests, TypesTupleStateTest)
         builder.get<1>().get_blocks().resize(i2);
         builder.finish();
         auto const_view = ConstView<TupleLayout>(builder.buffer().data());
-        auto view = vec.insert(const_view);
+        auto view = *set.insert(const_view).first;
 
         std::cout << "unordered_set returned: ";
         print(view.buffer(), view.buffer_size());
