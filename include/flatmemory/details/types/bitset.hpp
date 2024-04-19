@@ -912,22 +912,6 @@ public:
         }
     }
 
-    // Unset all bits for a given default_bit_value
-    void unset_all(bool default_bit_value)
-    {
-        m_default_bit_value = default_bit_value;
-        unset_all();
-    }
-
-    // Set all bits
-    void set_all()
-    {
-        for (auto& value : m_blocks)
-        {
-            value = (m_default_bit_value) ? BitsetOperator::block_zeroes : BitsetOperator::block_ones;
-        }
-    }
-
     // Set all bits for a given default_bit_value
     void set_all(bool default_bit_value)
     {
