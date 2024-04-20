@@ -34,40 +34,40 @@ private:
     NumBytes m_num_bytes_per_segment;
     std::vector<uint8_t*> m_segments;
 
-    size_t cur_segment_id;
-    size_t cur_segment_pos;
+    size_t m_cur_segment_id;
+    size_t m_cur_segment_pos;
 
     size_t m_size;
     size_t m_capacity;
 
-    size_t last_written;
+    size_t m_last_written;
 
     /// @brief Allocate a block of size N and update tracking variables.
     void increase_capacity()
     {
-        if (cur_segment_id == (m_segments.size() - 1))
+        if (m_cur_segment_id == (m_segments.size() - 1))
         {
-            m_segments.push_back(new uint8_t[m_num_bytes_per_segment]);
-            cur_segment_pos = 0;
+            m_segments.push_back(new uint8_t[m_num_bytes_per_segment]());
+            m_cur_segment_pos = 0;
             m_capacity += m_num_bytes_per_segment;
         }
-        ++cur_segment_id;
-        assert(cur_segment_id < m_segments.size());
+        ++m_cur_segment_id;
+        assert(m_cur_segment_id < m_segments.size());
     }
 
 public:
     explicit ByteBufferSegmented(NumBytes n = 1000000) :
         m_num_bytes_per_segment(n),
-        cur_segment_id(-1),
-        cur_segment_pos(0),
+        m_cur_segment_id(-1),
+        m_cur_segment_pos(0),
         m_size(0),
         m_capacity(0),
-        last_written(0)
+        m_last_written(0)
     {
         // allocate first block of memory
         increase_capacity();
-        assert(cur_segment_pos == 0);
-        assert(cur_segment_id == 0);
+        assert(m_cur_segment_pos == 0);
+        assert(m_cur_segment_id == 0);
     }
     ~ByteBufferSegmented()
     {
@@ -81,39 +81,39 @@ public:
     ByteBufferSegmented(ByteBufferSegmented&& other) = default;
     ByteBufferSegmented& operator=(ByteBufferSegmented&& other) = default;
 
-    /// @brief Write the data starting from the cur_segment_pos
-    ///        in the segment with cur_segment_id, if it fits,
+    /// @brief Write the data starting from the m_cur_segment_pos
+    ///        in the segment with m_cur_segment_id, if it fits,
     ///        and otherwise, push_back a new segment first.
     uint8_t* write(const uint8_t* data, size_t amount)
     {
         assert(data);
         assert(amount <= m_num_bytes_per_segment);
-        if (amount > (m_num_bytes_per_segment - cur_segment_pos))
+        if (amount > (m_num_bytes_per_segment - m_cur_segment_pos))
         {
             increase_capacity();
         }
-        uint8_t* result_data = &m_segments[cur_segment_id][cur_segment_pos];
+        uint8_t* result_data = &m_segments[m_cur_segment_id][m_cur_segment_pos];
         memcpy(result_data, data, amount);
-        cur_segment_pos += amount;
+        m_cur_segment_pos += amount;
         m_size += amount;
-        last_written = amount;
+        m_last_written = amount;
         return result_data;
     }
 
     /// @brief Undo the last write operation.
     void undo_last_write()
     {
-        cur_segment_pos -= last_written;
-        last_written = 0;
+        m_cur_segment_pos -= m_last_written;
+        m_last_written = 0;
     }
 
     /// @brief Set the write head to the beginning.
     void clear()
     {
-        cur_segment_id = 0;
-        cur_segment_pos = 0;
+        m_cur_segment_id = 0;
+        m_cur_segment_pos = 0;
         m_size = 0;
-        last_written = 0;
+        m_last_written = 0;
     }
 
     [[nodiscard]] size_t size() const { return m_size; }
