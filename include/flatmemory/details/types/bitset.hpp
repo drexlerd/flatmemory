@@ -1023,18 +1023,16 @@ public:
     // Get the value of a bit at a specific position
     bool get(std::size_t position) const
     {
-        {
-            const std::size_t index = BitsetOperator::get_index(position);
+        const std::size_t index = BitsetOperator::get_index(position);
 
-            if (index < m_blocks.size())
-            {
-                const std::size_t offset = BitsetOperator::get_offset(position);
-                return (m_blocks[index] & (static_cast<Block>(1) << offset)) != 0;
-            }
-            else
-            {
-                return m_default_bit_value;
-            }
+        if (index < m_blocks.size())
+        {
+            const std::size_t offset = BitsetOperator::get_offset(position);
+            return (m_blocks[index] & (static_cast<Block>(1) << offset)) != 0;
+        }
+        else
+        {
+            return m_default_bit_value;
         }
     }
 
@@ -1044,10 +1042,10 @@ public:
         std::size_t index = BitsetOperator::get_index(position);
         std::size_t offset = BitsetOperator::get_offset(position);
 
-        while (index < m_blocks.size())
+        for (auto iter = m_blocks.begin() + index; iter < m_blocks.end(); ++iter)
         {
             // Shift so that we start checking from the offset
-            const Block value = m_blocks[index] >> offset;
+            const Block value = *iter >> offset;
 
             if (value)
             {
@@ -1058,7 +1056,6 @@ public:
 
             // Reset offset for the next value
             offset = 0;
-            index++;
         }
 
         return BitsetOperator::no_position;
