@@ -943,9 +943,13 @@ public:
 
         // Update blocks
         resize_to_fit(other);
+        // Other blocks might still be smaller which is fine
+        assert(other_blocks.size() <= m_blocks.size());
+
         auto it = m_blocks.begin();
         auto other_it = other_blocks.begin();
-        while (it != m_blocks.end())
+        // Since other is potentially smaller, it acts as termination conditions
+        while (other_it != other_blocks.end())
         {
             *it |= *other_it;
             ++it;
@@ -967,14 +971,19 @@ public:
 
         // Update blocks
         resize_to_fit(other);
+        // Other blocks might still be smaller which is fine
+        assert(other_blocks.size() <= m_blocks.size());
+
         auto it = m_blocks.begin();
         auto other_it = other_blocks.begin();
-        while (it != m_blocks.end())
+        while (other_it != other_blocks.end())
         {
             *it &= *other_it;
             ++it;
             ++other_it;
         }
+        // Shrink to size of other since those bits should become default valued
+        m_blocks.resize(other_blocks.size());
 
         return *this;
     }
@@ -991,14 +1000,18 @@ public:
 
         // Update blocks
         resize_to_fit(other);
+        // Other blocks might still be smaller which is fine
+        assert(other_blocks.size() <= m_blocks.size());
+
         auto it = m_blocks.begin();
         auto other_it = other_blocks.begin();
-        while (it != m_blocks.end())
+        while (other_it != other_blocks.end())
         {
             *it &= ~(*other_it);
             ++it;
             ++other_it;
         }
+        // The remaining blocks stay the same.
 
         return *this;
     }
