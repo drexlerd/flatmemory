@@ -254,9 +254,9 @@ public:
 
         for (std::size_t index = 0; index < common_size; ++index)
         {
-            if (blocks[index] & (other_blocks[index] != other_blocks[index]))
+            if ((blocks[index] & other_blocks[index]) != other_blocks[index])
             {
-                // There exists a set bit in block that is not set in block.
+                // There exists a set bit in other block that is not set in block.
                 return false;
             }
         }
