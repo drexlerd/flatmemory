@@ -612,7 +612,7 @@ public:
         }
         else
         {
-            return View<T>(m_buf + read_value<offset_type>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(offset_type)));
+            return ConstView<T>(m_buf + read_value<offset_type>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(offset_type)));
         }
     }
 
