@@ -692,7 +692,6 @@ public:
     [[nodiscard]] bool operator==(const Other& other) const
     {
         assert(m_buf);
-        assert(other.m_buf);
         return BitsetOperator::are_equal(*this, other);
     }
 
@@ -706,7 +705,6 @@ public:
     bool is_superseteq(const Other& other) const
     {
         assert(m_buf);
-        assert(other.m_buf);
         return BitsetOperator::is_superseteq(*this, other);
     }
 
@@ -714,7 +712,6 @@ public:
     bool are_disjoint(const Other& other) const
     {
         assert(m_buf);
-        assert(other.m_buf);
         return BitsetOperator::are_disjoint(*this, other);
     }
 
