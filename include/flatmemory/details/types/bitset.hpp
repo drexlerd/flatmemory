@@ -305,7 +305,7 @@ public:
 
         for (std::size_t index = 0; index < common_size; ++index)
         {
-            if (blocks[index] & (other_blocks[index] > 0))
+            if ((blocks[index] & other_blocks[index]) > 0)
             {
                 // block and other_block have set bits in common
                 return false;
