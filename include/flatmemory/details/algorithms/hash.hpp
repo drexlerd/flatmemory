@@ -64,6 +64,20 @@ inline std::size_t hash_container(const Container& container)
     return aggregated_hash;
 }
 
+template<class Iterator>
+inline std::size_t hash_iteration(Iterator begin, Iterator end)
+{
+    using T = typename std::iterator_traits<Iterator>::value_type;
+    const std::hash<T> hash_function;
+    std::size_t aggregated_hash = 0;
+    for (Iterator iter = begin; iter != end; ++iter)
+    {
+        const auto item_hash = hash_function(*iter);
+        hash_combine(aggregated_hash, item_hash);
+    }
+    return aggregated_hash;
+}
+
 template<typename Container>
 struct hash_container_type
 {
