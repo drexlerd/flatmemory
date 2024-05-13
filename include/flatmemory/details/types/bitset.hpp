@@ -401,6 +401,18 @@ public:
         }
     }
 
+    /// @brief Return the number of set bits.
+    template<IsBitset B>
+    static size_t count(const B& bitset)
+    {
+        auto count = (size_t) 0;
+        for (auto it = bitset.begin(); it != bitset.end(); ++it)
+        {
+            ++count;
+        }
+        return count;
+    }
+
     /**
      * Iterators
      */
@@ -594,6 +606,12 @@ public:
         return BitsetOperator::get(*this, position);
     }
 
+    size_t count() const
+    {
+        assert(m_buf);
+        return BitsetOperator::count(*this);
+    }
+
     /**
      * Iterators
      */
@@ -723,6 +741,12 @@ public:
     {
         assert(m_buf);
         return BitsetOperator::get(*this, position);
+    }
+
+    size_t count() const
+    {
+        assert(m_buf);
+        return BitsetOperator::count(*this);
     }
 
     /**
@@ -1032,6 +1056,8 @@ public:
             return m_default_bit_value;
         }
     }
+
+    size_t count() const { return BitsetOperator::count(*this); }
 
     // Find the next set bit, inclusive the given position
     std::size_t next_set_bit(std::size_t position) const

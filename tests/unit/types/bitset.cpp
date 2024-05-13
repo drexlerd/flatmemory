@@ -35,7 +35,6 @@ TEST(FlatmemoryTests, TypesBitsetTest)
     auto view = View<Bitset<uint64_t>>(builder.buffer().data());
     EXPECT_EQ(view.get_default_bit_value(), true);
     EXPECT_EQ(view.get_blocks().size(), 5);
-    for (auto block : view.get_blocks()) {}
 }
 
 TEST(FlatmemoryTests, TypesBitsetDefaultConstructorTest)
@@ -118,6 +117,9 @@ TEST(FlatmemoryTests, TypesBitsetOrEqualTest)
     EXPECT_TRUE(bitset_1.get(2));
     EXPECT_TRUE(bitset_1.get(3));
     EXPECT_FALSE(bitset_1.get(4));
+
+    EXPECT_EQ(bitset_1.count(), 3);
+    EXPECT_EQ(bitset_2.count(), 2);
 }
 
 TEST(FlatmemoryTests, TypesBitsetAndEqualTest)
@@ -142,6 +144,9 @@ TEST(FlatmemoryTests, TypesBitsetAndEqualTest)
     EXPECT_FALSE(bitset_1.get(2));
     EXPECT_TRUE(bitset_1.get(3));
     EXPECT_FALSE(bitset_1.get(4));
+
+    EXPECT_EQ(bitset_1.count(), 1);
+    EXPECT_EQ(bitset_2.count(), 2);
 }
 
 TEST(FlatmemoryTests, TypesBitsetAreDisjointTest)
