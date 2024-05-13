@@ -178,7 +178,7 @@ private:
     [[nodiscard]] const auto& get_buffer_impl() const { return m_buffer; }
 
 public:
-    Builder() = default;
+    Builder() : m_actual_size(0) {}
     explicit Builder(size_t count) : m_data(count), m_actual_size(count) {}
     explicit Builder(size_t count, const T_& value) : m_data(count, value), m_actual_size(count) {}
 
