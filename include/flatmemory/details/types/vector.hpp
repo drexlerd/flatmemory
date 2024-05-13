@@ -309,7 +309,11 @@ public:
         }
     }
 
-    void clear() { m_data.clear(); }
+    void clear()
+    {
+        m_actual_size = 0;
+        m_data.clear();
+    }
 };
 
 /**
