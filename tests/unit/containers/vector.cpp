@@ -21,6 +21,7 @@
 
 namespace flatmemory::tests
 {
+
 TEST(FlatmemoryTests, ContainersVariableSizedTypeVectorTest)
 {
     VariableSizedTypeVector<Bitset<uint64_t>> views;
@@ -31,6 +32,12 @@ TEST(FlatmemoryTests, ContainersVariableSizedTypeVectorTest)
     {
         views.push_back(builder);
     }
+}
+
+TEST(FlatmemoryTests, ContainersFixedSizedTypeVectorConstructor1Test)
+{
+    FixedSizedTypeVector<Tuple<uint16_t, uint32_t>> vector;
+    vector.resize(5);
 }
 
 TEST(FlatmemoryTests, ContainersFixedSizedTypeVectorTest)

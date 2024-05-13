@@ -111,12 +111,18 @@ private:
     // Data to be accessed
     std::vector<View<T>> m_data;
 
-    const Builder<T> m_default_builder;
+    Builder<T> m_default_builder;
 
     using iterator = typename std::vector<View<T>>::iterator;
     using const_iterator = typename std::vector<View<T>>::const_iterator;
 
 public:
+    /// @brief Constructor that uses empty default constructed elements when resizing.
+    explicit FixedSizedTypeVector(NumBytes n = 1000000) : m_storage(ByteBufferSegmented(n))
+    {  //
+        m_default_builder.finish();
+    }
+    /// @brief Constructor that ensure that a resize yields non trivially initialized objects.
     FixedSizedTypeVector(Builder<T>&& default_builder, NumBytes n = 1000000) : m_storage(ByteBufferSegmented(n)), m_default_builder(std::move(default_builder))
     {
         if (m_default_builder.buffer().data() == nullptr)
