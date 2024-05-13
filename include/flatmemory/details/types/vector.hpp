@@ -740,7 +740,6 @@ public:
     [[nodiscard]] const_iterator begin() const
     {
         assert(m_buf);
-        assert(test_correct_alignment<const_iterator>(m_buf + Layout<Vector<T>>::vector_data_position));
         return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position);
     }
 
@@ -750,12 +749,10 @@ public:
         constexpr bool is_trivial = IsTriviallyCopyable<T>;
         if constexpr (is_trivial)
         {
-            assert(test_correct_alignment<const_iterator>(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(T) * size()));
             return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(T) * size());
         }
         else
         {
-            assert(test_correct_alignment<const_iterator>(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(offset_type) * size()));
             return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(offset_type) * size());
         }
     }
