@@ -707,7 +707,7 @@ public:
             }
             else
             {
-                return View<T>(buf + read_value<offset_type>(buf));
+                return ConstView<T>(buf + read_value<offset_type>(buf));
             }
         }
 
