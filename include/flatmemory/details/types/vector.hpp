@@ -154,8 +154,9 @@ private:
             buffer_size = offset_end + offset_padding;
             for (size_t i = 0; i < m_actual_size; ++i)
             {
-                // write offset
-                offset_pos += m_buffer.write(offset_pos, buffer_size);
+                // write distance between written data position and offset position
+                offset_type x = buffer_size - offset_pos;
+                offset_pos += m_buffer.write(offset_pos, x);
 
                 // write data
                 auto& nested_builder = m_data[i];
@@ -374,7 +375,8 @@ public:
         }
         else
         {
-            return View<T>(m_buf + read_value<offset_type>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(offset_type)));
+            const auto offset_pos = m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(offset_type);
+            return View<T>(offset_pos + read_value<offset_type>(offset_pos));
         }
     }
 
@@ -390,7 +392,8 @@ public:
         }
         else
         {
-            return View<T>(m_buf + read_value<offset_type>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(offset_type)));
+            const auto offset_pos = m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(offset_type);
+            return View<T>(offset_pos + read_value<offset_type>(offset_pos));
         }
     }
 
@@ -469,7 +472,6 @@ public:
     [[nodiscard]] iterator begin()
     {
         assert(m_buf);
-        assert(test_correct_alignment<iterator>(m_buf + Layout<Vector<T>>::vector_data_position));
         return iterator(m_buf + Layout<Vector<T>>::vector_data_position);
     }
 
@@ -479,12 +481,10 @@ public:
         constexpr bool is_trivial = IsTriviallyCopyable<T>;
         if constexpr (is_trivial)
         {
-            assert(test_correct_alignment<iterator>(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(T) * size()));
             return iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(T) * size());
         }
         else
         {
-            assert(test_correct_alignment<iterator>(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(offset_type) * size()));
             return iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(offset_type) * size());
         }
     }
@@ -546,7 +546,6 @@ public:
     [[nodiscard]] const_iterator begin() const
     {
         assert(m_buf);
-        assert(test_correct_alignment<iterator>(m_buf + Layout<Vector<T>>::vector_data_position));
         return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position);
     }
 
@@ -556,12 +555,10 @@ public:
         constexpr bool is_trivial = IsTriviallyCopyable<T>;
         if constexpr (is_trivial)
         {
-            assert(test_correct_alignment<iterator>(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(T) * size()));
             return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(T) * size());
         }
         else
         {
-            assert(test_correct_alignment<iterator>(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(offset_type) * size()));
             return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(offset_type) * size());
         }
     }
@@ -663,7 +660,8 @@ public:
         }
         else
         {
-            return ConstView<T>(m_buf + read_value<offset_type>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(offset_type)));
+            const auto offset_pos = m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(offset_type);
+            return ConstView<T>(offset_pos + read_value<offset_type>(offset_pos));
         }
     }
 

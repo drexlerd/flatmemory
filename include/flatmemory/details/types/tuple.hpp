@@ -222,6 +222,7 @@ private:
                 }
                 else
                 {
+                    // TODO: for every off
                     // write offset
                     m_buffer.write(element_data.position, buffer_size);
                     m_buffer.write_padding(element_data.end, element_data.padding);

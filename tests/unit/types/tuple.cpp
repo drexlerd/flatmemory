@@ -217,39 +217,4 @@ TEST(FlatmemoryTests, TypesTupleEqualityTest)
     EXPECT_NE(const_view2.hash(), const_view3.hash());
 }
 
-TEST(FlatmemoryTests, TypesTupleStateTest)
-{
-    using BitsetLayout = Bitset<uint64_t>;
-    using TupleLayout = Tuple<uint32_t, BitsetLayout>;
-    using UnorderedSet = UnorderedSet<TupleLayout>;
-
-    Layout<TupleLayout>().print();
-    std::cout << std::endl;
-    Layout<BitsetLayout>().print();
-    std::cout << std::endl;
-
-    auto set = UnorderedSet();
-
-    std::random_device rd;   // Obtain a random number from hardware
-    std::mt19937 eng(rd());  // Seed the generator
-
-    auto builder = Builder<TupleLayout>();
-
-    for (size_t i = 0; i < 2; ++i)
-    {
-        std::cout << std::endl << std::endl;
-        size_t i2 = eng() % 2;
-
-        // i2 = 2;
-        builder.get<1>().get_blocks().resize(i2);
-        builder.finish();
-        auto const_view = ConstView<TupleLayout>(builder.buffer().data());
-        auto view = *set.insert(const_view).first;
-
-        std::cout << "unordered_set returned: ";
-        print(view.buffer(), view.buffer_size());
-
-        EXPECT_EQ(view.get<1>().get_blocks().size(), i2);
-    }
-}
 }

@@ -73,6 +73,33 @@ TEST(FlatmemoryTests, TypesVectorVectorTest)
     EXPECT_EQ(view[1][1], 7);
 }
 
+TEST(FlatmemoryTests, TypesVectorViewIteratorTest)
+{
+    using VectorVectorUint32Layout = Vector<Vector<uint32_t>>;
+    using VectorVectorUint32Builder = Builder<VectorVectorUint32Layout>;
+    using VectorVectorUint32 = View<VectorVectorUint32Layout>;
+    using ConstVectorVectorUint32 = ConstView<VectorVectorUint32Layout>;
+
+    auto builder = VectorVectorUint32Builder();
+    builder.resize(3);
+    builder[0].resize(3);
+    builder[1].resize(4);
+    builder[2].resize(5);
+    builder.finish();
+
+    auto view = VectorVectorUint32(builder.buffer().data());
+    for (const auto element : view)
+    {
+        EXPECT_GT(element.size(), 0);
+    }
+
+    auto const_view = ConstVectorVectorUint32(builder.buffer().data());
+    for (const auto element : const_view)
+    {
+        EXPECT_GT(element.size(), 0);
+    }
+}
+
 TEST(FlatmemoryTests, TypesVectorViewTest)
 {
     EXPECT_EQ((Layout<Vector<View<Vector<uint16_t>>>>::final_alignment), 8);
