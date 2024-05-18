@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <ranges>
 #include <vector>
 
 namespace flatmemory
