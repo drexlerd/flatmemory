@@ -20,6 +20,49 @@
 
 namespace flatmemory::tests
 {
+TEST(FlatmemoryTests, TypesBitsetDefaultConstructorTest)
+{
+    // Test default constructor bitset
+    auto bitset = Builder<Bitset<uint64_t>>();
+    EXPECT_FALSE(bitset.get_default_bit_value());
+    EXPECT_EQ(bitset.get_blocks().size(), 1);
+}
+
+TEST(FlatmemoryTests, TypesBitsetConstructorSizeTest)
+{
+    // Test size constructor
+    size_t num_bits = 65;
+    auto bitset = Builder<Bitset<uint64_t>>(num_bits);
+    EXPECT_FALSE(bitset.get_default_bit_value());
+    EXPECT_EQ(bitset.get_blocks().size(), 2);
+    EXPECT_FALSE(bitset.get(num_bits));
+}
+
+TEST(FlatmemoryTests, TypesBitsetConstructorSizeValueTest)
+{
+    // Test size constructor
+    size_t num_bits = 10;
+    auto bitset = Builder<Bitset<uint64_t>>(num_bits, true);
+    EXPECT_TRUE(bitset.get_default_bit_value());
+    EXPECT_EQ(bitset.get_blocks().size(), 1);
+    EXPECT_TRUE(bitset.get(num_bits));
+}
+
+TEST(FlatmemoryTests, TypesBitsetConstructorCopyTest)
+{
+    // Test size constructor
+    size_t num_bits = 2;
+    auto builder = Builder<Bitset<uint64_t>>(num_bits);
+    builder.set(1);
+    EXPECT_FALSE(builder.get(0));
+    EXPECT_TRUE(builder.get(1));
+
+    // Test builder
+    auto copy_builder = Builder<Bitset<uint64_t>>(builder);
+    EXPECT_FALSE(copy_builder.get(0));
+    EXPECT_TRUE(copy_builder.get(1));
+}
+
 TEST(FlatmemoryTests, TypesBitsetTest)
 {
     EXPECT_EQ((Layout<Bitset<uint64_t>>::final_alignment), 8);
@@ -35,38 +78,6 @@ TEST(FlatmemoryTests, TypesBitsetTest)
     auto view = View<Bitset<uint64_t>>(builder.buffer().data());
     EXPECT_EQ(view.get_default_bit_value(), true);
     EXPECT_EQ(view.get_blocks().size(), 5);
-}
-
-TEST(FlatmemoryTests, TypesBitsetDefaultConstructorTest)
-{
-    // Test default constructor bitset
-    auto bitset = Builder<Bitset<uint64_t>>();
-    EXPECT_FALSE(bitset.get_default_bit_value());
-    EXPECT_EQ(bitset.get_blocks().size(), 1);
-}
-
-TEST(FlatmemoryTests, TypesBitsetConstructorSizeTest)
-{
-    // Test size constructor
-    size_t num_bits = 10;
-    auto bitset = Builder<Bitset<uint64_t>>(num_bits);
-    EXPECT_FALSE(bitset.get_default_bit_value());
-    EXPECT_EQ(bitset.get_blocks().size(), 1);
-    for (size_t i = 0; i < num_bits; ++i)
-        EXPECT_FALSE(bitset.get(i));
-    EXPECT_FALSE(bitset.get(num_bits));
-}
-
-TEST(FlatmemoryTests, TypesBitsetConstructorSizeValueTest)
-{
-    // Test size constructor
-    size_t num_bits = 10;
-    auto bitset = Builder<Bitset<uint64_t>>(num_bits, true);
-    EXPECT_TRUE(bitset.get_default_bit_value());
-    EXPECT_EQ(bitset.get_blocks().size(), 1);
-    for (size_t i = 0; i < num_bits; ++i)
-        EXPECT_TRUE(bitset.get(i));
-    EXPECT_TRUE(bitset.get(num_bits));
 }
 
 TEST(FlatmemoryTests, TypesBitsetResizeTest)

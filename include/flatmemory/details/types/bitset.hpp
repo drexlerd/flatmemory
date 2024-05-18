@@ -34,6 +34,7 @@
 #include <bit>
 #include <cassert>
 #include <iostream>
+#include <ranges>
 
 namespace flatmemory
 {
@@ -474,12 +475,13 @@ public:
         }
 
     public:
-        using difference_type = size_t;
+        using difference_type = int;
         using value_type = size_t;
         using pointer = size_t*;
         using reference = size_t&;
         using iterator_category = std::forward_iterator_tag;
 
+        const_iterator() : m_blocks(nullptr), m_num_blocks(0), m_block_index(0), m_bit_index(-1) {}
         const_iterator(bool default_bit_value, const Block* blocks, size_t num_blocks, bool begin) :
             m_blocks(blocks),
             m_num_blocks(num_blocks),
@@ -511,6 +513,13 @@ public:
         {
             next_set_bit();
             return *this;
+        }
+
+        const_iterator operator++(int)
+        {
+            const_iterator tmp = *this;
+            ++(*this);
+            return tmp;
         }
 
         // No postfix increment since it is too costly to copy the iterator
@@ -849,6 +858,7 @@ private:
 
 public:
     Builder() : Builder(0) {}
+
     // Initialize the bitset with a certain size
     Builder(std::size_t size) : m_default_bit_value(false), m_blocks((size / BitsetOperator::block_size) + 1, BitsetOperator::block_zeroes) {}
 
@@ -857,6 +867,11 @@ public:
         m_blocks((size / BitsetOperator::block_size) + 1, default_bit_value ? BitsetOperator::block_ones : BitsetOperator::block_zeroes)
     {
     }
+
+    Builder(const Builder& other) = default;
+    Builder& operator=(const Builder& other) = default;
+    Builder(Builder&& other) noexcept = default;
+    Builder& operator=(Builder&& other) noexcept = default;
 
     /**
      * Operators
@@ -1088,9 +1103,7 @@ public:
      * Iterators
      */
 
-    [[nodiscard]] const_iterator begin() { return const_iterator(m_default_bit_value, m_blocks.data(), m_blocks.size(), true); }
     [[nodiscard]] const_iterator begin() const { return const_iterator(m_default_bit_value, m_blocks.data(), m_blocks.size(), true); }
-    [[nodiscard]] const_iterator end() { return const_iterator(m_default_bit_value, m_blocks.data(), m_blocks.size(), false); }
     [[nodiscard]] const_iterator end() const { return const_iterator(m_default_bit_value, m_blocks.data(), m_blocks.size(), false); }
 
     /**
@@ -1109,6 +1122,14 @@ public:
     [[nodiscard]] auto& get_blocks() { return m_blocks; }
     [[nodiscard]] const auto& get_blocks() const { return m_blocks; }
 };
+
+/**
+ * Static assertions
+ */
+
+static_assert(std::ranges::forward_range<Builder<Bitset<uint64_t>>>);
+static_assert(std::ranges::forward_range<View<Bitset<uint64_t>>>);
+static_assert(std::ranges::forward_range<ConstView<Bitset<uint64_t>>>);
 }
 
 #endif
