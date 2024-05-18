@@ -22,6 +22,7 @@
 #include "flatmemory/details/builder.hpp"
 #include "flatmemory/details/byte_buffer.hpp"
 #include "flatmemory/details/byte_buffer_utils.hpp"
+#include "flatmemory/details/concepts.hpp"
 #include "flatmemory/details/layout.hpp"
 #include "flatmemory/details/layout_utils.hpp"
 #include "flatmemory/details/operator.hpp"
@@ -94,61 +95,121 @@ class Builder<Bitset<Block>>;
 /**
  * Concepts
  */
-template<typename>
-struct is_bitset : std::false_type
-{
-};
-
-template<typename Block>
-struct is_bitset<Builder<Bitset<Block>>> : std::true_type
-{
-};
-
-template<typename Block>
-struct is_bitset<View<Bitset<Block>>> : std::true_type
-{
-};
-
-template<typename Block>
-struct is_bitset<ConstView<Bitset<Block>>> : std::true_type
-{
-};
-
-// Concept to check whether T is a Bitset
-template<typename T>
-concept IsBitset = is_bitset<T>::value;
-
-template<typename T>
-struct block_type_extractor;
-
-template<typename Block>
-struct block_type_extractor<Builder<Bitset<Block>>>
-{
-    using type = Block;
-};
-
-template<typename Block>
-struct block_type_extractor<View<Bitset<Block>>>
-{
-    using type = Block;
-};
-
-template<typename Block>
-struct block_type_extractor<ConstView<Bitset<Block>>>
-{
-    using type = Block;
-};
-
-template<typename T>
-using block_type_extractor_t = typename block_type_extractor<T>::type;
 
 // Concept to check if two types have the same Block type
 template<typename T1, typename T2>
-concept SameBlockType = std::is_same_v<block_type_extractor_t<T1>, block_type_extractor_t<T2>>;
+concept HaveSameBlockType = std::is_same_v<typename T1::BlockType, typename T2::BlockType>;
 
 // Concept to check the block type
 template<typename T, typename Block>
-concept HasBlockType = std::is_same_v<block_type_extractor_t<T>, Block>;
+concept HasBlockType = std::is_same_v<typename T::BlockType, Block>;
+
+// Concept for user define bitsets based on the STL
+template<typename T>
+concept IsUserDefinedBitset = requires(T a, const T b) {
+    /* Common */
+
+    requires IsIntegral<typename T::BlockType>;
+
+    /* Non const version*/
+
+    {
+        a.get_default_bit_value()
+    } -> std::same_as<bool&>;
+    {
+        a.get_blocks()
+    } -> std::same_as<std::vector<typename T::BlockType>&>;
+
+    /* Const version */
+
+    {
+        b.get_default_bit_value()
+    } -> std::same_as<bool>;
+    {
+        b.get_blocks()
+    } -> std::same_as<const std::vector<typename T::BlockType>&>;
+};
+
+// Concept for Builder
+template<typename T>
+concept IsBitsetBuilder = requires(T a, const T b) {
+    /* Common */
+
+    requires IsIntegral<typename T::BlockType>;
+
+    /* Non const version*/
+
+    {
+        a.get_default_bit_value()
+    } -> std::same_as<bool&>;
+    {
+        a.get_blocks()
+    } -> std::same_as<Builder<Vector<typename T::BlockType>>&>;
+
+    /* Const version */
+
+    {
+        b.get_default_bit_value()
+    } -> std::same_as<bool>;
+    {
+        b.get_blocks()
+    } -> std::same_as<const Builder<Vector<typename T::BlockType>>&>;
+};
+
+// Concept for View
+template<typename T>
+concept IsBitsetView = requires(T a, const T b) {
+    /* Common */
+
+    requires IsIntegral<typename T::BlockType>;
+
+    /* Non const version*/
+
+    {
+        a.get_default_bit_value()
+    } -> std::same_as<bool&>;
+    {
+        a.get_blocks()
+    } -> std::same_as<View<Vector<typename T::BlockType>>>;
+
+    /* Const version */
+
+    {
+        b.get_default_bit_value()
+    } -> std::same_as<bool>;
+    {
+        b.get_blocks()
+    } -> std::same_as<ConstView<Vector<typename T::BlockType>>>;
+};
+
+// Concept for ConstView
+template<typename T>
+concept IsBitsetConstView = requires(T a, const T b) {
+    /* Common */
+    requires IsIntegral<typename T::BlockType>;
+
+    /* Non const version*/
+
+    {
+        a.get_default_bit_value()
+    } -> std::same_as<bool>;
+    {
+        a.get_blocks()
+    } -> std::same_as<ConstView<Vector<typename T::BlockType>>>;
+
+    /* Const version */
+
+    {
+        b.get_default_bit_value()
+    } -> std::same_as<bool>;
+    {
+        b.get_blocks()
+    } -> std::same_as<ConstView<Vector<typename T::BlockType>>>;
+};
+
+// Concept for Bitset
+template<typename T>
+concept IsBitset = IsUserDefinedBitset<T> || IsBitsetBuilder<T> || IsBitsetView<T> || IsBitsetConstView<T>;
 
 /**
  * Operator
@@ -173,7 +234,7 @@ public:
      * Operators
      */
     template<IsBitset L, IsBitset R>
-        requires SameBlockType<L, R>
+        requires HaveSameBlockType<L, R>
     static bool are_equal(const L& left_bitset, const R& right_bitset)
     {
         // Fetch data
@@ -203,7 +264,7 @@ public:
     }
 
     template<IsBitset L, IsBitset R>
-        requires SameBlockType<L, R>
+        requires HaveSameBlockType<L, R>
     static bool less(const L& left_bitset, const R& right_bitset)
     {
         // Fetch data
@@ -239,7 +300,7 @@ public:
     }
 
     template<IsBitset L, IsBitset R>
-        requires SameBlockType<L, R>
+        requires HaveSameBlockType<L, R>
     static bool is_superseteq(const L& left_bitset, const R& right_bitset)
     {
         // Fetch data
@@ -290,7 +351,7 @@ public:
     }
 
     template<IsBitset L, IsBitset R>
-        requires SameBlockType<L, R>
+        requires HaveSameBlockType<L, R>
     static bool are_disjoint(const L& left_bitset, const R& right_bitset)
     {
         // Fetch data
@@ -570,6 +631,8 @@ private:
     friend class Builder;
 
 public:
+    using BlockType = Block;
+
     /**
      * Constructor to interpret raw data created by its corresponding builder
      */
@@ -668,7 +731,7 @@ public:
         return read_value<bool>(m_buf + Layout<Bitset<Block>>::default_bit_value_position);
     }
 
-    [[nodiscard]] const bool& get_default_bit_value() const
+    [[nodiscard]] bool get_default_bit_value() const
     {
         assert(m_buf);
         assert(test_correct_alignment<bool>(m_buf + Layout<Bitset<Block>>::default_bit_value_position));
@@ -709,6 +772,8 @@ private:
     friend class Builder;
 
 public:
+    using BlockType = Block;
+
     /**
      * Constructor to interpret raw data created by its corresponding builder
      */
@@ -802,11 +867,24 @@ public:
         return read_value<buffer_size_type>(m_buf + Layout<Bitset<Block>>::buffer_size_position);
     }
 
-    [[nodiscard]] const bool& get_default_bit_value() const
+    [[nodiscard]] bool get_default_bit_value()
     {
         assert(m_buf);
         assert(test_correct_alignment<bool>(m_buf + Layout<Bitset<Block>>::default_bit_value_position));
         return read_value<bool>(m_buf + Layout<Bitset<Block>>::default_bit_value_position);
+    }
+
+    [[nodiscard]] bool get_default_bit_value() const
+    {
+        assert(m_buf);
+        assert(test_correct_alignment<bool>(m_buf + Layout<Bitset<Block>>::default_bit_value_position));
+        return read_value<bool>(m_buf + Layout<Bitset<Block>>::default_bit_value_position);
+    }
+
+    [[nodiscard]] ConstView<Vector<Block>> get_blocks()
+    {
+        assert(m_buf);
+        return ConstView<Vector<Block>>(m_buf + Layout<Bitset<Block>>::blocks_position);
     }
 
     [[nodiscard]] ConstView<Vector<Block>> get_blocks() const
@@ -882,6 +960,8 @@ private:
     }
 
 public:
+    using BlockType = Block;
+
     Builder() : Builder(0) {}
 
     // Initialize the bitset with a certain size
@@ -1174,7 +1254,7 @@ public:
      */
 
     [[nodiscard]] bool& get_default_bit_value() { return m_default_bit_value; }
-    [[nodiscard]] const bool& get_default_bit_value() const { return m_default_bit_value; }
+    [[nodiscard]] bool get_default_bit_value() const { return m_default_bit_value; }
 
     [[nodiscard]] auto& get_blocks() { return m_blocks; }
     [[nodiscard]] const auto& get_blocks() const { return m_blocks; }
