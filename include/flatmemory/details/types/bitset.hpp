@@ -146,6 +146,10 @@ using block_type_extractor_t = typename block_type_extractor<T>::type;
 template<typename T1, typename T2>
 concept SameBlockType = std::is_same_v<block_type_extractor_t<T1>, block_type_extractor_t<T2>>;
 
+// Concept to check the block type
+template<typename T, typename Block>
+concept HasBlockType = std::is_same_v<block_type_extractor_t<T>, Block>;
+
 /**
  * Operator
  */
@@ -576,6 +580,7 @@ public:
      */
 
     template<IsBitset Other>
+        requires HasBlockType<Other, Block>
     [[nodiscard]] bool operator==(const Other& other) const
     {
         assert(m_buf);
@@ -584,12 +589,14 @@ public:
     }
 
     template<IsBitset Other>
+        requires HasBlockType<Other, Block>
     [[nodiscard]] bool operator!=(const Other& other) const
     {
         return !(*this == other);
     }
 
     template<IsBitset Other>
+        requires HasBlockType<Other, Block>
     bool is_superseteq(const Other& other) const
     {
         assert(m_buf);
@@ -598,6 +605,7 @@ public:
     }
 
     template<IsBitset Other>
+        requires HasBlockType<Other, Block>
     bool are_disjoint(const Other& other) const
     {
         assert(m_buf);
@@ -716,6 +724,7 @@ public:
      */
 
     template<IsBitset Other>
+        requires HasBlockType<Other, Block>
     [[nodiscard]] bool operator==(const Other& other) const
     {
         assert(m_buf);
@@ -723,12 +732,14 @@ public:
     }
 
     template<IsBitset Other>
+        requires HasBlockType<Other, Block>
     [[nodiscard]] bool operator!=(const Other& other) const
     {
         return !(*this == other);
     }
 
     template<IsBitset Other>
+        requires HasBlockType<Other, Block>
     bool is_superseteq(const Other& other) const
     {
         assert(m_buf);
@@ -736,6 +747,7 @@ public:
     }
 
     template<IsBitset Other>
+        requires HasBlockType<Other, Block>
     bool are_disjoint(const Other& other) const
     {
         assert(m_buf);
@@ -856,6 +868,19 @@ private:
         }
     }
 
+    template<IsBitset T>
+        requires HasBlockType<T, Block>
+    void init_from_view(const T& other)
+    {
+        m_default_bit_value = other.get_default_bit_value();
+        const auto& other_blocks = other.get_blocks();
+        m_blocks.resize(other_blocks.size());
+        for (size_t i = 0; i < other_blocks.size(); ++i)
+        {
+            m_blocks[i] = other_blocks[i];
+        }
+    }
+
 public:
     Builder() : Builder(0) {}
 
@@ -874,34 +899,63 @@ public:
     Builder& operator=(Builder&& other) noexcept = default;
 
     /**
+     * Conversion constructors
+     */
+
+    Builder(const View<Bitset<Block>>& other) { init_from_view(other); }
+
+    Builder(const ConstView<Bitset<Block>>& other) { init_from_view(other); }
+
+    /**
+     * Conversion assignments
+     */
+
+    Builder& operator=(const View<Bitset<Block>>& other)
+    {
+        init_from_view(other);
+        return *this;
+    }
+
+    Builder& operator=(const ConstView<Bitset<Block>>& other)
+    {
+        init_from_view(other);
+        return *this;
+    }
+
+    /**
      * Operators
      */
 
     template<IsBitset Other>
+        requires HasBlockType<Other, Block>
     bool operator<(const Other& other) const
     {
         return BitsetOperator::less(*this, other);
     }
 
     template<IsBitset Other>
+        requires HasBlockType<Other, Block>
     bool operator==(const Other& other) const
     {
         return BitsetOperator::are_equal(*this, other);
     }
 
     template<IsBitset Other>
+        requires HasBlockType<Other, Block>
     [[nodiscard]] bool operator!=(const Other& other) const
     {
         return !(*this == other);
     }
 
     template<IsBitset Other>
+        requires HasBlockType<Other, Block>
     bool is_superseteq(const Other& other) const
     {
         return BitsetOperator::is_superseteq(*this, other);
     }
 
     template<IsBitset Other>
+        requires HasBlockType<Other, Block>
     bool are_disjoint(const Other& other) const
     {
         return BitsetOperator::are_disjoint(*this, other);
@@ -968,6 +1022,7 @@ public:
     }
 
     template<IsBitset Other>
+        requires HasBlockType<Other, Block>
     Builder& operator|=(const Other& other)
     {
         // Fetch data
@@ -996,6 +1051,7 @@ public:
     }
 
     template<IsBitset Other>
+        requires HasBlockType<Other, Block>
     Builder& operator&=(const Other& other)
     {
         // Fetch data
@@ -1025,6 +1081,7 @@ public:
     }
 
     template<IsBitset Other>
+        requires HasBlockType<Other, Block>
     Builder& operator-=(const Other& other)
     {
         // Fetch data

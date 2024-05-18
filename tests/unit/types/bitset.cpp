@@ -54,13 +54,58 @@ TEST(FlatmemoryTests, TypesBitsetConstructorCopyTest)
     size_t num_bits = 2;
     auto builder = Builder<Bitset<uint64_t>>(num_bits);
     builder.set(1);
+    builder.finish();
     EXPECT_FALSE(builder.get(0));
     EXPECT_TRUE(builder.get(1));
 
-    // Test builder
+    // Test Builder
     auto copy_builder = Builder<Bitset<uint64_t>>(builder);
     EXPECT_FALSE(copy_builder.get(0));
     EXPECT_TRUE(copy_builder.get(1));
+
+    // Test View
+    auto view = View<Bitset<uint64_t>>(builder.buffer().data());
+    auto copy_builder_view = Builder<Bitset<uint64_t>>(view);
+    EXPECT_FALSE(copy_builder_view.get(0));
+    EXPECT_TRUE(copy_builder_view.get(1));
+
+    // Test ConstView
+    auto const_view = ConstView<Bitset<uint64_t>>(builder.buffer().data());
+    auto copy_builder_const_view = Builder<Bitset<uint64_t>>(const_view);
+    EXPECT_FALSE(copy_builder_const_view.get(0));
+    EXPECT_TRUE(copy_builder_const_view.get(1));
+}
+
+TEST(FlatmemoryTests, TypesBitsetAssignmentTest)
+{
+    // Test size constructor
+    size_t num_bits = 2;
+    auto builder = Builder<Bitset<uint64_t>>(num_bits);
+    builder.set(1);
+    builder.finish();
+    EXPECT_FALSE(builder.get(0));
+    EXPECT_TRUE(builder.get(1));
+
+    // Test Builder
+    auto tmp_builder = Builder<Bitset<uint64_t>>();
+    tmp_builder = builder;
+    EXPECT_FALSE(tmp_builder.get(0));
+    EXPECT_TRUE(tmp_builder.get(1));
+
+    // Test View
+    auto view = View<Bitset<uint64_t>>(builder.buffer().data());
+    auto tmp_builder_view = Builder<Bitset<uint64_t>>();
+    tmp_builder_view = view;
+    EXPECT_FALSE(tmp_builder_view.get(0));
+    EXPECT_TRUE(tmp_builder_view.get(1));
+
+    // Test ConstView
+    builder.finish();
+    auto const_view = ConstView<Bitset<uint64_t>>(builder.buffer().data());
+    auto tmp_builder_const_view = Builder<Bitset<uint64_t>>();
+    tmp_builder_const_view = const_view;
+    EXPECT_FALSE(tmp_builder_const_view.get(0));
+    EXPECT_TRUE(tmp_builder_const_view.get(1));
 }
 
 TEST(FlatmemoryTests, TypesBitsetTest)
