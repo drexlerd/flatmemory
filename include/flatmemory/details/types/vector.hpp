@@ -119,8 +119,6 @@ private:
     using const_iterator = typename std::vector<T_>::const_iterator;
 
     std::vector<T_> m_data;
-    // Avoid deallocating nested T
-    size_t m_actual_size;
     ByteBuffer m_buffer;
 
     /* Implement IBuilder interface. */
@@ -131,7 +129,7 @@ private:
     {
         /* Write header info */
         // Write vector size
-        m_buffer.write(Layout<Vector<T>>::vector_size_position, m_actual_size);
+        m_buffer.write(Layout<Vector<T>>::vector_size_position, m_data.size());
         m_buffer.write_padding(Layout<Vector<T>>::vector_size_end, Layout<Vector<T>>::vector_size_padding);
 
         /* Write dynamic info */
@@ -141,19 +139,19 @@ private:
         if constexpr (is_trivial)
         {
             /* For trivial type we can write the data without additional padding. */
-            buffer_size += m_buffer.write(buffer_size, reinterpret_cast<const uint8_t*>(m_data.data()), sizeof(T_) * m_actual_size);
+            buffer_size += m_buffer.write(buffer_size, reinterpret_cast<const uint8_t*>(m_data.data()), sizeof(T_) * m_data.size());
         }
         else
         {
             /* For non-trivial type T, we store the offsets first */
             // position of offset
             offset_type offset_pos = Layout<Vector<T>>::vector_data_position;
-            size_t offset_end = offset_pos + m_actual_size * sizeof(offset_type);
+            size_t offset_end = offset_pos + m_data.size() * sizeof(offset_type);
             size_t offset_padding = calculate_amount_padding(offset_end, Layout<T>::final_alignment);
             m_buffer.write_padding(offset_end, offset_padding);
             // We have to add padding to ensure that the data is correctly aligned
             buffer_size = offset_end + offset_padding;
-            for (size_t i = 0; i < m_actual_size; ++i)
+            for (size_t i = 0; i < m_data.size(); ++i)
             {
                 // write distance between written data position and offset position
                 offset_type x = buffer_size - offset_pos;
@@ -180,9 +178,9 @@ private:
     [[nodiscard]] const auto& get_buffer_impl() const { return m_buffer; }
 
 public:
-    Builder() : m_actual_size(0) {}
-    explicit Builder(size_t count) : m_data(count), m_actual_size(count) {}
-    explicit Builder(size_t count, const T_& value) : m_data(count, value), m_actual_size(count) {}
+    Builder() {}
+    explicit Builder(size_t count) : m_data(count) {}
+    explicit Builder(size_t count, const T_& value) : m_data(count, value) {}
 
     /**
      * Operators
@@ -190,20 +188,11 @@ public:
 
     [[nodiscard]] bool operator==(const Builder& other) const
     {
-        // Same instance comparison
-        if (this == &other)
+        if (this != &other)
         {
-            return true;
+            return m_data == other.m_data;
         }
-
-        // First, compare the actual sizes
-        if (m_actual_size != other.m_actual_size)
-        {
-            return false;  // Different number of active elements means not equal
-        }
-
-        // Compare the elements up to m_actual_size
-        return std::equal(m_data.begin(), m_data.begin() + m_actual_size, other.m_data.begin(), other.m_data.begin() + other.m_actual_size);
+        return true;
     }
 
     [[nodiscard]] bool operator!=(const Builder& other) const { return !(*this == other); }
@@ -213,13 +202,13 @@ public:
      */
     [[nodiscard]] T_& operator[](size_t pos)
     {
-        assert(pos < m_actual_size);
+        assert(pos < size());
         return m_data[pos];
     }
 
     [[nodiscard]] const T_& operator[](size_t pos) const
     {
-        assert(pos < m_actual_size);
+        assert(pos < size());
         return m_data[pos];
     }
 
@@ -228,12 +217,12 @@ public:
         constexpr bool is_trivial = IsTriviallyCopyable<T>;
         if constexpr (is_trivial)
         {
-            return hash_combine(hash_iteration(m_data.begin(), m_data.begin() + m_actual_size));
+            return hash_combine(hash_iteration(m_data.begin(), m_data.end()));
         }
         else
         {
             size_t seed = size();
-            for (auto iter = m_data.begin(); iter < m_data.begin() + m_actual_size; ++iter)
+            for (auto iter = m_data.begin(); iter < m_data.end(); ++iter)
             {
                 seed = hash_combine(seed, iter->hash());
             }
@@ -250,72 +239,32 @@ public:
 
     iterator begin() { return m_data.begin(); }
     const_iterator begin() const { return m_data.begin(); }
-    iterator end() { return m_data.begin() + m_actual_size; }
-    const_iterator end() const { return m_data.begin() + m_actual_size; }
+    iterator end() { return m_data.end(); }
+    const_iterator end() const { return m_data.end(); }
 
     /**
      * Capacity
      */
 
-    [[nodiscard]] constexpr bool empty() const { return m_actual_size == 0; }
+    [[nodiscard]] constexpr bool empty() const { return m_data.empty(); }
 
-    [[nodiscard]] constexpr size_t size() const { return m_actual_size; }
+    [[nodiscard]] constexpr size_t size() const { return m_data.size(); }
 
     /**
      * Modifiers
      */
-    void push_back(T_&& element)
-    {
-        if (m_actual_size < m_data.size())
-        {
-            m_data[m_actual_size] = std::move(element);
-        }
-        else
-        {
-            m_data.push_back(std::move(element));
-        }
-        ++m_actual_size;
-    }
-    void push_back(const T_& element)
-    {
-        if (m_actual_size < m_data.size())
-        {
-            m_data[m_actual_size] = element;
-        }
-        else
-        {
-            m_data.push_back(element);
-        }
-        ++m_actual_size;
-    }
+    void push_back(T_&& element) { m_data.push_back(std::move(element)); }
+    void push_back(const T_& element) { m_data.push_back(element); }
 
     /// @brief
     ///
     /// Resizing a vector of views needs additional caution
     /// since the default constructed views are not meaningful.
     /// @param count
-    void resize(size_t count)
-    {
-        m_actual_size = count;
-        if (m_actual_size > m_data.size())
-        {
-            m_data.resize(count, T_());
-        }
-    }
-    void resize(size_t count, const T_& value)
-    {
-        m_actual_size = count;
-        if (m_actual_size > m_data.size())
-        {
-            m_data.resize(count, value);
-        }
-    }
+    void resize(size_t count) { m_data.resize(count, T_()); }
+    void resize(size_t count, const T_& value) { m_data.resize(count, value); }
 
-    void clear()
-    {
-        m_actual_size = 0;
-        m_data.clear();
-    }
+    void clear() { m_data.clear(); }
 };
 
 /**
