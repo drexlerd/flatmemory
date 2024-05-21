@@ -507,9 +507,15 @@ public:
                 // Advance position
                 ++m_pos;
                 ++m_bit_index;
-                if (m_bit_index == 64)
+                if (m_bit_index == Operator::block_size)
                 {
                     ++m_block_index;
+                    if (m_block_index == m_num_blocks)
+                    {
+                        // Reached end of blocks, set m_pos to end
+                        m_pos += Operator::block_size - 1;
+                        break;
+                    }
                     m_bit_index = 0;
                     m_cur_block = m_blocks[m_block_index];
                 }
@@ -527,11 +533,11 @@ public:
                 else
                 {
                     // Skip the remaining bits, point to last position in the current block
-                    m_pos += block_size - m_bit_index - 1;
+                    m_pos += Operator::block_size - m_bit_index - 1;
                     ++m_block_index;
                     m_bit_index = -1;
                     // Fetch next data block or zeroes
-                    m_cur_block = m_block_index < m_num_blocks ? m_blocks[m_block_index] : block_zeroes;
+                    m_cur_block = m_block_index < m_num_blocks ? m_blocks[m_block_index] : Operator::block_zeroes;
                 }
             } while (m_pos < m_end_pos);
         }
@@ -549,8 +555,8 @@ public:
             m_num_blocks(num_blocks),
             m_block_index(0),
             m_bit_index(-1),
-            m_cur_block(num_blocks > 0 ? blocks[m_block_index] : block_zeroes),
-            m_end_pos((m_num_blocks + 1) * block_size - 1),
+            m_cur_block(num_blocks > 0 ? m_blocks[m_block_index] : Operator::block_zeroes),
+            m_end_pos((m_num_blocks + 1) * Operator::block_size - 1),
             m_pos(begin ? -1 : m_end_pos)
         {
             if (default_bit_value)
