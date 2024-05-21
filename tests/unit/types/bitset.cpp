@@ -20,32 +20,39 @@
 
 namespace flatmemory::tests
 {
+/**
+ * Constructors
+ */
+
 TEST(FlatmemoryTests, TypesBitsetDefaultConstructorTest)
 {
     // Test default constructor bitset
-    auto bitset = Builder<Bitset<uint64_t>>();
-    EXPECT_FALSE(bitset.get_default_bit_value());
-    EXPECT_EQ(bitset.get_blocks().size(), 1);
+    auto builder = Builder<Bitset<uint64_t>>();
+    builder.finish();
+    EXPECT_FALSE(builder.get_default_bit_value());
+    EXPECT_EQ(builder.get_blocks().size(), 1);
 }
 
 TEST(FlatmemoryTests, TypesBitsetConstructorSizeTest)
 {
     // Test size constructor
     size_t num_bits = 65;
-    auto bitset = Builder<Bitset<uint64_t>>(num_bits);
-    EXPECT_FALSE(bitset.get_default_bit_value());
-    EXPECT_EQ(bitset.get_blocks().size(), 2);
-    EXPECT_FALSE(bitset.get(num_bits));
+    auto builder = Builder<Bitset<uint64_t>>(num_bits);
+    builder.finish();
+    EXPECT_FALSE(builder.get_default_bit_value());
+    EXPECT_EQ(builder.get_blocks().size(), 2);
+    EXPECT_FALSE(builder.get(num_bits));
 }
 
 TEST(FlatmemoryTests, TypesBitsetConstructorSizeValueTest)
 {
     // Test size constructor
     size_t num_bits = 10;
-    auto bitset = Builder<Bitset<uint64_t>>(num_bits, true);
-    EXPECT_TRUE(bitset.get_default_bit_value());
-    EXPECT_EQ(bitset.get_blocks().size(), 1);
-    EXPECT_TRUE(bitset.get(num_bits));
+    auto builder = Builder<Bitset<uint64_t>>(num_bits, true);
+    builder.finish();
+    EXPECT_TRUE(builder.get_default_bit_value());
+    EXPECT_EQ(builder.get_blocks().size(), 1);
+    EXPECT_TRUE(builder.get(num_bits));
 }
 
 TEST(FlatmemoryTests, TypesBitsetConstructorCopyTest)
@@ -55,26 +62,65 @@ TEST(FlatmemoryTests, TypesBitsetConstructorCopyTest)
     auto builder = Builder<Bitset<uint64_t>>(num_bits);
     builder.set(1);
     builder.finish();
-    EXPECT_FALSE(builder.get(0));
-    EXPECT_TRUE(builder.get(1));
 
     // Test Builder
     auto copy_builder = Builder<Bitset<uint64_t>>(builder);
-    EXPECT_FALSE(copy_builder.get(0));
-    EXPECT_TRUE(copy_builder.get(1));
+    copy_builder.finish();
+    EXPECT_EQ(builder, copy_builder);
+}
+
+TEST(FlatmemoryTests, TypesBitsetViewConstructorTest)
+{
+    size_t num_bits = 2;
+    auto builder = Builder<Bitset<uint64_t>>(num_bits);
+    builder.set(1);
+    builder.set(100);
+    builder.finish();
+
+    // Test ConstView
+    auto view = View<Bitset<uint64_t>>(builder.buffer().data());
+    EXPECT_EQ(builder, view);
+}
+
+TEST(FlatmemoryTests, TypesBitsetConstViewConstructorTest)
+{
+    size_t num_bits = 2;
+    auto builder = Builder<Bitset<uint64_t>>(num_bits);
+    builder.set(1);
+    builder.set(100);
+    builder.finish();
+
+    // Test ConstView
+    auto const_view = ConstView<Bitset<uint64_t>>(builder.buffer().data());
+    EXPECT_EQ(builder, const_view);
+}
+
+/**
+ * Conversion constructors
+ */
+
+TEST(FlatmemoryTests, TypesBitsetConversionTest)
+{
+    // Test size constructor
+    size_t num_bits = 2;
+    auto builder = Builder<Bitset<uint64_t>>(num_bits);
+    builder.set(1);
+    builder.finish();
 
     // Test View
     auto view = View<Bitset<uint64_t>>(builder.buffer().data());
     auto copy_builder_view = Builder<Bitset<uint64_t>>(view);
-    EXPECT_FALSE(copy_builder_view.get(0));
-    EXPECT_TRUE(copy_builder_view.get(1));
+    EXPECT_EQ(builder, copy_builder_view);
 
     // Test ConstView
     auto const_view = ConstView<Bitset<uint64_t>>(builder.buffer().data());
     auto copy_builder_const_view = Builder<Bitset<uint64_t>>(const_view);
-    EXPECT_FALSE(copy_builder_const_view.get(0));
-    EXPECT_TRUE(copy_builder_const_view.get(1));
+    EXPECT_EQ(builder, copy_builder_const_view);
 }
+
+/**
+ * Conversion assignments
+ */
 
 TEST(FlatmemoryTests, TypesBitsetAssignmentTest)
 {
@@ -83,30 +129,142 @@ TEST(FlatmemoryTests, TypesBitsetAssignmentTest)
     auto builder = Builder<Bitset<uint64_t>>(num_bits);
     builder.set(1);
     builder.finish();
-    EXPECT_FALSE(builder.get(0));
-    EXPECT_TRUE(builder.get(1));
 
     // Test Builder
     auto tmp_builder = Builder<Bitset<uint64_t>>();
     tmp_builder = builder;
-    EXPECT_FALSE(tmp_builder.get(0));
-    EXPECT_TRUE(tmp_builder.get(1));
+    EXPECT_EQ(builder, tmp_builder);
 
     // Test View
     auto view = View<Bitset<uint64_t>>(builder.buffer().data());
     auto tmp_builder_view = Builder<Bitset<uint64_t>>();
+    EXPECT_NE(builder, tmp_builder_view);
     tmp_builder_view = view;
-    EXPECT_FALSE(tmp_builder_view.get(0));
-    EXPECT_TRUE(tmp_builder_view.get(1));
+    EXPECT_EQ(builder, tmp_builder_view);
 
     // Test ConstView
     builder.finish();
     auto const_view = ConstView<Bitset<uint64_t>>(builder.buffer().data());
     auto tmp_builder_const_view = Builder<Bitset<uint64_t>>();
+    EXPECT_NE(builder, tmp_builder_const_view);
     tmp_builder_const_view = const_view;
-    EXPECT_FALSE(tmp_builder_const_view.get(0));
-    EXPECT_TRUE(tmp_builder_const_view.get(1));
+    EXPECT_EQ(builder, const_view);
 }
+
+/**
+ * Operators
+ */
+
+TEST(FlatmemoryTests, TypesBitsetEqualTest)
+{
+    auto builder = Builder<Bitset<uint64_t>>();
+    builder.set(42);
+    builder.finish();
+
+    auto builder2 = Builder<Bitset<uint64_t>>();
+    builder2.set(42);
+    builder2.set(64);
+    builder2.finish();
+
+    auto builder3 = Builder<Bitset<uint64_t>>();
+    builder3.set(42);
+    builder3.finish();
+
+    // Test Builder
+    EXPECT_EQ(builder, builder3);
+    EXPECT_NE(builder, builder2);
+
+    // Test View
+    auto view = View<Bitset<uint64_t>>(builder.buffer().data());
+    auto view2 = View<Bitset<uint64_t>>(builder2.buffer().data());
+    auto view3 = View<Bitset<uint64_t>>(builder3.buffer().data());
+    EXPECT_EQ(view, view3);
+    EXPECT_NE(view, view2);
+
+    // Test ConstView
+    auto const_view = ConstView<Bitset<uint64_t>>(builder.buffer().data());
+    auto const_view2 = ConstView<Bitset<uint64_t>>(builder2.buffer().data());
+    auto const_view3 = ConstView<Bitset<uint64_t>>(builder3.buffer().data());
+    EXPECT_EQ(const_view, const_view3);
+    EXPECT_NE(const_view, const_view2);
+
+    // Test Builder and View
+    EXPECT_EQ(builder, view);
+    EXPECT_EQ(builder2, view2);
+    EXPECT_EQ(builder3, view3);
+    EXPECT_EQ(builder, view3);
+    EXPECT_NE(builder, view2);
+    // Test View and Builder
+    EXPECT_EQ(view, builder);
+    EXPECT_EQ(view2, builder2);
+    EXPECT_EQ(view3, builder3);
+    EXPECT_EQ(view, builder3);
+    EXPECT_NE(view, builder2);
+
+    // Test Builder and ConstView
+    EXPECT_EQ(builder, const_view);
+    EXPECT_EQ(builder2, const_view2);
+    EXPECT_EQ(builder3, const_view3);
+    EXPECT_EQ(builder, const_view3);
+    EXPECT_NE(builder, const_view2);
+    // Test ConstView and Builder
+    EXPECT_EQ(const_view, builder);
+    EXPECT_EQ(const_view2, builder2);
+    EXPECT_EQ(const_view3, builder3);
+    EXPECT_EQ(const_view, builder3);
+    EXPECT_NE(const_view, builder2);
+
+    // Test View and ConstView
+    EXPECT_EQ(view, const_view);
+    EXPECT_EQ(view2, const_view2);
+    EXPECT_EQ(view3, const_view3);
+    EXPECT_EQ(view, const_view3);
+    EXPECT_NE(view, const_view2);
+    // Test ConstView and View
+    EXPECT_EQ(const_view, view);
+    EXPECT_EQ(const_view2, view2);
+    EXPECT_EQ(const_view3, view3);
+    EXPECT_EQ(const_view, view3);
+    EXPECT_NE(const_view, view2);
+}
+
+/**
+ * Modifiers
+ */
+
+TEST(FlatmemoryTests, TypesBitsetSetTest)
+{
+    // Is included in TypesBitsetGetTest
+}
+
+/**
+ * Accessors
+ */
+
+TEST(FlatmemoryTests, TypesBitsetGetTest)
+{
+    auto builder = Builder<Bitset<uint64_t>>();
+    builder.set(42);
+    builder.finish();
+
+    // Test Builder
+    EXPECT_TRUE(builder.get(42));
+    EXPECT_FALSE(builder.get(64));
+
+    // Test View
+    auto view = View<Bitset<uint64_t>>(builder.buffer().data());
+    EXPECT_TRUE(view.get(42));
+    EXPECT_FALSE(view.get(64));
+
+    // Test ConstView
+    auto const_view = View<Bitset<uint64_t>>(builder.buffer().data());
+    EXPECT_TRUE(const_view.get(42));
+    EXPECT_FALSE(const_view.get(64));
+}
+
+/**
+ * TODO: rework all the remaining parts
+ */
 
 TEST(FlatmemoryTests, TypesBitsetTest)
 {

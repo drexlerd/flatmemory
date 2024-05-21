@@ -647,7 +647,6 @@ public:
     [[nodiscard]] bool operator==(const Other& other) const
     {
         assert(m_buf);
-        assert(other.m_buf);
         return BitsetOperator::are_equal(*this, other);
     }
 
@@ -663,7 +662,6 @@ public:
     bool is_superseteq(const Other& other) const
     {
         assert(m_buf);
-        assert(other.m_buf);
         return BitsetOperator::is_superseteq(*this, other);
     }
 
@@ -672,7 +670,6 @@ public:
     bool are_disjoint(const Other& other) const
     {
         assert(m_buf);
-        assert(other.m_buf);
         return BitsetOperator::are_disjoint(*this, other);
     }
 
@@ -717,7 +714,7 @@ public:
     [[nodiscard]] uint8_t* buffer() { return m_buf; }
     [[nodiscard]] const uint8_t* buffer() const { return m_buf; }
 
-    [[nodiscard]] size_t buffer_size() const
+    [[nodiscard]] buffer_size_type buffer_size() const
     {
         assert(m_buf);
         assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Bitset<Block>>::buffer_size_position));
@@ -860,7 +857,7 @@ public:
 
     [[nodiscard]] const uint8_t* buffer() const { return m_buf; }
 
-    [[nodiscard]] size_t buffer_size() const
+    [[nodiscard]] buffer_size_type buffer_size() const
     {
         assert(m_buf);
         assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Bitset<Block>>::buffer_size_position));
@@ -944,6 +941,8 @@ private:
         {
             m_blocks.resize(other.get_blocks().size(), m_default_bit_value ? BitsetOperator::block_ones : BitsetOperator::block_zeroes);
         }
+
+        assert(m_blocks.size() > 0);
     }
 
     template<IsBitset T>
@@ -961,6 +960,10 @@ private:
 
 public:
     using BlockType = Block;
+
+    /**
+     * Constructors
+     */
 
     Builder() : Builder(0) {}
 

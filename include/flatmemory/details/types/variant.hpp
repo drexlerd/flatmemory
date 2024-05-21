@@ -112,7 +112,7 @@ public:
      */
     View(uint8_t* data) : m_buf(data) { assert(m_buf); }
 
-    [[nodiscard]] size_t buffer_size() const
+    [[nodiscard]] buffer_size_type buffer_size() const
     {
         assert(m_buf);
         return sizeof(T);
@@ -150,7 +150,7 @@ public:
      */
     ConstView(const View<Variant<Ts...>>& view) : m_buf(view.buffer()) {}
 
-    [[nodiscard]] size_t buffer_size() const
+    [[nodiscard]] buffer_size_type buffer_size() const
     {
         assert(m_buf);
         return sizeof(T);

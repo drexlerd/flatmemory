@@ -31,7 +31,7 @@ namespace flatmemory
 /**
  * Common data types
  */
-using offset_type = uint16_t;
+using offset_type = uint32_t;
 
 using buffer_size_type = uint32_t;
 

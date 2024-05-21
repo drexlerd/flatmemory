@@ -120,7 +120,7 @@ public:
         return &read_value<T>(m_buf);
     }
 
-    [[nodiscard]] size_t buffer_size() const
+    [[nodiscard]] buffer_size_type buffer_size() const
     {
         assert(m_buf);
         return sizeof(T);
@@ -172,7 +172,7 @@ public:
         return &read_value<T>(m_buf);
     }
 
-    [[nodiscard]] size_t buffer_size() const
+    [[nodiscard]] buffer_size_type buffer_size() const
     {
         assert(m_buf);
         return sizeof(T);

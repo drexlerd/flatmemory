@@ -254,6 +254,10 @@ private:
 
 public:
     /**
+     * Constructors
+     */
+
+    /**
      * Operators
      */
     [[nodiscard]] bool operator==(const Builder& other) const
@@ -265,7 +269,33 @@ public:
         return true;
     }
 
+    template<std::size_t... Is>
+    bool compare_tuples(std::index_sequence<Is...>, const ConstView<Tuple<Ts...>>& other) const
+    {
+        return (... && (std::get<Is>(m_data) == other.template get<Is>()));
+    }
+
+    [[nodiscard]] bool operator==(const ConstView<Tuple<Ts...>> other) const
+    {  //
+        return compare_tuples(std::index_sequence_for<Ts...> {}, other);
+    }
+
+    template<std::size_t... Is>
+    bool compare_tuples(std::index_sequence<Is...>, const View<Tuple<Ts...>>& other) const
+    {
+        return (... && (std::get<Is>(m_data) == other.template get<Is>()));
+    }
+
+    [[nodiscard]] bool operator==(const View<Tuple<Ts...>> other) const
+    {  //
+        return compare_tuples(std::index_sequence_for<Ts...> {}, other);
+    }
+
     [[nodiscard]] bool operator!=(const Builder& other) const { return !(*this == other); }
+
+    [[nodiscard]] bool operator!=(const View<Tuple<Ts...>>& other) const { return !(*this == other); }
+
+    [[nodiscard]] bool operator!=(const ConstView<Tuple<Ts...>>& other) const { return !(*this == other); }
 
     /**
      * Lookup
@@ -338,18 +368,49 @@ public:
     /**
      * Operators
      */
+
+    template<std::size_t... Is>
+    bool compare_tuples(std::index_sequence<Is...>, const Builder<Tuple<Ts...>>& other) const
+    {
+        return (... && (get<Is>() == other.template get<Is>()));
+    }
+
+    [[nodiscard]] bool operator==(const Builder<Tuple<Ts...>> other) const
+    {  //
+        return compare_tuples(std::index_sequence_for<Ts...> {}, other);
+    }
+
     [[nodiscard]] bool operator==(const View& other) const
     {
-        if (this != &other)
+        if (m_buf != other.buffer())
         {
             if (buffer_size() != other.buffer_size())
+            {
                 return false;
-            return std::memcmp(m_buf, other.m_buf, buffer_size()) == 0;
+            }
+            return std::memcmp(m_buf, other.buffer(), buffer_size()) == 0;
         }
         return true;
     }
 
-    [[nodiscard]] bool operator!=(const View& other) const { return !(*this == other); }
+    [[nodiscard]] bool operator==(const ConstView<Tuple<Ts...>> other) const
+    {
+        if (m_buf != other.buffer())
+        {
+            if (buffer_size() != other.buffer_size())
+            {
+                return false;
+            }
+            return std::memcmp(m_buf, other.buffer(), buffer_size()) == 0;
+        }
+        return true;
+    }
+
+    [[nodiscard]] bool operator!=(const Builder<Tuple<Ts...>>& other) const { return !(*this == other); }
+
+    [[nodiscard]] bool operator!=(const View<Tuple<Ts...>>& other) const { return !(*this == other); }
+
+    [[nodiscard]] bool operator!=(const ConstView<Tuple<Ts...>>& other) const { return !(*this == other); }
 
     /**
      * Lookup
@@ -395,7 +456,7 @@ public:
     [[nodiscard]] uint8_t* buffer() { return m_buf; }
     [[nodiscard]] const uint8_t* buffer() const { return m_buf; }
 
-    [[nodiscard]] size_t buffer_size() const
+    [[nodiscard]] buffer_size_type buffer_size() const
     {
         assert(m_buf);
         assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position));
@@ -446,32 +507,61 @@ public:
     /**
      * Constructor to interpret raw data created by its corresponding builder
      */
+
     ConstView(const uint8_t* data) : m_buf(data) { assert(m_buf); }
 
     /**
      * Conversion constructor
      */
+
     ConstView(const View<Tuple<Ts...>>& view) : m_buf(view.buffer()) {}
 
     /**
      * Operators
      */
 
-    [[nodiscard]] bool operator==(const ConstView& other) const
+    template<std::size_t... Is>
+    bool compare_tuples(std::index_sequence<Is...>, const Builder<Tuple<Ts...>>& other) const
     {
-        if (this != &other)
+        return (... && (get<Is>() == other.template get<Is>()));
+    }
+
+    [[nodiscard]] bool operator==(const Builder<Tuple<Ts...>> other) const
+    {  //
+        return compare_tuples(std::index_sequence_for<Ts...> {}, other);
+    }
+
+    [[nodiscard]] bool operator==(const View<Tuple<Ts...>>& other) const
+    {
+        if (m_buf != other.buffer())
         {
-            if (m_buf != other.m_buf)
+            if (buffer_size() != other.buffer_size())
             {
-                if (buffer_size() != other.buffer_size())
-                    return false;
-                return std::memcmp(m_buf, other.m_buf, buffer_size()) == 0;
+                return false;
             }
+            return std::memcmp(m_buf, other.buffer(), buffer_size()) == 0;
         }
         return true;
     }
 
-    [[nodiscard]] bool operator!=(const ConstView& other) const { return !(*this == other); }
+    [[nodiscard]] bool operator==(const ConstView<Tuple<Ts...>> other) const
+    {
+        if (m_buf != other.buffer())
+        {
+            if (buffer_size() != other.buffer_size())
+            {
+                return false;
+            }
+            return std::memcmp(m_buf, other.buffer(), buffer_size()) == 0;
+        }
+        return true;
+    }
+
+    [[nodiscard]] bool operator!=(const Builder<Tuple<Ts...>>& other) const { return !(*this == other); }
+
+    [[nodiscard]] bool operator!=(const View<Tuple<Ts...>>& other) const { return !(*this == other); }
+
+    [[nodiscard]] bool operator!=(const ConstView<Tuple<Ts...>>& other) const { return !(*this == other); }
 
     /**
      * Lookup
@@ -497,7 +587,7 @@ public:
         }
     }
 
-    [[nodiscard]] size_t buffer_size() const
+    [[nodiscard]] buffer_size_type buffer_size() const
     {
         assert(m_buf);
         assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position));

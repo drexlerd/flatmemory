@@ -178,6 +178,10 @@ private:
     [[nodiscard]] const auto& get_buffer_impl() const { return m_buffer; }
 
 public:
+    /**
+     * Constructors
+     */
+
     Builder() {}
     explicit Builder(size_t count) : m_data(count) {}
     explicit Builder(size_t count, const T_& value) : m_data(count, value) {}
@@ -192,6 +196,44 @@ public:
         {
             return m_data == other.m_data;
         }
+        return true;
+    }
+
+    [[nodiscard]] bool operator==(const ConstView<Vector<T>> other) const
+    {
+        if (size() != other.size())
+        {
+            return false;
+        }
+
+        for (size_t i = 0; i < size(); ++i)
+        {
+            // Requires comparison between nested builder and constview/view types
+            if ((*this)[i] != other[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    [[nodiscard]] bool operator==(const View<Vector<T>> other) const
+    {
+        if (size() != other.size())
+        {
+            return false;
+        }
+
+        for (size_t i = 0; i < size(); ++i)
+        {
+            // Requires comparison between nested builder and constview/view types
+            if ((*this)[i] != other[i])
+            {
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -287,27 +329,57 @@ private:
 public:
     /// @brief Constructor to interpret raw data created by its corresponding builder.
     /// @param buf
-    View(uint8_t* buf) : m_buf(buf) { assert(buf); }
+    View(uint8_t* buf) : m_buf(buf) { assert(m_buf); }
 
     /**
      * Operators
      */
 
-    [[nodiscard]] bool operator==(const View& other) const
+    [[nodiscard]] bool operator==(const Builder<Vector<T>>& other) const
     {
-        if (this != &other)
+        if (size() != other.size())
         {
-            if (m_buf != other.m_buf)
+            return false;
+        }
+        for (size_t i = 0; i < size(); ++i)
+        {
+            if ((*this)[i] != other[i])
             {
-                if (buffer_size() != other.buffer_size())
-                    return false;
-                return std::memcmp(m_buf, other.m_buf, buffer_size()) == 0;
+                return false;
             }
         }
         return true;
     }
 
-    [[nodiscard]] bool operator!=(const View& other) const { return !(*this == other); }
+    [[nodiscard]] bool operator==(const View<Vector<T>>& other) const
+    {
+        if (m_buf != other.buffer())
+        {
+            if (buffer_size() != other.buffer_size())
+            {
+                return false;
+            }
+            return std::memcmp(m_buf, other.buffer(), buffer_size()) == 0;
+        }
+        return true;
+    }
+
+    [[nodiscard]] bool operator==(const ConstView<Vector<T>>& other) const
+    {
+        if (m_buf != other.buffer())
+        {
+            if (buffer_size() != other.buffer_size())
+            {
+                return false;
+            }
+            return std::memcmp(m_buf, other.buffer(), buffer_size()) == 0;
+        }
+        return true;
+    }
+
+    [[nodiscard]] bool operator!=(const Builder<Vector<T>>& other) const { return !(*this == other); }
+    [[nodiscard]] bool operator!=(const View<Vector<T>>& other) const { return !(*this == other); }
+    [[nodiscard]] bool operator!=(const ConstView<Vector<T>>& other) const { return !(*this == other); }
 
     /**
      * Element access.
@@ -465,7 +537,7 @@ public:
             }
             else
             {
-                return View<T>(m_buf + read_value<offset_type>(m_buf));
+                return ConstView<T>(m_buf + read_value<offset_type>(m_buf));
             }
         }
 
@@ -525,7 +597,7 @@ public:
     /// @return
     [[nodiscard]] bool empty() const { return size() == 0; }
 
-    [[nodiscard]] size_t buffer_size() const
+    [[nodiscard]] buffer_size_type buffer_size() const
     {
         assert(m_buf);
         assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_position));
@@ -579,21 +651,51 @@ public:
     /**
      * Operators
      */
-    [[nodiscard]] bool operator==(const ConstView& other) const
+    [[nodiscard]] bool operator==(const Builder<Vector<T>>& other) const
     {
-        if (this != &other)
+        if (size() != other.size())
         {
-            if (m_buf != other.m_buf)
+            return false;
+        }
+        for (size_t i = 0; i < size(); ++i)
+        {
+            if ((*this)[i] != other[i])
             {
-                if (buffer_size() != other.buffer_size())
-                    return false;
-                return std::memcmp(m_buf, other.m_buf, buffer_size()) == 0;
+                return false;
             }
         }
         return true;
     }
 
-    [[nodiscard]] bool operator!=(const ConstView& other) const { return !(*this == other); }
+    [[nodiscard]] bool operator==(const ConstView<Vector<T>>& other) const
+    {
+        if (m_buf != other.buffer())
+        {
+            if (buffer_size() != other.buffer_size())
+            {
+                return false;
+            }
+            return std::memcmp(m_buf, other.buffer(), buffer_size()) == 0;
+        }
+        return true;
+    }
+
+    [[nodiscard]] bool operator==(const View<Vector<T>>& other) const
+    {
+        if (m_buf != other.buffer())
+        {
+            if (buffer_size() != other.buffer_size())
+            {
+                return false;
+            }
+            return std::memcmp(m_buf, other.buffer(), buffer_size()) == 0;
+        }
+        return true;
+    }
+
+    [[nodiscard]] bool operator!=(const Builder<Vector<T>>& other) const { return !(*this == other); }
+    [[nodiscard]] bool operator!=(const ConstView<Vector<T>>& other) const { return !(*this == other); }
+    [[nodiscard]] bool operator!=(const View<Vector<T>>& other) const { return !(*this == other); }
 
     /**
      * Element access
@@ -717,7 +819,7 @@ public:
     /// @return
     [[nodiscard]] bool empty() const { return size() == 0; }
 
-    [[nodiscard]] size_t buffer_size() const
+    [[nodiscard]] buffer_size_type buffer_size() const
     {
         assert(m_buf);
         assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_position));
