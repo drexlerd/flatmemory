@@ -507,6 +507,13 @@ public:
                 // Advance position
                 ++m_pos;
                 ++m_bit_index;
+                if (m_bit_index == 64)
+                {
+                    ++m_block_index;
+                    m_bit_index = 0;
+                    m_cur_block = m_blocks[m_block_index];
+                }
+
                 if (m_cur_block)
                 {
                     // If there are set bits in the current value
@@ -529,16 +536,6 @@ public:
             } while (m_pos < m_end_pos);
         }
 
-        size_t find_end_pos() const
-        {
-            assert(m_num_blocks > 0);
-            // Find the last block that differs from the default block
-            int32_t last_relevant_block_index = static_cast<int64_t>(m_num_blocks) - 1;
-            for (; (last_relevant_block_index >= 0) && (m_blocks[last_relevant_block_index] == block_zeroes); --last_relevant_block_index) {}
-            // Point to the last position of the next block (it must not exist)
-            return (last_relevant_block_index + 1) * block_size - 1;
-        }
-
     public:
         using difference_type = int;
         using value_type = size_t;
@@ -551,11 +548,10 @@ public:
             m_blocks(blocks),
             m_num_blocks(num_blocks),
             m_block_index(0),
-            m_bit_index(-1)  // set bit_index to -1 for advance step
-            ,
+            m_bit_index(-1),
             m_cur_block(num_blocks > 0 ? blocks[m_block_index] : block_zeroes),
-            m_end_pos(find_end_pos()),
-            m_pos(begin ? -1 : m_end_pos)  // set to -1 for advance step
+            m_end_pos((m_num_blocks + 1) * block_size - 1),
+            m_pos(begin ? -1 : m_end_pos)
         {
             if (default_bit_value)
             {
@@ -563,7 +559,19 @@ public:
             }
             if (begin && m_pos != m_end_pos)
             {
-                next_set_bit();
+                // Operator::block_msb_one
+                if ((num_blocks > 0) && ((m_blocks[0] & 1) == 0))
+                {
+                    // The first bit is not set, so we need to find it
+                    next_set_bit();
+                }
+                else
+                {
+                    // The first bit is set, advance by 1 manually
+                    m_pos = 0;
+                    m_bit_index = 0;
+                    m_cur_block >>= 1;
+                }
             }
         }
 

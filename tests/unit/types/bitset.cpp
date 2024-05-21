@@ -263,6 +263,79 @@ TEST(FlatmemoryTests, TypesBitsetGetTest)
 }
 
 /**
+ * Iterators
+ */
+
+TEST(FlatmemoryTests, TypesBitsetIteratorTest)
+{
+    size_t num_bits = 200;
+    auto builder = Builder<Bitset<uint64_t>>(num_bits, false);
+    builder.set(0);
+    builder.set(2);
+    builder.set(4);
+    builder.set(99);
+
+    auto it = builder.begin();
+    auto end = builder.end();
+    EXPECT_EQ(*it, 0);
+    ++it;
+    EXPECT_EQ(*it, 2);
+    ++it;
+    EXPECT_EQ(*it, 4);
+    ++it;
+    EXPECT_EQ(*it, 99);
+    ++it;
+    EXPECT_EQ(it, end);
+
+    builder.finish();
+
+    auto view = View<Bitset<uint64_t>>(builder.buffer().data());
+    it = view.begin();
+    end = view.end();
+    EXPECT_EQ(*it, 0);
+    ++it;
+    EXPECT_EQ(*it, 2);
+    ++it;
+    EXPECT_EQ(*it, 4);
+    ++it;
+    EXPECT_EQ(*it, 99);
+    ++it;
+    EXPECT_EQ(it, end);
+
+    auto const_view = ConstView<Bitset<uint64_t>>(builder.buffer().data());
+    it = const_view.begin();
+    end = const_view.end();
+    EXPECT_EQ(*it, 0);
+    ++it;
+    EXPECT_EQ(*it, 2);
+    ++it;
+    EXPECT_EQ(*it, 4);
+    ++it;
+    EXPECT_EQ(*it, 99);
+    ++it;
+    EXPECT_EQ(it, end);
+}
+
+TEST(FlatmemoryTests, TypesBitsetIterator2Test)
+{
+    size_t num_bits = 0;
+    auto builder = Builder<Bitset<uint64_t>>(num_bits, false);
+
+    auto it = builder.begin();
+    auto end = builder.end();
+    EXPECT_EQ(it, end);
+}
+
+TEST(FlatmemoryTests, TypesBitsetIterator3Test)
+{
+    // Set the last bit within the size of the bitset.
+    auto builder = Builder<Bitset<uint64_t>>(63, false);
+    builder.set(63);
+    builder.set(127);
+    EXPECT_EQ(builder.count(), 2);
+}
+
+/**
  * TODO: rework all the remaining parts
  */
 
@@ -463,66 +536,6 @@ TEST(FlatmemoryTests, TypesBitsetEqualityTest)
 
     EXPECT_FALSE((const_view2 == const_view3));
     EXPECT_NE(const_view2.hash(), const_view3.hash());
-}
-
-TEST(FlatmemoryTests, TypesBitsetIteratorTest)
-{
-    size_t num_bits = 200;
-    auto builder = Builder<Bitset<uint64_t>>(num_bits, false);
-    builder.set(0);
-    builder.set(2);
-    builder.set(4);
-    builder.set(99);
-
-    auto it = builder.begin();
-    auto end = builder.end();
-    EXPECT_EQ(*it, 0);
-    ++it;
-    EXPECT_EQ(*it, 2);
-    ++it;
-    EXPECT_EQ(*it, 4);
-    ++it;
-    EXPECT_EQ(*it, 99);
-    ++it;
-    EXPECT_EQ(it, end);
-
-    builder.finish();
-
-    auto view = View<Bitset<uint64_t>>(builder.buffer().data());
-    it = view.begin();
-    end = view.end();
-    EXPECT_EQ(*it, 0);
-    ++it;
-    EXPECT_EQ(*it, 2);
-    ++it;
-    EXPECT_EQ(*it, 4);
-    ++it;
-    EXPECT_EQ(*it, 99);
-    ++it;
-    EXPECT_EQ(it, end);
-
-    auto const_view = ConstView<Bitset<uint64_t>>(builder.buffer().data());
-    it = const_view.begin();
-    end = const_view.end();
-    EXPECT_EQ(*it, 0);
-    ++it;
-    EXPECT_EQ(*it, 2);
-    ++it;
-    EXPECT_EQ(*it, 4);
-    ++it;
-    EXPECT_EQ(*it, 99);
-    ++it;
-    EXPECT_EQ(it, end);
-}
-
-TEST(FlatmemoryTests, TypesBitsetIterator2Test)
-{
-    size_t num_bits = 0;
-    auto builder = Builder<Bitset<uint64_t>>(num_bits, false);
-
-    auto it = builder.begin();
-    auto end = builder.end();
-    EXPECT_EQ(it, end);
 }
 
 }
