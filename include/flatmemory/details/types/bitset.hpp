@@ -1062,6 +1062,24 @@ public:
      * Modifiers
      */
 
+    /// @brief Shrink the bitset to minimum number of blocks (at least 1) to represent its bits.
+    void shrink_to_fit()
+    {
+        int32_t last_non_default_block_index = m_blocks.size() - 1;
+
+        const Block default_block = m_default_bit_value ? BitsetOperator::block_ones : BitsetOperator::block_zeroes;
+
+        for (; last_non_default_block_index >= 0; --last_non_default_block_index)
+        {
+            if (m_blocks[last_non_default_block_index] != default_block)
+            {
+                break;
+            }
+        }
+
+        m_blocks.resize(last_non_default_block_index + 1);
+    }
+
     // Set a bit at a specific position
     void set(std::size_t position)
     {

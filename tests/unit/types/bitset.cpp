@@ -232,6 +232,19 @@ TEST(FlatmemoryTests, TypesBitsetEqualTest)
  * Modifiers
  */
 
+TEST(FlatmemoryTests, TypesBitsetShrinkToFitTest)
+{
+    // Is included in TypesBitsetGetTest
+    auto builder = Builder<Bitset<uint64_t>>(250);
+    builder.unset_all();
+    builder.set(42);
+    EXPECT_EQ(builder.get_blocks().size(), 4);
+    EXPECT_TRUE(builder.get(42));
+
+    builder.shrink_to_fit();
+    EXPECT_EQ(builder.get_blocks().size(), 1);
+}
+
 TEST(FlatmemoryTests, TypesBitsetSetTest)
 {
     // Is included in TypesBitsetGetTest
