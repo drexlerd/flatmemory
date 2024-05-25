@@ -1108,20 +1108,24 @@ public:
         m_blocks[index] &= ~(static_cast<Block>(1) << offset);  // Set the bit at the offset
     }
 
-    // Unset all bits
+    // Unset all bits and shrink its size to represent the bits
     void unset_all()
     {
-        for (auto& value : m_blocks)
-        {
-            value = (m_default_bit_value) ? BitsetOperator::block_ones : BitsetOperator::block_zeroes;
-        }
+        assert(m_blocks.size() > 0);
+
+        m_blocks[0] = (m_default_bit_value) ? BitsetOperator::block_ones : BitsetOperator::block_zeroes;
+
+        m_blocks.resize(1);
     }
 
-    // Set all bits for a given default_bit_value
-    void set_all(bool default_bit_value)
+    // Set all bits and shrink its size to represent the bits
+    void set_all()
     {
-        m_default_bit_value = default_bit_value;
-        set_all();
+        assert(m_blocks.size() > 0);
+
+        m_blocks[0] = (m_default_bit_value) ? BitsetOperator::block_ones : BitsetOperator::block_zeroes;
+
+        m_blocks.resize(1);
     }
 
     Builder& operator~()
