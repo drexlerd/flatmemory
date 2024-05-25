@@ -1111,16 +1111,11 @@ public:
     // Unset all bits and shrink its size to represent the bits
     void unset_all()
     {
-        // assert(m_blocks.size() > 0);
+        assert(m_blocks.size() > 0);
 
-        // m_blocks[0] = (m_default_bit_value) ? BitsetOperator::block_ones : BitsetOperator::block_zeroes;
+        m_blocks[0] = (m_default_bit_value) ? BitsetOperator::block_ones : BitsetOperator::block_zeroes;
 
-        // m_blocks.resize(1);
-
-        for (auto& value : m_blocks)
-        {
-            value = (m_default_bit_value) ? BitsetOperator::block_ones : BitsetOperator::block_zeroes;
-        }
+        m_blocks.resize(1);
     }
 
     // Set all bits and shrink its size to represent the bits
