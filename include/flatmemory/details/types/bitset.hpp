@@ -1123,7 +1123,7 @@ public:
     {
         assert(m_blocks.size() > 0);
 
-        m_blocks[0] = (m_default_bit_value) ? BitsetOperator::block_ones : BitsetOperator::block_zeroes;
+        m_blocks[0] = (m_default_bit_value) ? BitsetOperator::block_zeroes : BitsetOperator::block_ones;
 
         m_blocks.resize(1);
     }
