@@ -26,6 +26,10 @@ namespace flatmemory
 // Concept to check whether T is integral
 template<typename T>
 concept IsIntegral = std::is_integral_v<T>;
+
+// Concept to check whether T is an unsigned integral
+template<typename T>
+concept IsUnsignedIntegral = IsIntegral<T> && std::is_unsigned_v<T>;
 }
 
 #endif
