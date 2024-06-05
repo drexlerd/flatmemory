@@ -19,6 +19,7 @@
 #define FLATMEMORY_BYTE_BUFFER_HPP_
 
 #include "flatmemory/details/byte_buffer_utils.hpp"
+#include "flatmemory/details/concepts.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -29,69 +30,62 @@
 namespace flatmemory
 {
 
+/**
+ * Declarations
+ */
+
 class ByteBuffer
 {
 private:
     std::vector<uint8_t> m_data;
     size_t m_size;
 
-    inline void resize_to_fit(size_t pos, size_t amount)
-    {
-        size_t final_size = pos + amount;
-        if (final_size > m_data.size())
-        {
-            m_data.resize(final_size);
-        }
-    }
+    void resize_to_fit(size_t pos, size_t amount);
 
 public:
-    ByteBuffer() : m_size(0) {}
+    ByteBuffer();
 
-    size_t write(size_t pos, const uint8_t* data, size_t amount)
-    {
-        resize_to_fit(pos, amount);
-        std::memcpy(&m_data[pos], data, amount);
-        return amount;
-    }
+    size_t write(size_t pos, const uint8_t* data, size_t amount);
 
     /// @brief Writes a value to the stream.
     template<IsTriviallyCopyable T>
-    size_t write(size_t pos, const T& value)
-    {
-        write(pos, reinterpret_cast<const uint8_t*>(&value), sizeof(value));
-        return sizeof(value);
-    }
+    size_t write(size_t pos, const T& value);
 
     /// @brief Writes a pointer to the stream
     template<typename T>
-    size_t write(size_t pos, const T* pointer)
-    {
-        uintptr_t address = reinterpret_cast<uintptr_t>(pointer);
-        write(pos, reinterpret_cast<const uint8_t*>(&address), sizeof(address));
-        return sizeof(address);
-    }
+    size_t write(size_t pos, const T* pointer);
 
-    size_t write_padding(size_t pos, size_t amount)
-    {
-        if (amount > 0)
-        {
-            // Write num_byte many zeros 0's
-            resize_to_fit(pos, amount);
-            std::memset(&m_data[pos], 0, amount);
-        }
-        return amount;
-    }
+    size_t write_padding(size_t pos, size_t amount);
 
     /// @brief Set the final size of the buffer.
     /// @param count
-    void set_size(size_t count) { m_size = count; }
+    void set_size(size_t count);
 
-    [[nodiscard]] uint8_t* data() { return m_data.data(); }
-    [[nodiscard]] const uint8_t* data() const { return m_data.data(); }
+    [[nodiscard]] uint8_t* data();
+    [[nodiscard]] const uint8_t* data() const;
 
-    [[nodiscard]] size_t size() const { return m_size; }
-    [[nodiscard]] size_t capacity() const { return m_data.capacity(); }
+    [[nodiscard]] size_t size() const;
+    [[nodiscard]] size_t capacity() const;
 };
+
+/**
+ * Definitions
+ */
+
+template<IsTriviallyCopyable T>
+size_t ByteBuffer::write(size_t pos, const T& value)
+{
+    write(pos, reinterpret_cast<const uint8_t*>(&value), sizeof(value));
+    return sizeof(value);
+}
+
+template<typename T>
+size_t ByteBuffer::write(size_t pos, const T* pointer)
+{
+    uintptr_t address = reinterpret_cast<uintptr_t>(pointer);
+    write(pos, reinterpret_cast<const uint8_t*>(&address), sizeof(address));
+    return sizeof(address);
+}
 
 }
 

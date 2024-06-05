@@ -23,6 +23,22 @@
 
 namespace flatmemory
 {
+/**
+ * Base ID class for custom types.
+ */
+struct Custom
+{
+};
+
+template<typename T>
+concept IsCustom = std::derived_from<T, Custom>;
+
+template<typename T>
+concept IsTriviallyCopyable = std::is_trivially_copyable_v<T>;
+
+template<typename T>
+concept IsTriviallyCopyableOrCustom = (IsTriviallyCopyable<T> || IsCustom<T>);
+
 // Concept to check whether T is integral
 template<typename T>
 concept IsIntegral = std::is_integral_v<T>;

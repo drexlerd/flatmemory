@@ -4,7 +4,7 @@
 
 #include "flatmemory/details/builder.hpp"
 #include "flatmemory/details/byte_buffer_segmented.hpp"
-#include "flatmemory/details/type_traits.hpp"
+#include "flatmemory/details/concepts.hpp"
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
 
@@ -16,10 +16,13 @@ namespace flatmemory
 {
 
 /**
- * VariableSizedTypeVector can handle different sized objects
- * but does not support resize since the exact
- * amount of needed bytes is not known in advance.
+ * Declarations
  */
+
+/// @brief VariableSizedTypeVector can handle different sized objects
+/// but does not support resize since the exact
+/// amount of needed bytes is not known in advance.
+/// @tparam T
 template<typename T>
 class VariableSizedTypeVector
 {
@@ -34,7 +37,7 @@ private:
     using const_iterator = typename std::vector<View<T>>::const_iterator;
 
 public:
-    explicit VariableSizedTypeVector(NumBytes n = 1000000) : m_storage(ByteBufferSegmented(n)) {}
+    explicit VariableSizedTypeVector(NumBytes n = 1000000);
     // Move only
     VariableSizedTypeVector(const VariableSizedTypeVector& other) = delete;
     VariableSizedTypeVector& operator=(const VariableSizedTypeVector& other) = delete;
@@ -45,62 +48,40 @@ public:
      * Element access
      */
 
-    [[nodiscard]] View<T> operator[](size_t pos)
-    {
-        assert(pos <= size());
-        return m_data[pos];
-    }
+    [[nodiscard]] View<T> operator[](size_t pos);
+    [[nodiscard]] ConstView<T> operator[](size_t pos) const;
 
-    [[nodiscard]] ConstView<T> operator[](size_t pos) const
-    {
-        assert(pos <= size());
-        return m_data[pos];
-    }
-
-    [[nodiscard]] View<T> back()
-    {
-        assert(!m_data.empty());
-        return m_data.back();
-    }
-
-    [[nodiscard]] ConstView<T> back() const
-    {
-        assert(!m_data.empty());
-        return m_data.back();
-    }
+    [[nodiscard]] View<T> back();
+    [[nodiscard]] ConstView<T> back() const;
 
     /**
      * Iterators
      */
 
-    [[nodiscard]] iterator begin() { return m_data.begin(); }
-    [[nodiscard]] const_iterator begin() const { return m_data.begin(); }
-    [[nodiscard]] iterator end() { return m_data.end(); }
-    [[nodiscard]] const_iterator end() const { return m_data.end(); }
+    [[nodiscard]] iterator begin();
+    [[nodiscard]] const_iterator begin() const;
+    [[nodiscard]] iterator end();
+    [[nodiscard]] const_iterator end() const;
 
     /**
      * Capacity
      */
 
-    [[nodiscard]] constexpr size_t empty() const { return m_data.empty(); }
-
-    [[nodiscard]] constexpr size_t size() const { return m_data.size(); }
+    [[nodiscard]] constexpr size_t empty() const;
+    [[nodiscard]] constexpr size_t size() const;
 
     /**
      * Modifiers
      */
 
-    void push_back(const Builder<T>& builder) { m_data.push_back(View<T>(m_storage.write(builder.buffer().data(), builder.buffer().size()))); }
-
-    void push_back(const View<T>& view) { m_data.push_back(View<T>(m_storage.write(view.buffer(), view.buffer_size()))); }
-
-    void push_back(const ConstView<T>& view) { m_data.push_back(View<T>(m_storage.write(view.buffer(), view.buffer_size()))); }
+    void push_back(const Builder<T>& builder);
+    void push_back(const View<T>& view);
+    void push_back(const ConstView<T>& view);
 };
 
-/**
- * FixedSizedTypeVector can handle only equally sized objects
- * because it is meant to be resizeable.
- */
+/// @brief FixedSizedTypeVector can handle only equally sized objects
+/// because it is meant to be resizeable.
+/// @tparam T
 template<typename T>
 class FixedSizedTypeVector
 {
@@ -118,18 +99,9 @@ private:
 
 public:
     /// @brief Constructor that uses empty default constructed elements when resizing.
-    explicit FixedSizedTypeVector(NumBytes n = 1000000) : m_storage(ByteBufferSegmented(n))
-    {  //
-        m_default_builder.finish();
-    }
+    explicit FixedSizedTypeVector(NumBytes n = 1000000);
     /// @brief Constructor that ensure that a resize yields non trivially initialized objects.
-    FixedSizedTypeVector(Builder<T>&& default_builder, NumBytes n = 1000000) : m_storage(ByteBufferSegmented(n)), m_default_builder(std::move(default_builder))
-    {
-        if (m_default_builder.buffer().data() == nullptr)
-        {
-            throw std::runtime_error("Builder is not fully initialized! Did you forget to call finish()?");
-        }
-    }
+    FixedSizedTypeVector(Builder<T>&& default_builder, NumBytes n = 1000000);
     // Move only
     FixedSizedTypeVector(const FixedSizedTypeVector& other) = delete;
     FixedSizedTypeVector& operator=(const FixedSizedTypeVector& other) = delete;
@@ -140,66 +112,247 @@ public:
      * Element access
      */
 
-    [[nodiscard]] View<T> operator[](size_t pos)
-    {
-        if (pos >= size())
-        {
-            resize(pos);
-        }
-        return m_data[pos];
-    }
+    [[nodiscard]] View<T> operator[](size_t pos);
+    [[nodiscard]] ConstView<T> operator[](size_t pos) const;
 
-    [[nodiscard]] ConstView<T> operator[](size_t pos) const
-    {
-        if (pos < size())
-        {
-            return m_data[pos];
-        }
-        throw std::runtime_error("invalid argument");
-    }
-
-    [[nodiscard]] View<T> back() { return m_data.back(); }
-
-    [[nodiscard]] ConstView<T> back() const { return m_data.back(); }
+    [[nodiscard]] View<T> back();
+    [[nodiscard]] ConstView<T> back() const;
 
     /**
      * Iterators
      */
 
-    [[nodiscard]] iterator begin() { return m_data.begin(); }
-    [[nodiscard]] const_iterator begin() const { return m_data.begin(); }
-    [[nodiscard]] iterator end() { return m_data.end(); }
-    [[nodiscard]] const_iterator end() const { return m_data.end(); }
+    [[nodiscard]] iterator begin();
+    [[nodiscard]] const_iterator begin() const;
+    [[nodiscard]] iterator end();
+    [[nodiscard]] const_iterator end() const;
 
     /**
      * Capacity
      */
 
-    [[nodiscard]] constexpr size_t empty() const { return m_data.empty(); }
-
-    [[nodiscard]] constexpr size_t size() const { return m_data.size(); }
+    [[nodiscard]] constexpr size_t empty() const;
+    [[nodiscard]] constexpr size_t size() const;
 
     /**
      * Modifiers
      */
 
-    void push_back(const Builder<T>& builder) { m_data.push_back(View<T>(m_storage.write(builder.buffer().data(), builder.buffer().size()))); }
-
-    void push_back(const View<T>& view) { m_data.push_back(View<T>(m_storage.write(view.buffer(), view.buffer_size()))); }
-
-    void push_back(const ConstView<T>& view) { m_data.push_back(View<T>(m_storage.write(view.buffer(), view.buffer_size()))); }
-
-    void resize(size_t count)
-    {
-        const uint8_t* default_data = m_default_builder.buffer().data();
-        size_t default_size = m_default_builder.buffer().size();
-        while (size() <= count)
-        {
-            uint8_t* written_data = m_storage.write(default_data, default_size);
-            m_data.push_back(View<T>(written_data));
-        }
-    }
+    void push_back(const Builder<T>& builder);
+    void push_back(const View<T>& view);
+    void push_back(const ConstView<T>& view);
+    void resize(size_t count);
 };
+
+/**
+ * Definitions
+ */
+
+// VariableSizedTypeVector
+
+template<typename T>
+VariableSizedTypeVector<T>::VariableSizedTypeVector(NumBytes n) : m_storage(ByteBufferSegmented(n))
+{
+}
+
+template<typename T>
+View<T> VariableSizedTypeVector<T>::operator[](size_t pos)
+{
+    assert(pos <= size());
+    return m_data[pos];
+}
+
+template<typename T>
+ConstView<T> VariableSizedTypeVector<T>::operator[](size_t pos) const
+{
+    assert(pos <= size());
+    return m_data[pos];
+}
+
+template<typename T>
+View<T> VariableSizedTypeVector<T>::back()
+{
+    assert(!m_data.empty());
+    return m_data.back();
+}
+
+template<typename T>
+ConstView<T> VariableSizedTypeVector<T>::back() const
+{
+    assert(!m_data.empty());
+    return m_data.back();
+}
+
+template<typename T>
+VariableSizedTypeVector<T>::iterator VariableSizedTypeVector<T>::begin()
+{
+    return m_data.begin();
+}
+
+template<typename T>
+VariableSizedTypeVector<T>::const_iterator VariableSizedTypeVector<T>::begin() const
+{
+    return m_data.begin();
+}
+
+template<typename T>
+VariableSizedTypeVector<T>::iterator VariableSizedTypeVector<T>::end()
+{
+    return m_data.end();
+}
+
+template<typename T>
+VariableSizedTypeVector<T>::const_iterator VariableSizedTypeVector<T>::end() const
+{
+    return m_data.end();
+}
+
+template<typename T>
+constexpr size_t VariableSizedTypeVector<T>::empty() const
+{
+    return m_data.empty();
+}
+
+template<typename T>
+constexpr size_t VariableSizedTypeVector<T>::size() const
+{
+    return m_data.size();
+}
+
+template<typename T>
+void VariableSizedTypeVector<T>::push_back(const Builder<T>& builder)
+{
+    m_data.push_back(View<T>(m_storage.write(builder.buffer().data(), builder.buffer().size())));
+}
+
+template<typename T>
+void VariableSizedTypeVector<T>::push_back(const View<T>& view)
+{
+    m_data.push_back(View<T>(m_storage.write(view.buffer(), view.buffer_size())));
+}
+
+template<typename T>
+void VariableSizedTypeVector<T>::push_back(const ConstView<T>& view)
+{
+    m_data.push_back(View<T>(m_storage.write(view.buffer(), view.buffer_size())));
+}
+
+// FixedSizedTypeVector
+
+template<typename T>
+FixedSizedTypeVector<T>::FixedSizedTypeVector(NumBytes n) : m_storage(ByteBufferSegmented(n))
+{  //
+    m_default_builder.finish();
+}
+
+template<typename T>
+FixedSizedTypeVector<T>::FixedSizedTypeVector(Builder<T>&& default_builder, NumBytes n) :
+    m_storage(ByteBufferSegmented(n)),
+    m_default_builder(std::move(default_builder))
+{
+    if (m_default_builder.buffer().data() == nullptr)
+    {
+        throw std::runtime_error("Builder is not fully initialized! Did you forget to call finish()?");
+    }
+}
+
+template<typename T>
+View<T> FixedSizedTypeVector<T>::operator[](size_t pos)
+{
+    if (pos >= size())
+    {
+        resize(pos);
+    }
+    return m_data[pos];
+}
+
+template<typename T>
+ConstView<T> FixedSizedTypeVector<T>::operator[](size_t pos) const
+{
+    if (pos < size())
+    {
+        return m_data[pos];
+    }
+    throw std::runtime_error("invalid argument");
+}
+
+template<typename T>
+View<T> FixedSizedTypeVector<T>::back()
+{
+    return m_data.back();
+}
+
+template<typename T>
+ConstView<T> FixedSizedTypeVector<T>::back() const
+{
+    return m_data.back();
+}
+
+template<typename T>
+FixedSizedTypeVector<T>::iterator FixedSizedTypeVector<T>::begin()
+{
+    return m_data.begin();
+}
+
+template<typename T>
+FixedSizedTypeVector<T>::const_iterator FixedSizedTypeVector<T>::begin() const
+{
+    return m_data.begin();
+}
+
+template<typename T>
+FixedSizedTypeVector<T>::iterator FixedSizedTypeVector<T>::end()
+{
+    return m_data.end();
+}
+
+template<typename T>
+FixedSizedTypeVector<T>::const_iterator FixedSizedTypeVector<T>::end() const
+{
+    return m_data.end();
+}
+
+template<typename T>
+constexpr size_t FixedSizedTypeVector<T>::empty() const
+{
+    return m_data.empty();
+}
+
+template<typename T>
+constexpr size_t FixedSizedTypeVector<T>::size() const
+{
+    return m_data.size();
+}
+
+template<typename T>
+void FixedSizedTypeVector<T>::push_back(const Builder<T>& builder)
+{
+    m_data.push_back(View<T>(m_storage.write(builder.buffer().data(), builder.buffer().size())));
+}
+
+template<typename T>
+void FixedSizedTypeVector<T>::push_back(const View<T>& view)
+{
+    m_data.push_back(View<T>(m_storage.write(view.buffer(), view.buffer_size())));
+}
+
+template<typename T>
+void FixedSizedTypeVector<T>::push_back(const ConstView<T>& view)
+{
+    m_data.push_back(View<T>(m_storage.write(view.buffer(), view.buffer_size())));
+}
+
+template<typename T>
+void FixedSizedTypeVector<T>::resize(size_t count)
+{
+    const uint8_t* default_data = m_default_builder.buffer().data();
+    size_t default_size = m_default_builder.buffer().size();
+    while (size() <= count)
+    {
+        uint8_t* written_data = m_storage.write(default_data, default_size);
+        m_data.push_back(View<T>(written_data));
+    }
+}
 
 }
 

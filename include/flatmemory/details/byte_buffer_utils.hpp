@@ -18,7 +18,7 @@
 #ifndef FLATMEMORY_BYTE_BUFFER_UTILS_HPP_
 #define FLATMEMORY_BYTE_BUFFER_UTILS_HPP_
 
-#include "flatmemory/details/type_traits.hpp"
+#include "flatmemory/details/concepts.hpp"
 
 #include <bitset>
 #include <cassert>

@@ -21,8 +21,8 @@
 #include "flatmemory/details/builder.hpp"
 #include "flatmemory/details/byte_buffer.hpp"
 #include "flatmemory/details/byte_buffer_utils.hpp"
+#include "flatmemory/details/concepts.hpp"
 #include "flatmemory/details/layout.hpp"
-#include "flatmemory/details/type_traits.hpp"
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
 
@@ -68,19 +68,15 @@ private:
     template<typename>
     friend class IBuilder;
 
-    void finish_impl()
-    {
-        m_buffer.write(0, m_trivial);
-        m_buffer.set_size(sizeof(T));
-    }
+    void finish_impl();
 
-    [[nodiscard]] auto& get_buffer_impl() { return m_buffer; }
-    [[nodiscard]] const auto& get_buffer_impl() const { return m_buffer; }
+    [[nodiscard]] auto& get_buffer_impl();
+    [[nodiscard]] const auto& get_buffer_impl() const;
 
 public:
-    [[nodiscard]] T& operator*() { return m_trivial; }
+    [[nodiscard]] T& operator*();
 
-    [[nodiscard]] T* operator->() { return &m_trivial; }
+    [[nodiscard]] T* operator->();
 };
 
 /**
@@ -104,30 +100,14 @@ public:
     /**
      * Constructor to interpret raw data created by its corresponding builder
      */
-    View(uint8_t* data) : m_buf(data) { assert(m_buf); }
+    View(uint8_t* data);
 
-    [[nodiscard]] T& operator*()
-    {
-        assert(m_buf);
-        assert(test_correct_alignment<T>(m_buf));
-        return read_value<T>(m_buf);
-    }
+    [[nodiscard]] T& operator*();
+    [[nodiscard]] T* operator->();
 
-    [[nodiscard]] T* operator->()
-    {
-        assert(m_buf);
-        assert(test_correct_alignment<T>(m_buf));
-        return &read_value<T>(m_buf);
-    }
-
-    [[nodiscard]] buffer_size_type buffer_size() const
-    {
-        assert(m_buf);
-        return sizeof(T);
-    }
-
-    [[nodiscard]] uint8_t* buffer() { return m_buf; }
-    [[nodiscard]] const uint8_t* buffer() const { return m_buf; }
+    [[nodiscard]] buffer_size_type buffer_size() const;
+    [[nodiscard]] uint8_t* buffer();
+    [[nodiscard]] const uint8_t* buffer() const;
 };
 
 /**
@@ -151,35 +131,143 @@ public:
     /**
      * Constructor to interpret raw data created by its corresponding builder
      */
-    ConstView(const uint8_t* data) : m_buf(data) { assert(m_buf); }
+    ConstView(const uint8_t* data);
 
     /**
      * Conversion constructor
      */
-    ConstView(const View<Trivial<T>>& view) : m_buf(view.buffer()) {}
+    ConstView(const View<Trivial<T>>& view);
 
-    [[nodiscard]] const T& operator*() const
-    {
-        assert(m_buf);
-        assert(test_correct_alignment<T>(m_buf));
-        return read_value<T>(m_buf);
-    }
+    [[nodiscard]] const T& operator*() const;
+    [[nodiscard]] const T* operator->() const;
 
-    [[nodiscard]] const T* operator->() const
-    {
-        assert(m_buf);
-        assert(test_correct_alignment<T>(m_buf));
-        return &read_value<T>(m_buf);
-    }
-
-    [[nodiscard]] buffer_size_type buffer_size() const
-    {
-        assert(m_buf);
-        return sizeof(T);
-    }
-
-    [[nodiscard]] const uint8_t* buffer() const { return m_buf; }
+    [[nodiscard]] buffer_size_type buffer_size() const;
+    [[nodiscard]] const uint8_t* buffer() const;
 };
+
+/**
+ * Definitions
+ */
+
+// Layout
+
+// Builder
+
+template<IsTriviallyCopyable T>
+void Builder<Trivial<T>>::finish_impl()
+{
+    m_buffer.write(0, m_trivial);
+    m_buffer.set_size(sizeof(T));
+}
+
+template<IsTriviallyCopyable T>
+auto& Builder<Trivial<T>>::get_buffer_impl()
+{
+    return m_buffer;
+}
+
+template<IsTriviallyCopyable T>
+const auto& Builder<Trivial<T>>::get_buffer_impl() const
+{
+    return m_buffer;
+}
+
+template<IsTriviallyCopyable T>
+T& Builder<Trivial<T>>::operator*()
+{
+    return m_trivial;
+}
+
+template<IsTriviallyCopyable T>
+T* Builder<Trivial<T>>::operator->()
+{
+    return &m_trivial;
+}
+
+// View
+
+template<IsTriviallyCopyable T>
+View<Trivial<T>>::View(uint8_t* data) : m_buf(data)
+{
+    assert(m_buf);
+}
+
+template<IsTriviallyCopyable T>
+T& View<Trivial<T>>::operator*()
+{
+    assert(m_buf);
+    assert(test_correct_alignment<T>(m_buf));
+    return read_value<T>(m_buf);
+}
+
+template<IsTriviallyCopyable T>
+T* View<Trivial<T>>::operator->()
+{
+    assert(m_buf);
+    assert(test_correct_alignment<T>(m_buf));
+    return &read_value<T>(m_buf);
+}
+
+template<IsTriviallyCopyable T>
+buffer_size_type View<Trivial<T>>::buffer_size() const
+{
+    assert(m_buf);
+    return sizeof(T);
+}
+
+template<IsTriviallyCopyable T>
+uint8_t* View<Trivial<T>>::buffer()
+{
+    return m_buf;
+}
+
+template<IsTriviallyCopyable T>
+const uint8_t* View<Trivial<T>>::buffer() const
+{
+    return m_buf;
+}
+
+// ConstView
+
+template<IsTriviallyCopyable T>
+ConstView<Trivial<T>>::ConstView(const uint8_t* data) : m_buf(data)
+{
+    assert(m_buf);
+}
+
+template<IsTriviallyCopyable T>
+ConstView<Trivial<T>>::ConstView(const View<Trivial<T>>& view) : m_buf(view.buffer())
+{
+}
+
+template<IsTriviallyCopyable T>
+const T& ConstView<Trivial<T>>::operator*() const
+{
+    assert(m_buf);
+    assert(test_correct_alignment<T>(m_buf));
+    return read_value<T>(m_buf);
+}
+
+template<IsTriviallyCopyable T>
+const T* ConstView<Trivial<T>>::operator->() const
+{
+    assert(m_buf);
+    assert(test_correct_alignment<T>(m_buf));
+    return &read_value<T>(m_buf);
+}
+
+template<IsTriviallyCopyable T>
+buffer_size_type ConstView<Trivial<T>>::buffer_size() const
+{
+    assert(m_buf);
+    return sizeof(T);
+}
+
+template<IsTriviallyCopyable T>
+const uint8_t* ConstView<Trivial<T>>::buffer() const
+{
+    return m_buf;
+}
 }
 
 #endif

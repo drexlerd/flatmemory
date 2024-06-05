@@ -18,7 +18,7 @@
 #ifndef FLATMEMORY_BUILDER_HPP_
 #define FLATMEMORY_BUILDER_HPP_
 
-#include "flatmemory/details/type_traits.hpp"
+#include "flatmemory/details/concepts.hpp"
 
 #include <cstddef>
 #include <cstdint>

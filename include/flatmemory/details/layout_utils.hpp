@@ -18,8 +18,8 @@
 #ifndef FLATMEMORY_LAYOUT_UTILS_HPP_
 #define FLATMEMORY_LAYOUT_UTILS_HPP_
 
+#include "flatmemory/details/concepts.hpp"
 #include "flatmemory/details/layout.hpp"
-#include "flatmemory/details/type_traits.hpp"
 
 #include <algorithm>
 #include <cstddef>
