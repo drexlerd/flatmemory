@@ -77,6 +77,7 @@ public:
     void push_back(const Builder<T>& builder);
     void push_back(const View<T>& view);
     void push_back(const ConstView<T>& view);
+    void clear();
 };
 
 /// @brief FixedSizedTypeVector can handle only equally sized objects
@@ -142,6 +143,7 @@ public:
     void push_back(const View<T>& view);
     void push_back(const ConstView<T>& view);
     void resize(size_t count);
+    void clear();
 };
 
 /**
@@ -235,6 +237,13 @@ template<typename T>
 void VariableSizedTypeVector<T>::push_back(const ConstView<T>& view)
 {
     m_data.push_back(View<T>(m_storage.write(view.buffer(), view.buffer_size())));
+}
+
+template<typename T>
+void VariableSizedTypeVector<T>::clear()
+{
+    m_data.clear();
+    m_storage.clear();
 }
 
 // FixedSizedTypeVector
@@ -345,6 +354,10 @@ void FixedSizedTypeVector<T>::push_back(const ConstView<T>& view)
 template<typename T>
 void FixedSizedTypeVector<T>::resize(size_t count)
 {
+    if (count < size())
+    {
+        throw std::logic_error("Resize to size smaller than current size is not supported. Use clear instead.");
+    }
     const uint8_t* default_data = m_default_builder.buffer().data();
     size_t default_size = m_default_builder.buffer().size();
     while (size() <= count)
@@ -352,6 +365,13 @@ void FixedSizedTypeVector<T>::resize(size_t count)
         uint8_t* written_data = m_storage.write(default_data, default_size);
         m_data.push_back(View<T>(written_data));
     }
+}
+
+template<typename T>
+void FixedSizedTypeVector<T>::clear()
+{
+    m_data.clear();
+    m_storage.clear();
 }
 
 }
