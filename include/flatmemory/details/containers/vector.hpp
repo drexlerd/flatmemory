@@ -36,6 +36,8 @@ private:
     using iterator = typename std::vector<View<T>>::iterator;
     using const_iterator = typename std::vector<View<T>>::const_iterator;
 
+    void range_check(size_t pos) const;
+
 public:
     explicit VariableSizedTypeVector(NumBytes n = 1000000);
     // Move only
@@ -50,6 +52,9 @@ public:
 
     [[nodiscard]] View<T> operator[](size_t pos);
     [[nodiscard]] ConstView<T> operator[](size_t pos) const;
+
+    [[nodiscard]] View<T> at(size_t pos);
+    [[nodiscard]] ConstView<T> at(size_t pos) const;
 
     [[nodiscard]] View<T> back();
     [[nodiscard]] ConstView<T> back() const;
@@ -98,6 +103,8 @@ private:
     using iterator = typename std::vector<View<T>>::iterator;
     using const_iterator = typename std::vector<View<T>>::const_iterator;
 
+    void range_check(size_t pos) const;
+
 public:
     /// @brief Constructor that uses empty default constructed elements when resizing.
     explicit FixedSizedTypeVector(NumBytes n = 1000000);
@@ -115,6 +122,9 @@ public:
 
     [[nodiscard]] View<T> operator[](size_t pos);
     [[nodiscard]] ConstView<T> operator[](size_t pos) const;
+
+    [[nodiscard]] View<T> at(size_t pos);
+    [[nodiscard]] ConstView<T> at(size_t pos) const;
 
     [[nodiscard]] View<T> back();
     [[nodiscard]] ConstView<T> back() const;
@@ -158,6 +168,16 @@ VariableSizedTypeVector<T>::VariableSizedTypeVector(NumBytes n) : m_storage(Byte
 }
 
 template<typename T>
+void VariableSizedTypeVector<T>::range_check(size_t pos) const
+{
+    if (pos >= size())
+    {
+        throw std::out_of_range("VariableSizedTypeVector::range_check: pos (which is " + std::to_string(pos) + ") >= this->size() (which is "
+                                + std::to_string(size()) + ")");
+    }
+}
+
+template<typename T>
 View<T> VariableSizedTypeVector<T>::operator[](size_t pos)
 {
     assert(pos <= size());
@@ -168,6 +188,20 @@ template<typename T>
 ConstView<T> VariableSizedTypeVector<T>::operator[](size_t pos) const
 {
     assert(pos <= size());
+    return m_data[pos];
+}
+
+template<typename T>
+View<T> VariableSizedTypeVector<T>::at(size_t pos)
+{
+    range_check(pos);
+    return m_data[pos];
+}
+
+template<typename T>
+ConstView<T> VariableSizedTypeVector<T>::at(size_t pos) const
+{
+    range_check(pos);
     return m_data[pos];
 }
 
@@ -266,6 +300,16 @@ FixedSizedTypeVector<T>::FixedSizedTypeVector(Builder<T>&& default_builder, NumB
 }
 
 template<typename T>
+void FixedSizedTypeVector<T>::range_check(size_t pos) const
+{
+    if (pos >= size())
+    {
+        throw std::out_of_range("FixedSizedTypeVector::range_check: pos (which is " + std::to_string(pos) + ") >= this->size() (which is "
+                                + std::to_string(size()) + ")");
+    }
+}
+
+template<typename T>
 View<T> FixedSizedTypeVector<T>::operator[](size_t pos)
 {
     if (pos >= size())
@@ -278,11 +322,25 @@ View<T> FixedSizedTypeVector<T>::operator[](size_t pos)
 template<typename T>
 ConstView<T> FixedSizedTypeVector<T>::operator[](size_t pos) const
 {
-    if (pos < size())
+    range_check(pos);
+    return m_data[pos];
+}
+
+template<typename T>
+View<T> FixedSizedTypeVector<T>::at(size_t pos)
+{
+    if (pos >= size())
     {
-        return m_data[pos];
+        resize(pos);
     }
-    throw std::runtime_error("invalid argument");
+    return m_data[pos];
+}
+
+template<typename T>
+ConstView<T> FixedSizedTypeVector<T>::at(size_t pos) const
+{
+    range_check(pos);
+    return m_data[pos];
 }
 
 template<typename T>
