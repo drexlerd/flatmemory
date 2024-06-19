@@ -145,6 +145,8 @@ public:
 
     [[nodiscard]] T_& operator[](size_t pos);
     [[nodiscard]] const T_& operator[](size_t pos) const;
+    [[nodiscard]] T_& at(size_t pos);
+    [[nodiscard]] const T_& at(size_t pos) const;
     [[nodiscard]] size_t hash() const;
     [[nodiscard]] T_* data();
     [[nodiscard]] const T_* data() const;
@@ -194,6 +196,8 @@ private:
     template<typename>
     friend class Builder;
 
+    void range_check(size_t pos) const;
+
 public:
     /// @brief Constructor to interpret raw data created by its corresponding builder.
     View(uint8_t* buf);
@@ -215,6 +219,8 @@ public:
 
     [[nodiscard]] decltype(auto) operator[](size_t pos);
     [[nodiscard]] decltype(auto) operator[](size_t pos) const;
+    [[nodiscard]] decltype(auto) at(size_t pos);
+    [[nodiscard]] decltype(auto) at(size_t pos) const;
     [[nodiscard]] size_t hash() const;
     [[nodiscard]] T_* data();
     [[nodiscard]] const T_* data() const;
@@ -302,6 +308,8 @@ private:
     template<typename>
     friend class Builder;
 
+    void range_check(size_t pos) const;
+
 public:
     /// @brief Constructor to interpret raw data created by its corresponding builder
     ConstView(const uint8_t* buf);
@@ -327,6 +335,7 @@ public:
      */
 
     [[nodiscard]] decltype(auto) operator[](size_t pos) const;
+    [[nodiscard]] decltype(auto) at(size_t pos) const;
     [[nodiscard]] size_t hash() const;
     [[nodiscard]] const T_* data() const;
     [[nodiscard]] const uint8_t* buffer() const;
@@ -544,6 +553,18 @@ const Builder<Vector<T>>::T_& Builder<Vector<T>>::operator[](size_t pos) const
 }
 
 template<IsTriviallyCopyableOrCustom T>
+Builder<Vector<T>>::T_& Builder<Vector<T>>::at(size_t pos)
+{
+    return m_data.at(pos);
+}
+
+template<IsTriviallyCopyableOrCustom T>
+const Builder<Vector<T>>::T_& Builder<Vector<T>>::at(size_t pos) const
+{
+    return m_data.at(pos);
+}
+
+template<IsTriviallyCopyableOrCustom T>
 size_t Builder<Vector<T>>::hash() const
 {
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
@@ -649,6 +670,16 @@ View<Vector<T>>::View(uint8_t* buf) : m_buf(buf)
 }
 
 template<IsTriviallyCopyableOrCustom T>
+void View<Vector<T>>::range_check(size_t pos) const
+{
+    if (pos >= size())
+    {
+        throw std::out_of_range("View<Vector<T>>::range_check: pos (which is " + std::to_string(pos) + ") >= this->size() (which is " + std::to_string(size())
+                                + ")");
+    }
+}
+
+template<IsTriviallyCopyableOrCustom T>
 bool View<Vector<T>>::operator==(const Builder<Vector<T>>& other) const
 {
     if (size() != other.size())
@@ -745,6 +776,20 @@ decltype(auto) View<Vector<T>>::operator[](size_t pos) const
         const auto offset_pos = m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(offset_type);
         return View<T>(offset_pos + read_value<offset_type>(offset_pos));
     }
+}
+
+template<IsTriviallyCopyableOrCustom T>
+decltype(auto) View<Vector<T>>::at(size_t pos)
+{
+    range_check(pos);
+    return (*this)[pos];
+}
+
+template<IsTriviallyCopyableOrCustom T>
+decltype(auto) View<Vector<T>>::at(size_t pos) const
+{
+    range_check(pos);
+    return (*this)[pos];
 }
 
 template<IsTriviallyCopyableOrCustom T>
@@ -979,6 +1024,16 @@ ConstView<Vector<T>>::ConstView(const View<Vector<T>>& view) : m_buf(view.buffer
 }
 
 template<IsTriviallyCopyableOrCustom T>
+void ConstView<Vector<T>>::range_check(size_t pos) const
+{
+    if (pos >= size())
+    {
+        throw std::out_of_range("ConstView<Vector<T>>::range_check: pos (which is " + std::to_string(pos) + ") >= this->size() (which is "
+                                + std::to_string(size()) + ")");
+    }
+}
+
+template<IsTriviallyCopyableOrCustom T>
 bool ConstView<Vector<T>>::operator==(const Builder<Vector<T>>& other) const
 {
     if (size() != other.size())
@@ -1057,6 +1112,13 @@ decltype(auto) ConstView<Vector<T>>::operator[](size_t pos) const
         const auto offset_pos = m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(offset_type);
         return ConstView<T>(offset_pos + read_value<offset_type>(offset_pos));
     }
+}
+
+template<IsTriviallyCopyableOrCustom T>
+decltype(auto) ConstView<Vector<T>>::at(size_t pos) const
+{
+    range_check(pos);
+    return (*this)[pos];
 }
 
 template<IsTriviallyCopyableOrCustom T>
