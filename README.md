@@ -1,6 +1,6 @@
 # Flatmemory
 
-Flatmemory is a C++20 library for serializing nested data types into a sequence of bytes with zero-cost deserialization. Flatmemory can be used to decrease memory allocations and to obtain better cache locality. Flatmemory computes the memory layouts at compile time. Flatmemory reuses memory during the construction of buffers. Flatmemory provides containers to store the buffers that require only a few memory allocations for a storing a collection of buffers.
+Flatmemory is a C++20 library for serializing and zero-cost deserialization. Serialization is creating sequential binary data from an object, and zero-cost deserialization is accessing the data without creating the original object. Flatmemory uses the typical approach of using a builder class for serialization and views for deserialization. The main advantage of this approach over compiler-generated memory layouts is that it requires much fewer (almost zero) memory allocations when creating objects since the builder's memory is reused, and serialized data can be written to large preallocated buffers. Another advantage is that data is stored contiguously in memory, improving cache locality and resulting in better runtime. The main disadvantage is that serialized objects cannot grow in their size. Hence, flatmemory shines when creating many immutable objects that remain persistent in memory.
 
 Flatmemory currently provides the following non-trivial composite types:
 
@@ -14,8 +14,6 @@ The supported nested types are all non-trivial types and trivial types `T` that 
 Comparison to related libraries such as flatbuffers or cap'n'proto:
 
 Advantages:
-  - Availability of useful non-trivial types with reduced size of vtables
-  - Availability of general containers to store byte sequences: FixedSizedTypeVector, VariableSizedTypeVector, UnorderedSet
   - No code generator is needed
 
 Disadvantages:

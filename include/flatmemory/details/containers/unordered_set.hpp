@@ -50,7 +50,7 @@ private:
 
 public:
     explicit UnorderedSet(NumBytes n = 1000000);
-    // Move only
+    // Move only to avoid invalidating views.
     UnorderedSet(const UnorderedSet& other) = delete;
     UnorderedSet& operator=(const UnorderedSet& other) = delete;
     UnorderedSet(UnorderedSet&& other) = default;

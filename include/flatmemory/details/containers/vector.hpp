@@ -40,7 +40,7 @@ private:
 
 public:
     explicit VariableSizedTypeVector(NumBytes n = 1000000);
-    // Move only
+    // Move only to avoid invalidating views.
     VariableSizedTypeVector(const VariableSizedTypeVector& other) = delete;
     VariableSizedTypeVector& operator=(const VariableSizedTypeVector& other) = delete;
     VariableSizedTypeVector(VariableSizedTypeVector&& other) = default;
@@ -110,9 +110,9 @@ public:
     explicit FixedSizedTypeVector(NumBytes n = 1000000);
     /// @brief Constructor that ensure that a resize yields non trivially initialized objects.
     FixedSizedTypeVector(Builder<T>&& default_builder, NumBytes n = 1000000);
-    // Move only
-    FixedSizedTypeVector(const FixedSizedTypeVector& other) = delete;
-    FixedSizedTypeVector& operator=(const FixedSizedTypeVector& other) = delete;
+    // Move only to avoid invalidating views.
+    FixedSizedTypeVector(const FixedSizedTypeVector& other) = default;
+    FixedSizedTypeVector& operator=(const FixedSizedTypeVector& other) = default;
     FixedSizedTypeVector(FixedSizedTypeVector&& other) = default;
     FixedSizedTypeVector& operator=(FixedSizedTypeVector&& other) = default;
 

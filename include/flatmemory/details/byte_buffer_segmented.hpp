@@ -33,7 +33,7 @@ class ByteBufferSegmented
 {
 private:
     NumBytes m_num_bytes_per_segment;
-    std::vector<uint8_t*> m_segments;
+    std::vector<std::vector<uint8_t>> m_segments;
 
     size_t m_cur_segment_id;
     size_t m_cur_segment_pos;
@@ -48,7 +48,7 @@ private:
     {
         if (m_cur_segment_id == (m_segments.size() - 1))
         {
-            m_segments.push_back(new uint8_t[m_num_bytes_per_segment]());
+            m_segments.push_back(std::vector<uint8_t>(m_num_bytes_per_segment));
             m_cur_segment_pos = 0;
             m_capacity += m_num_bytes_per_segment;
         }
@@ -70,17 +70,6 @@ public:
         assert(m_cur_segment_pos == 0);
         assert(m_cur_segment_id == 0);
     }
-    ~ByteBufferSegmented()
-    {
-        for (uint8_t* ptr : m_segments)
-        {
-            delete[] ptr;
-        }
-    }
-    ByteBufferSegmented(const ByteBufferSegmented& other) = delete;
-    ByteBufferSegmented& operator=(const ByteBufferSegmented& other) = delete;
-    ByteBufferSegmented(ByteBufferSegmented&& other) = default;
-    ByteBufferSegmented& operator=(ByteBufferSegmented&& other) = default;
 
     /// @brief Write the data starting from the m_cur_segment_pos
     ///        in the segment with m_cur_segment_id, if it fits,
