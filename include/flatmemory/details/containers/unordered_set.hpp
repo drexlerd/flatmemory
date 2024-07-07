@@ -90,6 +90,8 @@ public:
     [[nodiscard]] iterator find(ConstView<T> key);
     [[nodiscard]] const_iterator find(ConstView<T> key) const;
     [[nodiscard]] bool contains(ConstView<T> key) const;
+
+    [[nodiscard]] const ByteBufferSegmented& get_storage() const;
 };
 
 /**
@@ -221,6 +223,12 @@ template<typename T, typename Hash, typename Equal>
 bool UnorderedSet<T, Hash, Equal>::contains(ConstView<T> key) const
 {
     return m_data.contains(key);
+}
+
+template<typename T, typename Hash, typename Equal>
+const ByteBufferSegmented& UnorderedSet<T, Hash, Equal>::get_storage() const
+{
+    return m_storage;
 }
 
 }

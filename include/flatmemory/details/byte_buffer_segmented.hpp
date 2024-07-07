@@ -49,9 +49,9 @@ private:
         if (m_cur_segment_id == (m_segments.size() - 1))
         {
             m_segments.push_back(std::vector<uint8_t>(m_num_bytes_per_segment));
-            m_cur_segment_pos = 0;
             m_capacity += m_num_bytes_per_segment;
         }
+        m_cur_segment_pos = 0;
         ++m_cur_segment_id;
         assert(m_cur_segment_id < m_segments.size());
     }
@@ -106,6 +106,7 @@ public:
         m_last_written = 0;
     }
 
+    [[nodiscard]] size_t num_segments() const { return m_segments.size(); }
     [[nodiscard]] size_t size() const { return m_size; }
     [[nodiscard]] size_t capacity() const { return m_capacity; }
 };

@@ -59,6 +59,8 @@ public:
     [[nodiscard]] View<T> back();
     [[nodiscard]] ConstView<T> back() const;
 
+    [[nodiscard]] const ByteBufferSegmented& get_storage() const;
+
     /**
      * Iterators
      */
@@ -128,6 +130,8 @@ public:
 
     [[nodiscard]] View<T> back();
     [[nodiscard]] ConstView<T> back() const;
+
+    [[nodiscard]] const ByteBufferSegmented& get_storage() const;
 
     /**
      * Iterators
@@ -217,6 +221,12 @@ ConstView<T> VariableSizedTypeVector<T>::back() const
 {
     assert(!m_data.empty());
     return m_data.back();
+}
+
+template<typename T>
+const ByteBufferSegmented& VariableSizedTypeVector<T>::get_storage() const
+{
+    return m_storage;
 }
 
 template<typename T>
@@ -353,6 +363,12 @@ template<typename T>
 ConstView<T> FixedSizedTypeVector<T>::back() const
 {
     return m_data.back();
+}
+
+template<typename T>
+const ByteBufferSegmented& FixedSizedTypeVector<T>::get_storage() const
+{
+    return m_storage;
 }
 
 template<typename T>
