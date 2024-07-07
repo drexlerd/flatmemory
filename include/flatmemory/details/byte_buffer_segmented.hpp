@@ -33,6 +33,7 @@ class ByteBufferSegmented
 {
 private:
     NumBytes m_num_bytes_per_segment;
+    NumBytes m_maximum_num_bytes_per_segment;
     std::vector<std::vector<uint8_t>> m_segments;
 
     size_t m_cur_segment_id;
@@ -43,22 +44,48 @@ private:
 
     size_t m_last_written;
 
-    /// @brief Allocate a block of size N and update tracking variables.
-    void increase_capacity()
+    void increase_capacity(size_t required_bytes)
     {
-        if (m_cur_segment_id == (m_segments.size() - 1))
+        if (required_bytes > m_maximum_num_bytes_per_segment)
         {
+            throw std::out_of_range("ByteBufferSegmented::increase_capacity: tried to increase capacity beyond maximum bytes per segment: "
+                                    + std::to_string(required_bytes) + " > " + std::to_string(m_maximum_num_bytes_per_segment));
+        }
+
+        // Ensure that required bytes fit into a buffer.
+        m_num_bytes_per_segment = std::max(required_bytes, m_num_bytes_per_segment);
+
+        bool is_segment_appended = (m_cur_segment_id == (m_segments.size() - 1));
+        if (is_segment_appended)
+        {
+            // Use doubling strategy to make future insertions cheaper.
+            m_num_bytes_per_segment = std::min(2 * m_num_bytes_per_segment, m_maximum_num_bytes_per_segment);
             m_segments.push_back(std::vector<uint8_t>(m_num_bytes_per_segment));
             m_capacity += m_num_bytes_per_segment;
+            m_cur_segment_pos = 0;
+            ++m_cur_segment_id;
         }
-        m_cur_segment_pos = 0;
-        ++m_cur_segment_id;
+        else
+        {
+            // This code branch is only relevant when using the clear() method and reusing the SegmentedByteBuffer.
+            ++m_cur_segment_id;
+            m_cur_segment_pos = 0;
+
+            // Swap out smaller segments.
+            auto& segment = m_segments.at(m_cur_segment_id);
+            if (segment.size() < m_num_bytes_per_segment)
+            {
+                segment = std::vector<uint8_t>(m_num_bytes_per_segment);
+            }
+        }
+
         assert(m_cur_segment_id < m_segments.size());
     }
 
 public:
-    explicit ByteBufferSegmented(NumBytes n = 1000000) :
-        m_num_bytes_per_segment(n),
+    explicit ByteBufferSegmented(NumBytes initial_num_bytes_per_segment = 1024, NumBytes maximum_num_bytes_per_segment = 1024 * 1024) :
+        m_num_bytes_per_segment(initial_num_bytes_per_segment),
+        m_maximum_num_bytes_per_segment(maximum_num_bytes_per_segment),
         m_cur_segment_id(-1),
         m_cur_segment_pos(0),
         m_size(0),
@@ -66,7 +93,7 @@ public:
         m_last_written(0)
     {
         // allocate first block of memory
-        increase_capacity();
+        increase_capacity(m_num_bytes_per_segment);
         assert(m_cur_segment_pos == 0);
         assert(m_cur_segment_id == 0);
     }
@@ -80,7 +107,7 @@ public:
         assert(amount <= m_num_bytes_per_segment);
         if (amount > (m_num_bytes_per_segment - m_cur_segment_pos))
         {
-            increase_capacity();
+            increase_capacity(amount);
         }
         uint8_t* result_data = &m_segments[m_cur_segment_id][m_cur_segment_pos];
         memcpy(result_data, data, amount);

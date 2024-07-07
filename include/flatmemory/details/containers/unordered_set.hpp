@@ -49,7 +49,7 @@ private:
     using const_iterator = typename std::unordered_set<ConstView<T>, Hash, Equal>::const_iterator;
 
 public:
-    explicit UnorderedSet(NumBytes n = 1000000);
+    explicit UnorderedSet(NumBytes initial_num_bytes_per_segment = 1024, NumBytes maximum_num_bytes_per_segment = 1024 * 1024);
     // Move only to avoid invalidating views.
     UnorderedSet(const UnorderedSet& other) = delete;
     UnorderedSet& operator=(const UnorderedSet& other) = delete;
@@ -99,7 +99,8 @@ public:
  */
 
 template<typename T, typename Hash, typename Equal>
-UnorderedSet<T, Hash, Equal>::UnorderedSet(NumBytes n) : m_storage(ByteBufferSegmented(n))
+UnorderedSet<T, Hash, Equal>::UnorderedSet(NumBytes initial_num_bytes_per_segment, NumBytes maximum_num_bytes_per_segment) :
+    m_storage(ByteBufferSegmented(initial_num_bytes_per_segment, maximum_num_bytes_per_segment))
 {
 }
 

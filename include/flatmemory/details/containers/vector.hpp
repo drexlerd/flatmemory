@@ -39,7 +39,7 @@ private:
     void range_check(size_t pos) const;
 
 public:
-    explicit VariableSizedTypeVector(NumBytes n = 1000000);
+    explicit VariableSizedTypeVector(NumBytes initial_num_bytes_per_segment = 1024, NumBytes maximum_num_bytes_per_segment = 1024 * 1024);
     // Move only to avoid invalidating views.
     VariableSizedTypeVector(const VariableSizedTypeVector& other) = delete;
     VariableSizedTypeVector& operator=(const VariableSizedTypeVector& other) = delete;
@@ -109,9 +109,9 @@ private:
 
 public:
     /// @brief Constructor that uses empty default constructed elements when resizing.
-    explicit FixedSizedTypeVector(NumBytes n = 1000000);
+    explicit FixedSizedTypeVector(NumBytes initial_num_bytes_per_segment = 1024, NumBytes maximum_num_bytes_per_segment = 1024 * 1024);
     /// @brief Constructor that ensure that a resize yields non trivially initialized objects.
-    FixedSizedTypeVector(Builder<T>&& default_builder, NumBytes n = 1000000);
+    FixedSizedTypeVector(Builder<T>&& default_builder, NumBytes initial_num_bytes_per_segment = 1024, NumBytes maximum_num_bytes_per_segment = 1024 * 1024);
     // Move only to avoid invalidating views.
     FixedSizedTypeVector(const FixedSizedTypeVector& other) = default;
     FixedSizedTypeVector& operator=(const FixedSizedTypeVector& other) = default;
@@ -167,7 +167,8 @@ public:
 // VariableSizedTypeVector
 
 template<typename T>
-VariableSizedTypeVector<T>::VariableSizedTypeVector(NumBytes n) : m_storage(ByteBufferSegmented(n))
+VariableSizedTypeVector<T>::VariableSizedTypeVector(NumBytes initial_num_bytes_per_segment, NumBytes maximum_num_bytes_per_segment) :
+    m_storage(ByteBufferSegmented(initial_num_bytes_per_segment, maximum_num_bytes_per_segment))
 {
 }
 
@@ -293,14 +294,15 @@ void VariableSizedTypeVector<T>::clear()
 // FixedSizedTypeVector
 
 template<typename T>
-FixedSizedTypeVector<T>::FixedSizedTypeVector(NumBytes n) : m_storage(ByteBufferSegmented(n))
+FixedSizedTypeVector<T>::FixedSizedTypeVector(NumBytes initial_num_bytes_per_segment, NumBytes maximum_num_bytes_per_segment) :
+    m_storage(ByteBufferSegmented(initial_num_bytes_per_segment, maximum_num_bytes_per_segment))
 {  //
     m_default_builder.finish();
 }
 
 template<typename T>
-FixedSizedTypeVector<T>::FixedSizedTypeVector(Builder<T>&& default_builder, NumBytes n) :
-    m_storage(ByteBufferSegmented(n)),
+FixedSizedTypeVector<T>::FixedSizedTypeVector(Builder<T>&& default_builder, NumBytes initial_num_bytes_per_segment, NumBytes maximum_num_bytes_per_segment) :
+    m_storage(ByteBufferSegmented(initial_num_bytes_per_segment, maximum_num_bytes_per_segment)),
     m_default_builder(std::move(default_builder))
 {
     if (m_default_builder.buffer().data() == nullptr)
