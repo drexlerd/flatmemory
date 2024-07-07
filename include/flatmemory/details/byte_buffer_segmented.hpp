@@ -55,47 +55,25 @@ private:
         // Ensure that required bytes fit into a buffer.
         m_num_bytes_per_segment = std::max(required_bytes, m_num_bytes_per_segment);
 
-        bool is_segment_appended = (m_cur_segment_id == (m_segments.size() - 1));
-        if (is_segment_appended)
-        {
-            // Use doubling strategy to make future insertions cheaper.
-            m_num_bytes_per_segment = std::min(2 * m_num_bytes_per_segment, m_maximum_num_bytes_per_segment);
-            m_segments.push_back(std::vector<uint8_t>(m_num_bytes_per_segment));
-            m_capacity += m_num_bytes_per_segment;
-            m_cur_segment_pos = 0;
-            ++m_cur_segment_id;
-        }
-        else
-        {
-            // This code branch is only relevant when using the clear() method and reusing the SegmentedByteBuffer.
-            ++m_cur_segment_id;
-            m_cur_segment_pos = 0;
-
-            // Swap out smaller segments.
-            auto& segment = m_segments.at(m_cur_segment_id);
-            if (segment.size() < m_num_bytes_per_segment)
-            {
-                segment = std::vector<uint8_t>(m_num_bytes_per_segment);
-            }
-        }
-
-        assert(m_cur_segment_id < m_segments.size());
+        // Use doubling strategy to make future insertions cheaper.
+        m_num_bytes_per_segment = std::min(2 * m_num_bytes_per_segment, m_maximum_num_bytes_per_segment);
+        m_segments.push_back(std::vector<uint8_t>(m_num_bytes_per_segment));
+        m_capacity += m_num_bytes_per_segment;
+        m_cur_segment_pos = 0;
+        ++m_cur_segment_id;
     }
 
 public:
     explicit ByteBufferSegmented(NumBytes initial_num_bytes_per_segment = 1024, NumBytes maximum_num_bytes_per_segment = 1024 * 1024) :
         m_num_bytes_per_segment(initial_num_bytes_per_segment),
         m_maximum_num_bytes_per_segment(maximum_num_bytes_per_segment),
+        m_segments(),
         m_cur_segment_id(-1),
         m_cur_segment_pos(0),
         m_size(0),
         m_capacity(0),
         m_last_written(0)
     {
-        // allocate first block of memory
-        increase_capacity(m_num_bytes_per_segment);
-        assert(m_cur_segment_pos == 0);
-        assert(m_cur_segment_id == 0);
     }
 
     /// @brief Write the data starting from the m_cur_segment_pos
@@ -104,8 +82,7 @@ public:
     uint8_t* write(const uint8_t* data, size_t amount)
     {
         assert(data);
-        assert(amount <= m_num_bytes_per_segment);
-        if (amount > (m_num_bytes_per_segment - m_cur_segment_pos))
+        if ((m_segments.size() == 0) || (amount > (m_num_bytes_per_segment - m_cur_segment_pos)))
         {
             increase_capacity(amount);
         }
@@ -127,9 +104,11 @@ public:
     /// @brief Set the write head to the beginning.
     void clear()
     {
-        m_cur_segment_id = 0;
+        m_segments.clear();
+        m_cur_segment_id = -1;
         m_cur_segment_pos = 0;
         m_size = 0;
+        m_capacity = 0;
         m_last_written = 0;
     }
 
