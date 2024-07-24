@@ -628,9 +628,6 @@ public:
     // Unset all bits and shrink its size to represent the bits
     void unset_all();
 
-    // Set all bits and shrink its size to represent the bits
-    void set_all();
-
     Builder& operator~();
 
     template<IsBitset Other>
@@ -1553,16 +1550,6 @@ void Builder<Bitset<Block, Tag>>::unset_all()
     assert(m_blocks.size() > 0);
 
     m_blocks[0] = (m_default_bit_value) ? BitsetOperator::block_ones : BitsetOperator::block_zeroes;
-
-    m_blocks.resize(1);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-void Builder<Bitset<Block, Tag>>::set_all()
-{
-    assert(m_blocks.size() > 0);
-
-    m_blocks[0] = (m_default_bit_value) ? BitsetOperator::block_zeroes : BitsetOperator::block_ones;
 
     m_blocks.resize(1);
 }

@@ -57,6 +57,7 @@ private:
 
         // Use doubling strategy to make future insertions cheaper.
         m_num_bytes_per_segment = std::min(2 * m_num_bytes_per_segment, m_maximum_num_bytes_per_segment);
+
         m_segments.push_back(std::vector<uint8_t>(m_num_bytes_per_segment));
         m_capacity += m_num_bytes_per_segment;
         m_cur_segment_pos = 0;
