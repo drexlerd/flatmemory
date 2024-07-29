@@ -118,8 +118,8 @@ private:
 
     void finish_impl();
 
-    [[nodiscard]] auto& get_buffer_impl();
-    [[nodiscard]] const auto& get_buffer_impl() const;
+    auto& get_buffer_impl();
+    const auto& get_buffer_impl() const;
 
 public:
     /**
@@ -134,22 +134,22 @@ public:
      * Operators
      */
 
-    [[nodiscard]] bool operator==(const Builder& other) const;
-    [[nodiscard]] bool operator==(const ConstView<Vector<T>> other) const;
-    [[nodiscard]] bool operator==(const View<Vector<T>> other) const;
-    [[nodiscard]] bool operator!=(const Builder& other) const;
+    bool operator==(const Builder& other) const;
+    bool operator==(const ConstView<Vector<T>> other) const;
+    bool operator==(const View<Vector<T>> other) const;
+    bool operator!=(const Builder& other) const;
 
     /**
      * Element access
      */
 
-    [[nodiscard]] T_& operator[](size_t pos);
-    [[nodiscard]] const T_& operator[](size_t pos) const;
-    [[nodiscard]] T_& at(size_t pos);
-    [[nodiscard]] const T_& at(size_t pos) const;
-    [[nodiscard]] size_t hash() const;
-    [[nodiscard]] T_* data();
-    [[nodiscard]] const T_* data() const;
+    T_& operator[](size_t pos);
+    const T_& operator[](size_t pos) const;
+    T_& at(size_t pos);
+    const T_& at(size_t pos) const;
+    size_t hash() const;
+    T_* data();
+    const T_* data() const;
 
     /**
      * Iterators
@@ -164,8 +164,8 @@ public:
      * Capacity
      */
 
-    [[nodiscard]] constexpr bool empty() const;
-    [[nodiscard]] constexpr size_t size() const;
+    constexpr bool empty() const;
+    constexpr size_t size() const;
 
     /**
      * Modifiers
@@ -206,26 +206,26 @@ public:
      * Operators
      */
 
-    [[nodiscard]] bool operator==(const Builder<Vector<T>>& other) const;
-    [[nodiscard]] bool operator==(const View<Vector<T>>& other) const;
-    [[nodiscard]] bool operator==(const ConstView<Vector<T>>& other) const;
-    [[nodiscard]] bool operator!=(const Builder<Vector<T>>& other) const;
-    [[nodiscard]] bool operator!=(const View<Vector<T>>& other) const;
-    [[nodiscard]] bool operator!=(const ConstView<Vector<T>>& other) const;
+    bool operator==(const Builder<Vector<T>>& other) const;
+    bool operator==(const View<Vector<T>>& other) const;
+    bool operator==(const ConstView<Vector<T>>& other) const;
+    bool operator!=(const Builder<Vector<T>>& other) const;
+    bool operator!=(const View<Vector<T>>& other) const;
+    bool operator!=(const ConstView<Vector<T>>& other) const;
 
     /**
      * Element access.
      */
 
-    [[nodiscard]] decltype(auto) operator[](size_t pos);
-    [[nodiscard]] decltype(auto) operator[](size_t pos) const;
-    [[nodiscard]] decltype(auto) at(size_t pos);
-    [[nodiscard]] decltype(auto) at(size_t pos) const;
-    [[nodiscard]] size_t hash() const;
-    [[nodiscard]] T_* data();
-    [[nodiscard]] const T_* data() const;
-    [[nodiscard]] uint8_t* buffer();
-    [[nodiscard]] const uint8_t* buffer() const;
+    decltype(auto) operator[](size_t pos);
+    decltype(auto) operator[](size_t pos) const;
+    decltype(auto) at(size_t pos);
+    decltype(auto) at(size_t pos) const;
+    size_t hash() const;
+    T_* data();
+    const T_* data() const;
+    uint8_t* buffer();
+    const uint8_t* buffer() const;
 
     /**
      * Iterators
@@ -246,15 +246,15 @@ public:
         iterator();
         iterator(uint8_t* buf);
 
-        [[nodiscard]] decltype(auto) operator*() const;
+        decltype(auto) operator*() const;
         iterator& operator++();
         iterator operator++(int);
-        [[nodiscard]] bool operator==(const iterator& other) const;
-        [[nodiscard]] bool operator!=(const iterator& other) const;
+        bool operator==(const iterator& other) const;
+        bool operator!=(const iterator& other) const;
     };
 
-    [[nodiscard]] iterator begin();
-    [[nodiscard]] iterator end();
+    iterator begin();
+    iterator end();
 
     class const_iterator
     {
@@ -271,23 +271,23 @@ public:
         const_iterator();
         const_iterator(const uint8_t* buf);
 
-        [[nodiscard]] decltype(auto) operator*() const;
+        decltype(auto) operator*() const;
         const_iterator& operator++();
         const_iterator operator++(int);
-        [[nodiscard]] bool operator==(const const_iterator& other) const;
-        [[nodiscard]] bool operator!=(const const_iterator& other) const;
+        bool operator==(const const_iterator& other) const;
+        bool operator!=(const const_iterator& other) const;
     };
 
-    [[nodiscard]] const_iterator begin() const;
-    [[nodiscard]] const_iterator end() const;
+    const_iterator begin() const;
+    const_iterator end() const;
 
     /**
      * Capacity
      */
 
-    [[nodiscard]] bool empty() const;
-    [[nodiscard]] buffer_size_type buffer_size() const;
-    [[nodiscard]] size_t size() const;
+    bool empty() const;
+    buffer_size_type buffer_size() const;
+    size_t size() const;
 };
 
 /**
@@ -323,22 +323,22 @@ public:
     /**
      * Operators
      */
-    [[nodiscard]] bool operator==(const Builder<Vector<T>>& other) const;
-    [[nodiscard]] bool operator==(const ConstView<Vector<T>>& other) const;
-    [[nodiscard]] bool operator==(const View<Vector<T>>& other) const;
-    [[nodiscard]] bool operator!=(const Builder<Vector<T>>& other) const;
-    [[nodiscard]] bool operator!=(const ConstView<Vector<T>>& other) const;
-    [[nodiscard]] bool operator!=(const View<Vector<T>>& other) const;
+    bool operator==(const Builder<Vector<T>>& other) const;
+    bool operator==(const ConstView<Vector<T>>& other) const;
+    bool operator==(const View<Vector<T>>& other) const;
+    bool operator!=(const Builder<Vector<T>>& other) const;
+    bool operator!=(const ConstView<Vector<T>>& other) const;
+    bool operator!=(const View<Vector<T>>& other) const;
 
     /**
      * Element access
      */
 
-    [[nodiscard]] decltype(auto) operator[](size_t pos) const;
-    [[nodiscard]] decltype(auto) at(size_t pos) const;
-    [[nodiscard]] size_t hash() const;
-    [[nodiscard]] const T_* data() const;
-    [[nodiscard]] const uint8_t* buffer() const;
+    decltype(auto) operator[](size_t pos) const;
+    decltype(auto) at(size_t pos) const;
+    size_t hash() const;
+    const T_* data() const;
+    const uint8_t* buffer() const;
 
     /**
      * Iterators
@@ -359,23 +359,23 @@ public:
         const_iterator();
         const_iterator(const uint8_t* buf);
 
-        [[nodiscard]] decltype(auto) operator*() const;
+        decltype(auto) operator*() const;
         const_iterator& operator++();
         const_iterator operator++(int);
-        [[nodiscard]] bool operator==(const const_iterator& other) const;
-        [[nodiscard]] bool operator!=(const const_iterator& other) const;
+        bool operator==(const const_iterator& other) const;
+        bool operator!=(const const_iterator& other) const;
     };
 
-    [[nodiscard]] const_iterator begin() const;
-    [[nodiscard]] const_iterator end() const;
+    const_iterator begin() const;
+    const_iterator end() const;
 
     /**
      * Capacity
      */
 
-    [[nodiscard]] bool empty() const;
-    [[nodiscard]] buffer_size_type buffer_size() const;
-    [[nodiscard]] size_t size() const;
+    bool empty() const;
+    buffer_size_type buffer_size() const;
+    size_t size() const;
 
     /**
      * Modifiers
@@ -584,13 +584,13 @@ size_t Builder<Vector<T>>::hash() const
 }
 
 template<IsTriviallyCopyableOrCustom T>
-[[nodiscard]] Builder<Vector<T>>::T_* Builder<Vector<T>>::data()
+Builder<Vector<T>>::T_* Builder<Vector<T>>::data()
 {
     return m_data.data();
 }
 
 template<IsTriviallyCopyableOrCustom T>
-[[nodiscard]] const Builder<Vector<T>>::T_* Builder<Vector<T>>::data() const
+const Builder<Vector<T>>::T_* Builder<Vector<T>>::data() const
 {
     return m_data.data();
 }
@@ -1191,26 +1191,26 @@ ConstView<Vector<T>>::const_iterator ConstView<Vector<T>>::const_iterator::opera
 }
 
 template<IsTriviallyCopyableOrCustom T>
-[[nodiscard]] bool ConstView<Vector<T>>::const_iterator::operator==(const ConstView<Vector<T>>::const_iterator& other) const
+bool ConstView<Vector<T>>::const_iterator::operator==(const ConstView<Vector<T>>::const_iterator& other) const
 {
     return m_buf == other.m_buf;
 }
 
 template<IsTriviallyCopyableOrCustom T>
-[[nodiscard]] bool ConstView<Vector<T>>::const_iterator::operator!=(const ConstView<Vector<T>>::const_iterator& other) const
+bool ConstView<Vector<T>>::const_iterator::operator!=(const ConstView<Vector<T>>::const_iterator& other) const
 {
     return !(*this == other);
 }
 
 template<IsTriviallyCopyableOrCustom T>
-[[nodiscard]] ConstView<Vector<T>>::const_iterator ConstView<Vector<T>>::begin() const
+ConstView<Vector<T>>::const_iterator ConstView<Vector<T>>::begin() const
 {
     assert(m_buf);
     return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position);
 }
 
 template<IsTriviallyCopyableOrCustom T>
-[[nodiscard]] ConstView<Vector<T>>::const_iterator ConstView<Vector<T>>::end() const
+ConstView<Vector<T>>::const_iterator ConstView<Vector<T>>::end() const
 {
     assert(m_buf);
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
@@ -1225,7 +1225,7 @@ template<IsTriviallyCopyableOrCustom T>
 }
 
 template<IsTriviallyCopyableOrCustom T>
-[[nodiscard]] bool ConstView<Vector<T>>::empty() const
+bool ConstView<Vector<T>>::empty() const
 {
     return size() == 0;
 }

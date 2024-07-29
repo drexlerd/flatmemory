@@ -113,9 +113,9 @@ public:
         m_last_written = 0;
     }
 
-    [[nodiscard]] size_t num_segments() const { return m_segments.size(); }
-    [[nodiscard]] size_t size() const { return m_size; }
-    [[nodiscard]] size_t capacity() const { return m_capacity; }
+    size_t num_segments() const { return m_segments.size(); }
+    size_t size() const { return m_size; }
+    size_t capacity() const { return m_capacity; }
 };
 }
 

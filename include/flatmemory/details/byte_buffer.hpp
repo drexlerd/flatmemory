@@ -87,11 +87,11 @@ public:
     /// @param count
     void set_size(size_t count) { m_size = count; }
 
-    [[nodiscard]] uint8_t* data() { return m_data.data(); }
-    [[nodiscard]] const uint8_t* data() const { return m_data.data(); }
+    uint8_t* data() { return m_data.data(); }
+    const uint8_t* data() const { return m_data.data(); }
 
-    [[nodiscard]] size_t size() const { return m_size; }
-    [[nodiscard]] size_t capacity() const { return m_data.capacity(); }
+    size_t size() const { return m_size; }
+    size_t capacity() const { return m_data.capacity(); }
 };
 
 }

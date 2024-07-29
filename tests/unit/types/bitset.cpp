@@ -102,8 +102,7 @@ TEST(FlatmemoryTests, TypesBitsetConstViewConstructorTest)
 TEST(FlatmemoryTests, TypesBitsetConversionTest)
 {
     // Test size constructor
-    size_t num_bits = 2;
-    auto builder = Builder<Bitset<uint64_t>>(num_bits);
+    auto builder = Builder<Bitset<uint64_t>>();
     builder.set(1);
     builder.finish();
 
@@ -228,6 +227,36 @@ TEST(FlatmemoryTests, TypesBitsetEqualTest)
     EXPECT_NE(const_view, view2);
 }
 
+TEST(FlatmemoryTests, TypesBitsetAreDisjointTest)
+{
+    auto bitset_1 = Builder<Bitset<uint64_t>>();
+    bitset_1.set(1);
+
+    auto bitset_2 = Builder<Bitset<uint64_t>>();
+    bitset_2.set(2);
+
+    EXPECT_TRUE(bitset_1.are_disjoint(bitset_2));
+
+    bitset_2.set(1);
+
+    EXPECT_FALSE(bitset_1.are_disjoint(bitset_2));
+}
+
+TEST(FlatmemoryTests, TypesBitsetIsSupersetTest)
+{
+    auto bitset_1 = Builder<Bitset<uint64_t>>();
+    bitset_1.set(1);
+
+    auto bitset_2 = Builder<Bitset<uint64_t>>();
+    bitset_2.set(2);
+
+    EXPECT_FALSE(bitset_2.is_superseteq(bitset_1));
+
+    bitset_2.set(1);
+
+    EXPECT_TRUE(bitset_2.is_superseteq(bitset_1));
+}
+
 /**
  * Modifiers
  */
@@ -259,8 +288,118 @@ TEST(FlatmemoryTests, TypesBitsetSetTest)
     // Is included in TypesBitsetGetTest
 }
 
+TEST(FlatmemoryTests, TypesBitsetNotTest)
+{
+    auto bitset = Builder<Bitset<uint64_t>>();
+    bitset.set(1);
+
+    ~bitset;
+
+    EXPECT_TRUE(bitset.get_default_bit_value());
+    EXPECT_TRUE(bitset.get(0));
+    EXPECT_FALSE(bitset.get(1));
+    EXPECT_TRUE(bitset.get(2));
+}
+
+TEST(FlatmemoryTests, TypesBitsetOrTest)
+{
+    // B1  B2  R
+    // 0 & 0 = 0
+    // 1 & 0 = 1
+    // 0 & 1 = 1
+    // 1 & 1 = 1
+    auto bitset_1 = Builder<Bitset<uint64_t>>();
+    bitset_1.set(1);
+    bitset_1.set(3);
+
+    auto bitset_2 = Builder<Bitset<uint64_t>>();
+    bitset_2.set(2);
+    bitset_2.set(3);
+
+    const auto result = bitset_1 | bitset_2;
+    EXPECT_EQ(result.get_blocks().size(), 1);
+    EXPECT_FALSE(result.get_default_bit_value());
+    EXPECT_FALSE(result.get(0));
+    EXPECT_TRUE(result.get(1));
+    EXPECT_TRUE(result.get(2));
+    EXPECT_TRUE(result.get(3));
+}
+
+TEST(FlatmemoryTests, TypesBitsetOrEqualTest)
+{
+    // B1  B2  R
+    // 0 & 0 = 0
+    // 1 & 0 = 1
+    // 0 & 1 = 1
+    // 1 & 1 = 1
+    auto bitset_1 = Builder<Bitset<uint64_t>>();
+    bitset_1.set(1);
+    bitset_1.set(3);
+
+    auto bitset_2 = Builder<Bitset<uint64_t>>();
+    bitset_2.set(2);
+    bitset_2.set(3);
+
+    bitset_1 |= bitset_2;
+    EXPECT_EQ(bitset_1.get_blocks().size(), 1);
+    EXPECT_FALSE(bitset_1.get_default_bit_value());
+    EXPECT_FALSE(bitset_1.get(0));
+    EXPECT_TRUE(bitset_1.get(1));
+    EXPECT_TRUE(bitset_1.get(2));
+    EXPECT_TRUE(bitset_1.get(3));
+}
+
+TEST(FlatmemoryTests, TypesBitsetAndTest)
+{
+    // B1  B2  R
+    // 0 & 0 = 0
+    // 1 & 0 = 0
+    // 0 & 1 = 0
+    // 1 & 1 = 1
+
+    auto bitset_1 = Builder<Bitset<uint64_t>>();
+    bitset_1.set(1);
+    bitset_1.set(3);
+
+    auto bitset_2 = Builder<Bitset<uint64_t>>();
+    bitset_2.set(2);
+    bitset_2.set(3);
+
+    const auto result = bitset_1 & bitset_2;
+    EXPECT_EQ(result.get_blocks().size(), 1);
+    EXPECT_FALSE(result.get_default_bit_value());
+    EXPECT_FALSE(result.get(0));
+    EXPECT_FALSE(result.get(1));
+    EXPECT_FALSE(result.get(2));
+    EXPECT_TRUE(result.get(3));
+}
+
+TEST(FlatmemoryTests, TypesBitsetAndEqualTest)
+{
+    // B1  B2  R
+    // 0 & 0 = 0
+    // 1 & 0 = 0
+    // 0 & 1 = 0
+    // 1 & 1 = 1
+    auto bitset_1 = Builder<Bitset<uint64_t>>();
+    bitset_1.set(1);
+    bitset_1.set(3);
+
+    auto bitset_2 = Builder<Bitset<uint64_t>>();
+    bitset_2.set(2);
+    bitset_2.set(3);
+
+    bitset_1 &= bitset_2;
+    EXPECT_EQ(bitset_1.get_blocks().size(), 1);
+    EXPECT_FALSE(bitset_1.get_default_bit_value());
+    EXPECT_FALSE(bitset_1.get(0));
+    EXPECT_FALSE(bitset_1.get(1));
+    EXPECT_FALSE(bitset_1.get(2));
+    EXPECT_TRUE(bitset_1.get(3));
+}
+
 /**
- * Accessors
+ * Lookup
  */
 
 TEST(FlatmemoryTests, TypesBitsetGetTest)
@@ -282,6 +421,16 @@ TEST(FlatmemoryTests, TypesBitsetGetTest)
     auto const_view = View<Bitset<uint64_t>>(builder.buffer().data());
     EXPECT_TRUE(const_view.get(42));
     EXPECT_FALSE(const_view.get(64));
+}
+
+TEST(FlatmemoryTests, TypesBitsetNextSetBitTest)
+{
+    size_t num_bits = 10;
+    auto bitset = Builder<Bitset<uint64_t>>(num_bits);
+
+    // Test next_set_bit
+    bitset.set(5);
+    EXPECT_EQ(bitset.next_set_bit(0), 5);
 }
 
 /**
@@ -355,209 +504,6 @@ TEST(FlatmemoryTests, TypesBitsetIterator3Test)
     builder.set(63);
     builder.set(127);
     EXPECT_EQ(builder.count(), 2);
-}
-
-/**
- * TODO: rework all the remaining parts
- */
-
-TEST(FlatmemoryTests, TypesBitsetTest)
-{
-    EXPECT_EQ((Layout<Bitset<uint64_t>>::final_alignment), 8);
-    EXPECT_EQ(IsTriviallyCopyable<View<Bitset<uint64_t>>>, true);
-
-    auto builder = Builder<Bitset<uint64_t>>();
-    builder.get_default_bit_value() = true;
-    builder.get_blocks().resize(5);
-    builder.finish();
-
-    EXPECT_EQ(builder.buffer().size(), 56);
-
-    auto view = View<Bitset<uint64_t>>(builder.buffer().data());
-    EXPECT_EQ(view.get_default_bit_value(), true);
-    EXPECT_EQ(view.get_blocks().size(), 5);
-}
-
-TEST(FlatmemoryTests, TypesBitsetResizeTest)
-{
-    auto bitset = Builder<Bitset<uint64_t>>();
-
-    // Test resize
-    bitset.set(100);
-    EXPECT_EQ(bitset.get_blocks().size(), 2);
-    EXPECT_TRUE(bitset.get(100));
-    EXPECT_FALSE(bitset.get(0));
-    EXPECT_FALSE(bitset.get(101));
-
-    // Test no resize out of bounds
-    EXPECT_FALSE(bitset.get(1000));
-    EXPECT_EQ(bitset.get_blocks().size(), 2);
-}
-
-TEST(FlatmemoryTests, TypesBitsetNextSetBitTest)
-{
-    size_t num_bits = 10;
-    auto bitset = Builder<Bitset<uint64_t>>(num_bits);
-
-    // Test next_set_bit
-    bitset.set(5);
-    EXPECT_EQ(bitset.next_set_bit(0), 5);
-}
-
-TEST(FlatmemoryTests, TypesBitsetOrEqualTest)
-{
-    // Test operator|=
-    // 1. Test with same default_bit_value=false
-    size_t num_bits_1 = 4;
-    auto bitset_1 = Builder<Bitset<uint64_t>>(num_bits_1, false);
-    bitset_1.set(1);
-    bitset_1.set(3);
-
-    size_t num_bits_2 = 4;
-    auto bitset_2 = Builder<Bitset<uint64_t>>(num_bits_2, false);
-    bitset_2.set(2);
-    bitset_2.set(3);
-
-    bitset_1 |= bitset_2;
-    EXPECT_EQ(bitset_1.get_blocks().size(), 1);
-    EXPECT_FALSE(bitset_1.get_default_bit_value());
-    EXPECT_FALSE(bitset_1.get(0));
-    EXPECT_TRUE(bitset_1.get(1));
-    EXPECT_TRUE(bitset_1.get(2));
-    EXPECT_TRUE(bitset_1.get(3));
-    EXPECT_FALSE(bitset_1.get(4));
-
-    EXPECT_EQ(bitset_1.count(), 3);
-    EXPECT_EQ(bitset_2.count(), 2);
-}
-
-TEST(FlatmemoryTests, TypesBitsetAndEqualTest)
-{
-    // Test operator&=
-    // 1. Test with same default_bit_value=false
-    size_t num_bits_1 = 4;
-    auto bitset_1 = Builder<Bitset<uint64_t>>(num_bits_1, false);
-    bitset_1.set(1);
-    bitset_1.set(3);
-
-    size_t num_bits_2 = 4;
-    auto bitset_2 = Builder<Bitset<uint64_t>>(num_bits_2, false);
-    bitset_2.set(2);
-    bitset_2.set(3);
-
-    bitset_1 &= bitset_2;
-    EXPECT_EQ(bitset_1.get_blocks().size(), 1);
-    EXPECT_FALSE(bitset_1.get_default_bit_value());
-    EXPECT_FALSE(bitset_1.get(0));
-    EXPECT_FALSE(bitset_1.get(1));
-    EXPECT_FALSE(bitset_1.get(2));
-    EXPECT_TRUE(bitset_1.get(3));
-    EXPECT_FALSE(bitset_1.get(4));
-
-    EXPECT_EQ(bitset_1.count(), 1);
-    EXPECT_EQ(bitset_2.count(), 2);
-}
-
-TEST(FlatmemoryTests, TypesBitsetAreDisjointTest)
-{
-    size_t num_bits_1 = 4;
-    auto bitset_1 = Builder<Bitset<uint64_t>>(num_bits_1, false);
-    bitset_1.set(1);
-
-    size_t num_bits_2 = 4;
-    auto bitset_2 = Builder<Bitset<uint64_t>>(num_bits_2, false);
-    bitset_2.set(2);
-
-    EXPECT_TRUE(bitset_1.are_disjoint(bitset_2));
-
-    bitset_2.set(1);
-
-    EXPECT_FALSE(bitset_1.are_disjoint(bitset_2));
-}
-
-TEST(FlatmemoryTests, TypesBitsetIsSupersetTest)
-{
-    size_t num_bits_1 = 4;
-    auto bitset_1 = Builder<Bitset<uint64_t>>(num_bits_1, false);
-    bitset_1.set(1);
-
-    size_t num_bits_2 = 4;
-    auto bitset_2 = Builder<Bitset<uint64_t>>(num_bits_2, false);
-    bitset_2.set(2);
-
-    EXPECT_FALSE(bitset_2.is_superseteq(bitset_1));
-
-    bitset_2.set(1);
-
-    EXPECT_TRUE(bitset_2.is_superseteq(bitset_1));
-}
-
-TEST(FlatmemoryTests, TypesBitsetNotTest)
-{
-    size_t num_bits = 3;
-    auto bitset = Builder<Bitset<uint64_t>>(num_bits, false);
-    bitset.set(1);
-
-    ~bitset;
-
-    EXPECT_TRUE(bitset.get_default_bit_value());
-    EXPECT_TRUE(bitset.get(0));
-    EXPECT_FALSE(bitset.get(1));
-    EXPECT_TRUE(bitset.get(2));
-}
-
-TEST(FlatmemoryTests, TypesBitsetEqualityTest)
-{
-    using BitsetLayout = Bitset<uint64_t>;
-
-    auto builder1 = Builder<BitsetLayout>(3);
-    builder1.get_default_bit_value() = false;
-    builder1.set(1);
-    builder1.finish();
-
-    auto builder2 = Builder<BitsetLayout>(3);
-    builder2.get_default_bit_value() = false;
-    builder2.set(1);
-    builder2.finish();
-
-    auto builder3 = Builder<BitsetLayout>(3);
-    builder3.get_default_bit_value() = false;
-    builder3.finish();
-
-    EXPECT_TRUE((builder1 == builder2));
-    EXPECT_EQ(builder1.hash(), builder2.hash());
-
-    EXPECT_FALSE((builder1 == builder3));
-    EXPECT_NE(builder1.hash(), builder3.hash());
-
-    EXPECT_FALSE((builder2 == builder3));
-    EXPECT_NE(builder2.hash(), builder3.hash());
-
-    auto view1 = View<BitsetLayout>(builder1.buffer().data());
-    auto view2 = View<BitsetLayout>(builder2.buffer().data());
-    auto view3 = View<BitsetLayout>(builder3.buffer().data());
-
-    EXPECT_TRUE((view1 == view2));
-    EXPECT_EQ(view1.hash(), view2.hash());
-
-    EXPECT_FALSE((view1 == view3));
-    EXPECT_NE(view1.hash(), view3.hash());
-
-    EXPECT_FALSE((view2 == view3));
-    EXPECT_NE(view2.hash(), view3.hash());
-
-    auto const_view1 = ConstView<BitsetLayout>(builder1.buffer().data());
-    auto const_view2 = ConstView<BitsetLayout>(builder2.buffer().data());
-    auto const_view3 = ConstView<BitsetLayout>(builder3.buffer().data());
-
-    EXPECT_TRUE((const_view1 == const_view2));
-    EXPECT_EQ(const_view1.hash(), const_view2.hash());
-
-    EXPECT_FALSE((const_view1 == const_view3));
-    EXPECT_NE(const_view1.hash(), const_view3.hash());
-
-    EXPECT_FALSE((const_view2 == const_view3));
-    EXPECT_NE(const_view2.hash(), const_view3.hash());
 }
 
 }

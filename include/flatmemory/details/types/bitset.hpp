@@ -315,11 +315,11 @@ public:
 
         const_iterator();
         const_iterator(bool default_bit_value, const Block* blocks, size_t num_blocks, bool begin);
-        [[nodiscard]] size_t operator*() const;
+        size_t operator*() const;
         const_iterator& operator++();
         const_iterator operator++(int);
-        [[nodiscard]] bool operator==(const const_iterator& other) const;
-        [[nodiscard]] bool operator!=(const const_iterator& other) const;
+        bool operator==(const const_iterator& other) const;
+        bool operator!=(const const_iterator& other) const;
     };
 
     /**
@@ -372,11 +372,11 @@ public:
 
     template<IsBitset Other>
         requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    [[nodiscard]] bool operator==(const Other& other) const;
+    bool operator==(const Other& other) const;
 
     template<IsBitset Other>
         requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    [[nodiscard]] bool operator!=(const Other& other) const;
+    bool operator!=(const Other& other) const;
 
     template<IsBitset Other>
         requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
@@ -398,29 +398,29 @@ public:
      * Iterators
      */
 
-    [[nodiscard]] const_iterator begin();
-    [[nodiscard]] const_iterator begin() const;
-    [[nodiscard]] const_iterator end();
-    [[nodiscard]] const_iterator end() const;
+    const_iterator begin();
+    const_iterator begin() const;
+    const_iterator end();
+    const_iterator end() const;
 
     /**
      * Hashing
      */
 
-    [[nodiscard]] size_t hash() const;
+    size_t hash() const;
 
     /**
      * Getters
      */
-    [[nodiscard]] uint8_t* buffer();
-    [[nodiscard]] const uint8_t* buffer() const;
-    [[nodiscard]] buffer_size_type buffer_size() const;
+    uint8_t* buffer();
+    const uint8_t* buffer() const;
+    buffer_size_type buffer_size() const;
 
-    [[nodiscard]] bool& get_default_bit_value();
-    [[nodiscard]] bool get_default_bit_value() const;
+    bool& get_default_bit_value();
+    bool get_default_bit_value() const;
 
-    [[nodiscard]] View<Vector<Block>> get_blocks();
-    [[nodiscard]] ConstView<Vector<Block>> get_blocks() const;
+    View<Vector<Block>> get_blocks();
+    ConstView<Vector<Block>> get_blocks() const;
 };
 
 /**
@@ -467,11 +467,11 @@ public:
 
     template<IsBitset Other>
         requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    [[nodiscard]] bool operator==(const Other& other) const;
+    bool operator==(const Other& other) const;
 
     template<IsBitset Other>
         requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    [[nodiscard]] bool operator!=(const Other& other) const;
+    bool operator!=(const Other& other) const;
 
     template<IsBitset Other>
         requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
@@ -493,32 +493,32 @@ public:
      * Iterators
      */
 
-    [[nodiscard]] const_iterator begin();
-    [[nodiscard]] const_iterator begin() const;
-    [[nodiscard]] const_iterator end();
-    [[nodiscard]] const_iterator end() const;
+    const_iterator begin();
+    const_iterator begin() const;
+    const_iterator end();
+    const_iterator end() const;
 
     /**
      * Hashing
      */
 
-    [[nodiscard]] size_t hash() const;
+    size_t hash() const;
 
     /**
      * Getters
      */
 
-    [[nodiscard]] const uint8_t* buffer() const;
+    const uint8_t* buffer() const;
 
-    [[nodiscard]] buffer_size_type buffer_size() const;
+    buffer_size_type buffer_size() const;
 
-    [[nodiscard]] bool get_default_bit_value();
+    bool get_default_bit_value();
 
-    [[nodiscard]] bool get_default_bit_value() const;
+    bool get_default_bit_value() const;
 
-    [[nodiscard]] ConstView<Vector<Block>> get_blocks();
+    ConstView<Vector<Block>> get_blocks();
 
-    [[nodiscard]] ConstView<Vector<Block>> get_blocks() const;
+    ConstView<Vector<Block>> get_blocks() const;
 };
 
 /**
@@ -549,8 +549,8 @@ private:
 
     void finish_impl();
 
-    [[nodiscard]] auto& get_buffer_impl();
-    [[nodiscard]] const auto& get_buffer_impl() const;
+    auto& get_buffer_impl();
+    const auto& get_buffer_impl() const;
 
     template<IsBitset Other>
         requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
@@ -602,7 +602,7 @@ public:
 
     template<IsBitset Other>
         requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    [[nodiscard]] bool operator!=(const Other& other) const;
+    bool operator!=(const Other& other) const;
 
     template<IsBitset Other>
         requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
@@ -632,11 +632,23 @@ public:
 
     template<IsBitset Other>
         requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    Builder operator|(const Other& other) const;
+
+    template<IsBitset Other>
+        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
     Builder& operator|=(const Other& other);
 
     template<IsBitset Other>
         requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    Builder operator&(const Other& other) const;
+
+    template<IsBitset Other>
+        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
     Builder& operator&=(const Other& other);
+
+    template<IsBitset Other>
+        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    Builder operator-(const Other& other) const;
 
     template<IsBitset Other>
         requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
@@ -658,24 +670,24 @@ public:
      * Iterators
      */
 
-    [[nodiscard]] const_iterator begin() const;
-    [[nodiscard]] const_iterator end() const;
+    const_iterator begin() const;
+    const_iterator end() const;
 
     /**
      * Hashing
      */
 
-    [[nodiscard]] size_t hash() const;
+    size_t hash() const;
 
     /**
      * Getters
      */
 
-    [[nodiscard]] bool& get_default_bit_value();
-    [[nodiscard]] bool get_default_bit_value() const;
+    bool& get_default_bit_value();
+    bool get_default_bit_value() const;
 
-    [[nodiscard]] auto& get_blocks();
-    [[nodiscard]] const auto& get_blocks() const;
+    auto& get_blocks();
+    const auto& get_blocks() const;
 };
 
 /**
@@ -1022,7 +1034,7 @@ Operator<Bitset<Block, Tag>>::const_iterator::const_iterator(bool default_bit_va
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-[[nodiscard]] size_t Operator<Bitset<Block, Tag>>::const_iterator::operator*() const
+size_t Operator<Bitset<Block, Tag>>::const_iterator::operator*() const
 {
     // Do not allow interpreting end as position.
     assert(m_pos < m_end_pos);
@@ -1087,7 +1099,7 @@ View<Bitset<Block, Tag>>::View(uint8_t* buf) : m_buf(buf)
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
     requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-[[nodiscard]] bool View<Bitset<Block, Tag>>::operator==(const Other& other) const
+bool View<Bitset<Block, Tag>>::operator==(const Other& other) const
 {
     assert(m_buf);
     return BitsetOperator::are_equal(*this, other);
@@ -1096,7 +1108,7 @@ template<IsBitset Other>
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
     requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-[[nodiscard]] bool View<Bitset<Block, Tag>>::operator!=(const Other& other) const
+bool View<Bitset<Block, Tag>>::operator!=(const Other& other) const
 {
     return !(*this == other);
 }
@@ -1570,6 +1582,17 @@ Builder<Bitset<Block, Tag>>& Builder<Bitset<Block, Tag>>::operator~()
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
     requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+Builder<Bitset<Block, Tag>> Builder<Bitset<Block, Tag>>::operator|(const Other& other) const
+{
+    auto result = Builder<Bitset<Block, Tag>>(*this);
+    result |= other;
+
+    return result;
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+template<IsBitset Other>
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
 Builder<Bitset<Block, Tag>>& Builder<Bitset<Block, Tag>>::operator|=(const Other& other)
 {
     // Fetch data
@@ -1595,6 +1618,17 @@ Builder<Bitset<Block, Tag>>& Builder<Bitset<Block, Tag>>::operator|=(const Other
     }
 
     return *this;
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+template<IsBitset Other>
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+Builder<Bitset<Block, Tag>> Builder<Bitset<Block, Tag>>::operator&(const Other& other) const
+{
+    auto result = Builder<Bitset<Block, Tag>>(*this);
+    result &= other;
+
+    return result;
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
@@ -1626,6 +1660,17 @@ Builder<Bitset<Block, Tag>>& Builder<Bitset<Block, Tag>>::operator&=(const Other
     m_blocks.resize(other_blocks.size());
 
     return *this;
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+template<IsBitset Other>
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+Builder<Bitset<Block, Tag>> Builder<Bitset<Block, Tag>>::operator-(const Other& other) const
+{
+    auto result = Builder<Bitset<Block, Tag>>(*this);
+    result -= other;
+
+    return result;
 }
 
 template<IsUnsignedIntegral Block, typename Tag>

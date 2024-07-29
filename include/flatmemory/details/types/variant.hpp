@@ -80,13 +80,13 @@ private:
         // TODO
     }
 
-    [[nodiscard]] auto& get_buffer_impl() { return m_buffer; }
-    [[nodiscard]] const auto& get_buffer_impl() const { return m_buffer; }
+    auto& get_buffer_impl() { return m_buffer; }
+    const auto& get_buffer_impl() const { return m_buffer; }
 
 public:
-    [[nodiscard]] std::variant<Ts...>& operator*() { return m_variant; }
+    std::variant<Ts...>& operator*() { return m_variant; }
 
-    [[nodiscard]] std::variant<Ts...>* operator->() { return &m_variant; }
+    std::variant<Ts...>* operator->() { return &m_variant; }
 };
 
 /**
@@ -112,14 +112,14 @@ public:
      */
     View(uint8_t* data) : m_buf(data) { assert(m_buf); }
 
-    [[nodiscard]] buffer_size_type buffer_size() const
+    buffer_size_type buffer_size() const
     {
         assert(m_buf);
         return sizeof(T);
     }
 
-    [[nodiscard]] uint8_t* buffer() { return m_buf; }
-    [[nodiscard]] const uint8_t* buffer() const { return m_buf; }
+    uint8_t* buffer() { return m_buf; }
+    const uint8_t* buffer() const { return m_buf; }
 };
 
 /**
@@ -150,13 +150,13 @@ public:
      */
     ConstView(const View<Variant<Ts...>>& view) : m_buf(view.buffer()) {}
 
-    [[nodiscard]] buffer_size_type buffer_size() const
+    buffer_size_type buffer_size() const
     {
         assert(m_buf);
         return sizeof(T);
     }
 
-    [[nodiscard]] const uint8_t* buffer() const { return m_buf; }
+    const uint8_t* buffer() const { return m_buf; }
 };
 }
 

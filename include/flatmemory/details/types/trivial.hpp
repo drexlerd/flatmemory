@@ -70,13 +70,13 @@ private:
 
     void finish_impl();
 
-    [[nodiscard]] auto& get_buffer_impl();
-    [[nodiscard]] const auto& get_buffer_impl() const;
+    auto& get_buffer_impl();
+    const auto& get_buffer_impl() const;
 
 public:
-    [[nodiscard]] T& operator*();
+    T& operator*();
 
-    [[nodiscard]] T* operator->();
+    T* operator->();
 };
 
 /**
@@ -102,12 +102,12 @@ public:
      */
     View(uint8_t* data);
 
-    [[nodiscard]] T& operator*();
-    [[nodiscard]] T* operator->();
+    T& operator*();
+    T* operator->();
 
-    [[nodiscard]] buffer_size_type buffer_size() const;
-    [[nodiscard]] uint8_t* buffer();
-    [[nodiscard]] const uint8_t* buffer() const;
+    buffer_size_type buffer_size() const;
+    uint8_t* buffer();
+    const uint8_t* buffer() const;
 };
 
 /**
@@ -138,11 +138,11 @@ public:
      */
     ConstView(const View<Trivial<T>>& view);
 
-    [[nodiscard]] const T& operator*() const;
-    [[nodiscard]] const T* operator->() const;
+    const T& operator*() const;
+    const T* operator->() const;
 
-    [[nodiscard]] buffer_size_type buffer_size() const;
-    [[nodiscard]] const uint8_t* buffer() const;
+    buffer_size_type buffer_size() const;
+    const uint8_t* buffer() const;
 };
 
 /**

@@ -151,12 +151,12 @@ public:
     template<std::size_t... Is>
     bool compare_tuples(std::index_sequence<Is...>, const View<Tuple<Ts...>>& other) const;
 
-    [[nodiscard]] bool operator==(const Builder& other) const;
-    [[nodiscard]] bool operator==(const ConstView<Tuple<Ts...>> other) const;
-    [[nodiscard]] bool operator==(const View<Tuple<Ts...>> other) const;
-    [[nodiscard]] bool operator!=(const Builder& other) const;
-    [[nodiscard]] bool operator!=(const View<Tuple<Ts...>>& other) const;
-    [[nodiscard]] bool operator!=(const ConstView<Tuple<Ts...>>& other) const;
+    bool operator==(const Builder& other) const;
+    bool operator==(const ConstView<Tuple<Ts...>> other) const;
+    bool operator==(const View<Tuple<Ts...>> other) const;
+    bool operator!=(const Builder& other) const;
+    bool operator!=(const View<Tuple<Ts...>>& other) const;
+    bool operator!=(const ConstView<Tuple<Ts...>>& other) const;
 
     /**
      * Lookup
@@ -169,9 +169,9 @@ public:
     const auto& get() const;
 
     template<size_t... Is>
-    [[nodiscard]] size_t hash_helper(std::index_sequence<Is...>) const;
+    size_t hash_helper(std::index_sequence<Is...>) const;
 
-    [[nodiscard]] size_t hash() const;
+    size_t hash() const;
 };
 
 /**
@@ -210,12 +210,12 @@ public:
     template<std::size_t... Is>
     bool compare_tuples(std::index_sequence<Is...>, const Builder<Tuple<Ts...>>& other) const;
 
-    [[nodiscard]] bool operator==(const Builder<Tuple<Ts...>> other) const;
-    [[nodiscard]] bool operator==(const View& other) const;
-    [[nodiscard]] bool operator==(const ConstView<Tuple<Ts...>> other) const;
-    [[nodiscard]] bool operator!=(const Builder<Tuple<Ts...>>& other) const;
-    [[nodiscard]] bool operator!=(const View<Tuple<Ts...>>& other) const;
-    [[nodiscard]] bool operator!=(const ConstView<Tuple<Ts...>>& other) const;
+    bool operator==(const Builder<Tuple<Ts...>> other) const;
+    bool operator==(const View& other) const;
+    bool operator==(const ConstView<Tuple<Ts...>> other) const;
+    bool operator!=(const Builder<Tuple<Ts...>>& other) const;
+    bool operator!=(const View<Tuple<Ts...>>& other) const;
+    bool operator!=(const ConstView<Tuple<Ts...>>& other) const;
 
     /**
      * Lookup
@@ -230,21 +230,21 @@ public:
     template<std::size_t I>
     decltype(auto) get() const;
 
-    [[nodiscard]] uint8_t* buffer();
-    [[nodiscard]] const uint8_t* buffer() const;
+    uint8_t* buffer();
+    const uint8_t* buffer() const;
 
-    [[nodiscard]] buffer_size_type buffer_size() const;
+    buffer_size_type buffer_size() const;
 
     /**
      * Capacity
      */
-    [[nodiscard]] size_t size() const;
+    size_t size() const;
 
     /**
      * Hashing
      */
 
-    [[nodiscard]] size_t hash() const;
+    size_t hash() const;
 };
 
 /**
@@ -290,12 +290,12 @@ public:
     template<std::size_t... Is>
     bool compare_tuples(std::index_sequence<Is...>, const Builder<Tuple<Ts...>>& other) const;
 
-    [[nodiscard]] bool operator==(const Builder<Tuple<Ts...>> other) const;
-    [[nodiscard]] bool operator==(const View<Tuple<Ts...>>& other) const;
-    [[nodiscard]] bool operator==(const ConstView<Tuple<Ts...>> other) const;
-    [[nodiscard]] bool operator!=(const Builder<Tuple<Ts...>>& other) const;
-    [[nodiscard]] bool operator!=(const View<Tuple<Ts...>>& other) const;
-    [[nodiscard]] bool operator!=(const ConstView<Tuple<Ts...>>& other) const;
+    bool operator==(const Builder<Tuple<Ts...>> other) const;
+    bool operator==(const View<Tuple<Ts...>>& other) const;
+    bool operator==(const ConstView<Tuple<Ts...>> other) const;
+    bool operator!=(const Builder<Tuple<Ts...>>& other) const;
+    bool operator!=(const View<Tuple<Ts...>>& other) const;
+    bool operator!=(const ConstView<Tuple<Ts...>>& other) const;
 
     /**
      * Lookup
@@ -307,21 +307,21 @@ public:
     template<std::size_t I>
     decltype(auto) get() const;
 
-    [[nodiscard]] buffer_size_type buffer_size() const;
+    buffer_size_type buffer_size() const;
 
-    [[nodiscard]] const uint8_t* buffer() const;
+    const uint8_t* buffer() const;
 
     /**
      * Capacity
      */
 
-    [[nodiscard]] size_t size() const;
+    size_t size() const;
 
     /**
      * Hashing
      */
 
-    [[nodiscard]] size_t hash() const;
+    size_t hash() const;
 };
 
 /**
@@ -497,7 +497,7 @@ const auto& Builder<Tuple<Ts...>>::get_buffer_impl() const
 }
 
 template<IsTriviallyCopyableOrCustom... Ts>
-[[nodiscard]] bool Builder<Tuple<Ts...>>::operator==(const Builder& other) const
+bool Builder<Tuple<Ts...>>::operator==(const Builder& other) const
 {
     if (this != &other)
     {
