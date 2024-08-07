@@ -60,17 +60,17 @@ public:
      * Iterators
      */
 
-    [[nodiscard]] iterator begin();
-    [[nodiscard]] const_iterator begin() const;
-    [[nodiscard]] iterator end();
-    [[nodiscard]] const_iterator end() const;
+     iterator begin();
+     const_iterator begin() const;
+     iterator end();
+     const_iterator end() const;
 
     /**
      * Capacity
      */
 
-    [[nodiscard]] bool empty() const;
-    [[nodiscard]] size_t size() const;
+     bool empty() const;
+     size_t size() const;
 
     /**
      * Modifiers
@@ -78,20 +78,20 @@ public:
 
     void clear();
 
-    [[nodiscard]] std::pair<const_iterator, bool> insert(const Builder<T>& builder);
-    [[nodiscard]] std::pair<const_iterator, bool> insert(ConstView<T>& view);
-    [[nodiscard]] std::pair<const_iterator, bool> insert(View<T>& view);
+     std::pair<const_iterator, bool> insert(const Builder<T>& builder);
+     std::pair<const_iterator, bool> insert(ConstView<T>& view);
+     std::pair<const_iterator, bool> insert(View<T>& view);
 
     /**
      * Lookup
      */
 
-    [[nodiscard]] size_t count(ConstView<T> key) const;
-    [[nodiscard]] iterator find(ConstView<T> key);
-    [[nodiscard]] const_iterator find(ConstView<T> key) const;
-    [[nodiscard]] bool contains(ConstView<T> key) const;
+     size_t count(ConstView<T> key) const;
+     iterator find(ConstView<T> key);
+     const_iterator find(ConstView<T> key) const;
+     bool contains(ConstView<T> key) const;
 
-    [[nodiscard]] const ByteBufferSegmented& get_storage() const;
+     const ByteBufferSegmented& get_storage() const;
 };
 
 /**

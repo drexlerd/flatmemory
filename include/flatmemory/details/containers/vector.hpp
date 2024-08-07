@@ -50,32 +50,32 @@ public:
      * Element access
      */
 
-    [[nodiscard]] View<T> operator[](size_t pos);
-    [[nodiscard]] ConstView<T> operator[](size_t pos) const;
+     View<T> operator[](size_t pos);
+     ConstView<T> operator[](size_t pos) const;
 
-    [[nodiscard]] View<T> at(size_t pos);
-    [[nodiscard]] ConstView<T> at(size_t pos) const;
+     View<T> at(size_t pos);
+     ConstView<T> at(size_t pos) const;
 
-    [[nodiscard]] View<T> back();
-    [[nodiscard]] ConstView<T> back() const;
+     View<T> back();
+     ConstView<T> back() const;
 
-    [[nodiscard]] const ByteBufferSegmented& get_storage() const;
+     const ByteBufferSegmented& get_storage() const;
 
     /**
      * Iterators
      */
 
-    [[nodiscard]] iterator begin();
-    [[nodiscard]] const_iterator begin() const;
-    [[nodiscard]] iterator end();
-    [[nodiscard]] const_iterator end() const;
+     iterator begin();
+     const_iterator begin() const;
+     iterator end();
+     const_iterator end() const;
 
     /**
      * Capacity
      */
 
-    [[nodiscard]] constexpr size_t empty() const;
-    [[nodiscard]] constexpr size_t size() const;
+     constexpr size_t empty() const;
+     constexpr size_t size() const;
 
     /**
      * Modifiers
@@ -111,7 +111,7 @@ public:
     /// @brief Constructor that uses empty default constructed elements when resizing.
     explicit FixedSizedTypeVector(NumBytes initial_num_bytes_per_segment = 1024, NumBytes maximum_num_bytes_per_segment = 1024 * 1024);
     /// @brief Constructor that ensure that a resize yields non trivially initialized objects.
-    FixedSizedTypeVector(Builder<T>&& default_builder, NumBytes initial_num_bytes_per_segment = 1024, NumBytes maximum_num_bytes_per_segment = 1024 * 1024);
+    FixedSizedTypeVector(Builder<T> default_builder, NumBytes initial_num_bytes_per_segment = 1024, NumBytes maximum_num_bytes_per_segment = 1024 * 1024);
     // Move only to avoid invalidating views.
     FixedSizedTypeVector(const FixedSizedTypeVector& other) = default;
     FixedSizedTypeVector& operator=(const FixedSizedTypeVector& other) = default;
@@ -122,32 +122,32 @@ public:
      * Element access
      */
 
-    [[nodiscard]] View<T> operator[](size_t pos);
-    [[nodiscard]] ConstView<T> operator[](size_t pos) const;
+     View<T> operator[](size_t pos);
+     ConstView<T> operator[](size_t pos) const;
 
-    [[nodiscard]] View<T> at(size_t pos);
-    [[nodiscard]] ConstView<T> at(size_t pos) const;
+     View<T> at(size_t pos);
+     ConstView<T> at(size_t pos) const;
 
-    [[nodiscard]] View<T> back();
-    [[nodiscard]] ConstView<T> back() const;
+     View<T> back();
+     ConstView<T> back() const;
 
-    [[nodiscard]] const ByteBufferSegmented& get_storage() const;
+     const ByteBufferSegmented& get_storage() const;
 
     /**
      * Iterators
      */
 
-    [[nodiscard]] iterator begin();
-    [[nodiscard]] const_iterator begin() const;
-    [[nodiscard]] iterator end();
-    [[nodiscard]] const_iterator end() const;
+     iterator begin();
+     const_iterator begin() const;
+     iterator end();
+     const_iterator end() const;
 
     /**
      * Capacity
      */
 
-    [[nodiscard]] constexpr size_t empty() const;
-    [[nodiscard]] constexpr size_t size() const;
+     constexpr size_t empty() const;
+     constexpr size_t size() const;
 
     /**
      * Modifiers
@@ -301,7 +301,7 @@ FixedSizedTypeVector<T>::FixedSizedTypeVector(NumBytes initial_num_bytes_per_seg
 }
 
 template<typename T>
-FixedSizedTypeVector<T>::FixedSizedTypeVector(Builder<T>&& default_builder, NumBytes initial_num_bytes_per_segment, NumBytes maximum_num_bytes_per_segment) :
+FixedSizedTypeVector<T>::FixedSizedTypeVector(Builder<T> default_builder, NumBytes initial_num_bytes_per_segment, NumBytes maximum_num_bytes_per_segment) :
     m_storage(ByteBufferSegmented(initial_num_bytes_per_segment, maximum_num_bytes_per_segment)),
     m_default_builder(std::move(default_builder))
 {
