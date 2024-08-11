@@ -15,7 +15,6 @@ add_executable(${TEST_NAME}
     "containers/unordered_set.cpp"
     "containers/vector.cpp"
     "types/bitset.cpp"
-    "types/trivial.cpp"
     "types/tuple.cpp"
     "types/vector.cpp"
 )

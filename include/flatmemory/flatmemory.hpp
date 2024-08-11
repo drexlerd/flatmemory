@@ -23,7 +23,6 @@
  */
 
 #include "flatmemory/details/types/bitset.hpp"
-#include "flatmemory/details/types/trivial.hpp"
 #include "flatmemory/details/types/tuple.hpp"
 #include "flatmemory/details/types/vector.hpp"
 
