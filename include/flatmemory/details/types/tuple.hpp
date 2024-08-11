@@ -129,9 +129,10 @@ private:
     friend class IBuilder;
 
     template<size_t... Is>
-    void finish_iterative_impl(std::index_sequence<Is...>);
+    size_t finish_iterative_impl(std::index_sequence<Is...>, ByteBuffer& out, size_t pos);
 
     void finish_impl();
+    size_t finish_impl(ByteBuffer& out, size_t pos);
 
     auto& get_buffer_impl();
     const auto& get_buffer_impl() const;
@@ -185,6 +186,8 @@ public:
     using element_type = std::tuple_element_t<I, std::tuple<Ts...>>;
     template<size_t I>
     using element_view_type = View<std::tuple_element_t<I, std::tuple<Ts...>>>;
+    template<size_t I>
+    using const_element_view_type = ConstView<std::tuple_element_t<I, std::tuple<Ts...>>>;
 
 private:
     uint8_t* m_buf;
@@ -257,7 +260,7 @@ public:
     template<size_t I>
     using element_type = std::tuple_element_t<I, std::tuple<Ts...>>;
     template<size_t I>
-    using element_view_type = ConstView<std::tuple_element_t<I, std::tuple<Ts...>>>;
+    using const_element_view_type = ConstView<std::tuple_element_t<I, std::tuple<Ts...>>>;
 
 private:
     const uint8_t* m_buf;
@@ -439,7 +442,7 @@ void Layout<Tuple<Ts...>>::print() const
 
 template<IsTriviallyCopyableOrCustom... Ts>
 template<size_t... Is>
-void Builder<Tuple<Ts...>>::finish_iterative_impl(std::index_sequence<Is...>)
+size_t Builder<Tuple<Ts...>>::finish_iterative_impl(std::index_sequence<Is...>, ByteBuffer& out, size_t pos)
 {
     offset_type buffer_size = Layout<Tuple<Ts...>>::layout_data.element_datas_position;
     (
@@ -451,37 +454,39 @@ void Builder<Tuple<Ts...>>::finish_iterative_impl(std::index_sequence<Is...>)
             if constexpr (is_trivial)
             {
                 auto& value = std::get<Is>(m_data);
-                m_buffer.write(element_data.position, value);
-                m_buffer.write_padding(element_data.end, element_data.padding);
+                out.write(pos + element_data.position, value);
+                out.write_padding(pos + element_data.end, element_data.padding);
             }
             else
             {
-                // TODO: for every off
                 // write offset
-                m_buffer.write(element_data.position, buffer_size);
-                m_buffer.write_padding(element_data.end, element_data.padding);
+                out.write(pos + element_data.position, buffer_size);
+                out.write_padding(pos + element_data.end, element_data.padding);
 
                 // write data
                 auto& nested_builder = std::get<Is>(m_data);
-                nested_builder.finish();
-                buffer_size_type nested_buffer_size = nested_builder.buffer().size();
-                m_buffer.write(buffer_size, nested_builder.buffer().data(), nested_buffer_size);
-                buffer_size += nested_buffer_size;
-                buffer_size += m_buffer.write_padding(buffer_size, calculate_amount_padding(buffer_size, element_data.next_data_alignment));
+                buffer_size += nested_builder.finish(out, pos + buffer_size);
+                buffer_size += out.write_padding(pos + buffer_size, calculate_amount_padding(buffer_size, element_data.next_data_alignment));
             }
         }(),
         ...);
     // No need to write padding because if size=0 then no padding is needed and otherwise, if size>0 then the loop adds final padding.
     /* Write buffer size */
-    m_buffer.write(Layout<Tuple<Ts...>>::layout_data.buffer_size_position, static_cast<buffer_size_type>(buffer_size));
-    m_buffer.set_size(buffer_size);
+    out.write(pos + Layout<Tuple<Ts...>>::layout_data.buffer_size_position, static_cast<buffer_size_type>(buffer_size));
+    out.set_size(pos + buffer_size);
+
+    return buffer_size;
 }
 
 template<IsTriviallyCopyableOrCustom... Ts>
 void Builder<Tuple<Ts...>>::finish_impl()
 {
-    // Build header and dynamic buffer
-    finish_iterative_impl(std::make_index_sequence<sizeof...(Ts)> {});
+    this->finish(m_buffer, 0);
+}
+
+template<IsTriviallyCopyableOrCustom... Ts>
+size_t Builder<Tuple<Ts...>>::finish_impl(ByteBuffer& out, size_t pos) {
+    return finish_iterative_impl(std::make_index_sequence<sizeof...(Ts)> {}, out, pos);
 }
 
 template<IsTriviallyCopyableOrCustom... Ts>
@@ -691,7 +696,7 @@ decltype(auto) View<Tuple<Ts...>>::get() const
     }
     else
     {
-        return element_view_type<I>(m_buf + read_value<offset_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position));
+        return const_element_view_type<I>(m_buf + read_value<offset_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position));
     }
 }
 
@@ -815,7 +820,7 @@ decltype(auto) ConstView<Tuple<Ts...>>::get() const
     }
     else
     {
-        return element_view_type<I>(m_buf + read_value<offset_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position));
+        return const_element_view_type<I>(m_buf + read_value<offset_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position));
     }
 }
 

@@ -117,6 +117,7 @@ private:
     friend class IBuilder;
 
     void finish_impl();
+    size_t finish_impl(ByteBuffer& out, size_t pos);
 
     auto& get_buffer_impl();
     const auto& get_buffer_impl() const;
@@ -239,8 +240,8 @@ public:
     public:
         using difference_type = std::ptrdiff_t;
         using value_type = typename maybe_view<T>::type;
-        using pointer = typename maybe_view<T>::type*;
-        using reference = typename maybe_view<T>::type&;
+        using pointer = value_type*;
+        using reference = value_type&;
         using iterator_category = std::forward_iterator_tag;
 
         iterator();
@@ -264,8 +265,8 @@ public:
     public:
         using difference_type = std::ptrdiff_t;
         using value_type = typename maybe_const_view<T>::type;
-        using pointer = typename maybe_const_view<T>::type*;
-        using reference = typename maybe_const_view<T>::type&;
+        using pointer = const value_type*;
+        using reference = const value_type&;
         using iterator_category = std::forward_iterator_tag;
 
         const_iterator();
@@ -408,10 +409,15 @@ void Layout<Vector<T>>::print() const
 template<IsTriviallyCopyableOrCustom T>
 void Builder<Vector<T>>::finish_impl()
 {
+    this->finish(m_buffer, 0);
+}
+
+template<IsTriviallyCopyableOrCustom T>
+size_t Builder<Vector<T>>::finish_impl(ByteBuffer& out, size_t pos) {
     /* Write header info */
     // Write vector size
-    m_buffer.write(Layout<Vector<T>>::vector_size_position, m_data.size());
-    m_buffer.write_padding(Layout<Vector<T>>::vector_size_end, Layout<Vector<T>>::vector_size_padding);
+    out.write(pos + Layout<Vector<T>>::vector_size_position, m_data.size());
+    out.write_padding(pos + Layout<Vector<T>>::vector_size_end, Layout<Vector<T>>::vector_size_padding);
 
     /* Write dynamic info */
     offset_type buffer_size = Layout<Vector<T>>::vector_data_position;
@@ -420,7 +426,7 @@ void Builder<Vector<T>>::finish_impl()
     if constexpr (is_trivial)
     {
         /* For trivial type we can write the data without additional padding. */
-        buffer_size += m_buffer.write(buffer_size, reinterpret_cast<const uint8_t*>(m_data.data()), sizeof(T_) * m_data.size());
+        buffer_size += out.write(pos + buffer_size, reinterpret_cast<const uint8_t*>(m_data.data()), sizeof(T_) * m_data.size());
     }
     else
     {
@@ -429,30 +435,29 @@ void Builder<Vector<T>>::finish_impl()
         offset_type offset_pos = Layout<Vector<T>>::vector_data_position;
         size_t offset_end = offset_pos + m_data.size() * sizeof(offset_type);
         size_t offset_padding = calculate_amount_padding(offset_end, Layout<T>::final_alignment);
-        m_buffer.write_padding(offset_end, offset_padding);
+        out.write_padding(pos + offset_end, offset_padding);
         // We have to add padding to ensure that the data is correctly aligned
         buffer_size = offset_end + offset_padding;
         for (size_t i = 0; i < m_data.size(); ++i)
         {
             // write distance between written data position and offset position
             offset_type distance = buffer_size - offset_pos;
-            offset_pos += m_buffer.write(offset_pos, distance);
+            offset_pos += out.write(pos + offset_pos, distance);
 
             // write data
             auto& nested_builder = m_data[i];
-            nested_builder.finish();
-            buffer_size_type nested_buffer_size = nested_builder.buffer().size();
-            m_buffer.write(buffer_size, nested_builder.buffer().data(), nested_buffer_size);
-            buffer_size += nested_buffer_size;
-            buffer_size += m_buffer.write_padding(buffer_size, calculate_amount_padding(buffer_size, Layout<Vector<T>>::final_alignment));
+            buffer_size += nested_builder.finish(out, pos + buffer_size);
+            buffer_size += out.write_padding(pos + buffer_size, calculate_amount_padding(buffer_size, Layout<Vector<T>>::final_alignment));
         }
     }
     // Write final padding to satisfy alignment requirements
-    buffer_size += m_buffer.write_padding(buffer_size, calculate_amount_padding(buffer_size, Layout<Vector<T>>::final_alignment));
+    buffer_size += out.write_padding(pos + buffer_size, calculate_amount_padding(buffer_size, Layout<Vector<T>>::final_alignment));
 
     /* Write buffer size */
-    m_buffer.write(Layout<Vector<T>>::buffer_size_position, static_cast<buffer_size_type>(buffer_size));
-    m_buffer.set_size(buffer_size);
+    out.write(pos + Layout<Vector<T>>::buffer_size_position, static_cast<buffer_size_type>(buffer_size));
+    out.set_size(pos + buffer_size);
+
+    return buffer_size;
 }
 
 template<IsTriviallyCopyableOrCustom T>
@@ -774,7 +779,7 @@ decltype(auto) View<Vector<T>>::operator[](size_t pos) const
     else
     {
         const auto offset_pos = m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(offset_type);
-        return View<T>(offset_pos + read_value<offset_type>(offset_pos));
+        return ConstView<T>(offset_pos + read_value<offset_type>(offset_pos));
     }
 }
 

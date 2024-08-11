@@ -43,8 +43,14 @@ private:
     constexpr auto& self() { return static_cast<Derived&>(*this); }
 
 public:
-    /// @brief Write serialized data to the stream.
+    /// @brief Serialize data to size prefixed byte sequence into the internal buffer.
     void finish() { self().finish_impl(); }
+
+    /// @brief Serialize data to size prefixed byte sequence into the given buffer.
+    /// @param out the buffer to write the data.
+    /// @param pos the next free position in the out buffer.
+    /// @return the number of bytest written to out.
+    size_t finish(ByteBuffer& out, size_t pos) { return self().finish_impl(out, pos); }
 
     /// @brief Access the serialized buffer
     auto& buffer() { return self().get_buffer_impl(); }

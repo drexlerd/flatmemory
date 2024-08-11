@@ -548,6 +548,7 @@ private:
     friend class IBuilder;
 
     void finish_impl();
+    size_t finish_impl(ByteBuffer& out, size_t pos);
 
     auto& get_buffer_impl();
     const auto& get_buffer_impl() const;
@@ -1368,23 +1369,29 @@ ConstView<Vector<Block>> ConstView<Bitset<Block, Tag>>::get_blocks() const
 template<IsUnsignedIntegral Block, typename Tag>
 void Builder<Bitset<Block, Tag>>::finish_impl()
 {
+    this->finish(m_buffer, 0);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+size_t Builder<Bitset<Block, Tag>>::finish_impl(ByteBuffer& out, size_t pos) {
     /* Write header info */
     // Write default_bit_value
-    m_buffer.write(BitsetLayout::default_bit_value_position, m_default_bit_value);
-    m_buffer.write_padding(BitsetLayout::default_bit_value_end, BitsetLayout::default_bit_value_padding);
+    out.write(pos + BitsetLayout::default_bit_value_position, m_default_bit_value);
+    out.write_padding(pos + BitsetLayout::default_bit_value_end, BitsetLayout::default_bit_value_padding);
 
     /* Write dynamic info */
     buffer_size_type buffer_size = BitsetLayout::blocks_position;
 
     // Write blocks
-    m_blocks.finish();
-    buffer_size += m_buffer.write(BitsetLayout::blocks_position, m_blocks.buffer().data(), m_blocks.buffer().size());
+    buffer_size += m_blocks.finish(out, pos + BitsetLayout::blocks_position);
     // Write final padding
-    buffer_size += m_buffer.write_padding(buffer_size, calculate_amount_padding(buffer_size, BitsetLayout::final_alignment));
+    buffer_size += out.write_padding(pos + buffer_size, calculate_amount_padding(buffer_size, BitsetLayout::final_alignment));
 
     /* Write buffer size */
-    m_buffer.write(BitsetLayout::buffer_size_position, buffer_size);
-    m_buffer.set_size(buffer_size);
+    out.write(pos + BitsetLayout::buffer_size_position, buffer_size);
+    out.set_size(pos + buffer_size);
+
+    return buffer_size;
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
