@@ -1,27 +1,23 @@
 # Flatmemory
 
-Flatmemory is a C++20 library for serialization and zero-cost deserialization. Serialization is the problem of creating sequential representation of an object, and zero-cost deserialization is the problem of accessing the data without creating the original object. Flatmemory uses the typical approach of using builders for serialization and views for deserialization. The main advantage of this approach over compiler-generated memory layouts is that it requires much fewer (almost zero) memory allocations when creating objects since the memory of the builders is reused, and serialized data can be written to large preallocated buffers. Another advantage is that data is stored contiguously in memory, improving cache locality and resulting in better runtimes. The main disadvantage is that serialized objects cannot grow in their size. Flatmemory shines when creating many immutable objects that remain persistent in memory.
+Flatmemory is a C++20 library for serialization and zero-cost deserialization. Serialization is the problem of creating sequential representation of an object, and zero-cost deserialization is the problem of accessing the data without creating the original object. Flatmemory uses the typical approach by employing builders for serialization and views for deserialization, offering significant performance advantages over traditional compiler-generated memory layouts.
 
-Flatmemory currently provides the following non-trivial composite types:
+## Key Features and Advantages
 
-- Tuple
-- Vector
-- Bitset
+1. **Efficient Memory Management:** Flatmemory excels in scenarios where minimal memory allocations are critical. Builders reuse their memory, and serialized data can be efficiently written to large preallocated buffers. This minimizes the overhead typically associated with object creation and memory management.
+2. **Cache-Friendly Data Layout:** The library stores data contiguously in memory, enhancing cache locality. This leads to improved runtime performance, especially in scenarios where large datasets are processed.
+3. **Composite and Trivial Types:** Flatmemory supports a variety of composite types like `Tuple`, `Vector`, and `Bitset`, as well as nested types. Trivial types `T` that satisfy `std::is_trivially_copyable_v<T>` are stored in place, while non-trivial types are managed using offsets. This balance ensures flexibility while maintaining performance.
+4. **No Code Generation Required:** Unlike some serialization libraries, Flatmemory does not rely on code generation tools, simplifying the build process and reducing dependencies.
+4. **Optimized for Immutable Data:** Flatmemory is particularly well-suited for scenarios involving the creation of many immutable objects. While mutability is allowed, structural changes to serialized objects (like inserting elements into a vector) are restricted to prevent overwriting adjacent data.
 
-The supported nested types are all non-trivial types and trivial types `T` that satisfy `std::is_trivially_copyable_v<T>`. The data of non-trivial types is stored with an offset of type `uint32_t` and the data of all trivial types `T` is stored in-place. All non-trivial types are prefixed with a `uint32_t` that represents the size of the buffer.
+## Limitations
 
-Comparison to related libraries such as flatbuffers or cap'n'proto:
-
-Advantages:
-  - No code generator is needed
-
-Disadvantages:
-  - Memory layouts cannot be extended while supporting backward compatibility
-
+1. **Fixed Memory Layouts:** Once an object is serialized, its memory layout cannot be extended while maintaining backward compatibility. This trade-off is necessary to achieve the library’s performance goals.
+2. **Non-Resizable Objects:** Serialized objects have a fixed size, and operations that would alter their structure (such as inserting elements in a vector) are not permitted.
 
 ## Example
 
-In this example, we use a `Builder`to serialize a 2-dimensional `Vector` of `uint16_t` into a sequence of bytes. A respective `View` can interpret the data.
+In this example, we use a `Builder` to serialize a 2-dimensional `Vector` of `uint16_t` into a sequence of bytes. A respective `View` can interpret the data.
 
 ```cpp
 #include <flatmemory/flatmemory.hpp>
