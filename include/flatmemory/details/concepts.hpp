@@ -24,20 +24,20 @@
 namespace flatmemory
 {
 /**
- * Base ID class for custom types.
+ * Base ID class for non-trivial types.
  */
-struct Custom
+struct NonTrivialType
 {
 };
 
 template<typename T>
-concept IsCustom = std::derived_from<T, Custom>;
+concept IsNonTrivialType = std::derived_from<T, NonTrivialType>;
 
 template<typename T>
 concept IsTriviallyCopyable = std::is_trivially_copyable_v<T>;
 
 template<typename T>
-concept IsTriviallyCopyableOrCustom = (IsTriviallyCopyable<T> || IsCustom<T>);
+concept IsTriviallyCopyableOrNonTrivialType = (IsTriviallyCopyable<T> || IsNonTrivialType<T>);
 
 // Concept to check whether T is integral
 template<typename T>

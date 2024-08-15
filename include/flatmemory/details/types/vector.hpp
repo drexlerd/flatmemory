@@ -29,7 +29,6 @@
 #include "flatmemory/details/operator.hpp"
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
-#include "flatmemory/details/types/tags.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -41,6 +40,17 @@ namespace flatmemory
 {
 
 /**
+ * ID class for non-trivial Vector type.
+ */
+template<IsTriviallyCopyableOrNonTrivialType T>
+struct Vector : public NonTrivialType
+{
+    /// @brief Non-trivial copy-constructor
+    /// @param other
+    Vector(const Vector& other) {}
+};
+
+/**
  * Data types
  */
 using vector_size_type = uint32_t;
@@ -48,19 +58,19 @@ using vector_size_type = uint32_t;
 /**
  * Forward declarations
  */
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 class View<Vector<T>>;
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 class ConstView<Vector<T>>;
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 class Builder<Vector<T>>;
 
 /**
  * Operator
  */
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 class Operator<Vector<T>>
 {
 private:
@@ -70,7 +80,7 @@ public:
 /**
  * Layout
  */
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 class Layout<Vector<T>>
 {
 public:
@@ -90,7 +100,7 @@ public:
 /**
  * Builder
  */
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 class Builder<Vector<T>> : public IBuilder<Builder<Vector<T>>>
 {
 public:
@@ -173,7 +183,7 @@ public:
 /**
  * View
  */
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 class View<Vector<T>>
 {
 public:
@@ -285,7 +295,7 @@ public:
 /**
  * ConstView
  */
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 class ConstView<Vector<T>>
 {
 public:
@@ -382,7 +392,7 @@ public:
 
 // Layout
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void Layout<Vector<T>>::print() const
 {
     std::cout << "buffer_size_position: " << buffer_size_position << "\n"
@@ -397,13 +407,13 @@ void Layout<Vector<T>>::print() const
 
 // Builder
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void Builder<Vector<T>>::finish_impl()
 {
     this->finish(m_buffer, 0);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 size_t Builder<Vector<T>>::finish_impl(ByteBuffer& out, size_t pos)
 {
     /* Write header info */
@@ -452,34 +462,34 @@ size_t Builder<Vector<T>>::finish_impl(ByteBuffer& out, size_t pos)
     return buffer_size;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 auto& Builder<Vector<T>>::get_buffer_impl()
 {
     return m_buffer;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 const auto& Builder<Vector<T>>::get_buffer_impl() const
 {
     return m_buffer;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 Builder<Vector<T>>::Builder()
 {
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 Builder<Vector<T>>::Builder(size_t count) : m_data(count)
 {
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 Builder<Vector<T>>::Builder(size_t count, const T_& value) : m_data(count, value)
 {
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool Builder<Vector<T>>::operator==(const Builder& other) const
 {
     if (this != &other)
@@ -489,7 +499,7 @@ bool Builder<Vector<T>>::operator==(const Builder& other) const
     return true;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool Builder<Vector<T>>::operator==(const ConstView<Vector<T>> other) const
 {
     if (size() != other.size())
@@ -509,7 +519,7 @@ bool Builder<Vector<T>>::operator==(const ConstView<Vector<T>> other) const
     return true;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool Builder<Vector<T>>::operator==(const View<Vector<T>> other) const
 {
     if (size() != other.size())
@@ -529,39 +539,39 @@ bool Builder<Vector<T>>::operator==(const View<Vector<T>> other) const
     return true;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool Builder<Vector<T>>::operator!=(const Builder& other) const
 {
     return !(*this == other);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 Builder<Vector<T>>::T_& Builder<Vector<T>>::operator[](size_t pos)
 {
     assert(pos < size());
     return m_data[pos];
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 const Builder<Vector<T>>::T_& Builder<Vector<T>>::operator[](size_t pos) const
 {
     assert(pos < size());
     return m_data[pos];
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 Builder<Vector<T>>::T_& Builder<Vector<T>>::at(size_t pos)
 {
     return m_data.at(pos);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 const Builder<Vector<T>>::T_& Builder<Vector<T>>::at(size_t pos) const
 {
     return m_data.at(pos);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 size_t Builder<Vector<T>>::hash() const
 {
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
@@ -580,79 +590,79 @@ size_t Builder<Vector<T>>::hash() const
     }
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 Builder<Vector<T>>::T_* Builder<Vector<T>>::data()
 {
     return m_data.data();
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 const Builder<Vector<T>>::T_* Builder<Vector<T>>::data() const
 {
     return m_data.data();
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 Builder<Vector<T>>::iterator Builder<Vector<T>>::begin()
 {
     return m_data.begin();
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 Builder<Vector<T>>::const_iterator Builder<Vector<T>>::begin() const
 {
     return m_data.begin();
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 Builder<Vector<T>>::iterator Builder<Vector<T>>::end()
 {
     return m_data.end();
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 Builder<Vector<T>>::const_iterator Builder<Vector<T>>::end() const
 {
     return m_data.end();
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 constexpr bool Builder<Vector<T>>::empty() const
 {
     return m_data.empty();
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 constexpr size_t Builder<Vector<T>>::size() const
 {
     return m_data.size();
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void Builder<Vector<T>>::push_back(T_&& element)
 {
     m_data.push_back(std::move(element));
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void Builder<Vector<T>>::push_back(const T_& element)
 {
     m_data.push_back(element);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void Builder<Vector<T>>::resize(size_t count)
 {
     m_data.resize(count, T_());
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void Builder<Vector<T>>::resize(size_t count, const T_& value)
 {
     m_data.resize(count, value);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void Builder<Vector<T>>::clear()
 {
     m_data.clear();
@@ -660,13 +670,13 @@ void Builder<Vector<T>>::clear()
 
 // View
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<Vector<T>>::View(uint8_t* buf) : m_buf(buf)
 {
     assert(m_buf);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void View<Vector<T>>::range_check(size_t pos) const
 {
     if (pos >= size())
@@ -676,7 +686,7 @@ void View<Vector<T>>::range_check(size_t pos) const
     }
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool View<Vector<T>>::operator==(const Builder<Vector<T>>& other) const
 {
     if (size() != other.size())
@@ -693,7 +703,7 @@ bool View<Vector<T>>::operator==(const Builder<Vector<T>>& other) const
     return true;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool View<Vector<T>>::operator==(const View<Vector<T>>& other) const
 {
     if (m_buf != other.buffer())
@@ -707,7 +717,7 @@ bool View<Vector<T>>::operator==(const View<Vector<T>>& other) const
     return true;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool View<Vector<T>>::operator==(const ConstView<Vector<T>>& other) const
 {
     if (m_buf != other.buffer())
@@ -721,25 +731,25 @@ bool View<Vector<T>>::operator==(const ConstView<Vector<T>>& other) const
     return true;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool View<Vector<T>>::operator!=(const Builder<Vector<T>>& other) const
 {
     return !(*this == other);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool View<Vector<T>>::operator!=(const View<Vector<T>>& other) const
 {
     return !(*this == other);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool View<Vector<T>>::operator!=(const ConstView<Vector<T>>& other) const
 {
     return !(*this == other);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 decltype(auto) View<Vector<T>>::operator[](size_t pos)
 {
     assert(m_buf);
@@ -757,7 +767,7 @@ decltype(auto) View<Vector<T>>::operator[](size_t pos)
     }
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 decltype(auto) View<Vector<T>>::operator[](size_t pos) const
 {
     assert(m_buf);
@@ -775,21 +785,21 @@ decltype(auto) View<Vector<T>>::operator[](size_t pos) const
     }
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 decltype(auto) View<Vector<T>>::at(size_t pos)
 {
     range_check(pos);
     return (*this)[pos];
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 decltype(auto) View<Vector<T>>::at(size_t pos) const
 {
     range_check(pos);
     return (*this)[pos];
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 size_t View<Vector<T>>::hash() const
 {
     size_t seed = size();
@@ -798,40 +808,40 @@ size_t View<Vector<T>>::hash() const
     return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<Vector<T>>::T_* View<Vector<T>>::data()
 {
     return reinterpret_cast<View<Vector<T>>::T_*>(m_buf + Layout<Vector<T>>::vector_data_position);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 const View<Vector<T>>::T_* View<Vector<T>>::data() const
 {
     return reinterpret_cast<const View<Vector<T>>::T_*>(m_buf + Layout<Vector<T>>::vector_data_position);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 uint8_t* View<Vector<T>>::buffer()
 {
     return m_buf;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 const uint8_t* View<Vector<T>>::buffer() const
 {
     return m_buf;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<Vector<T>>::iterator::iterator() : m_buf(nullptr)
 {
 }
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<Vector<T>>::iterator::iterator(uint8_t* buf) : m_buf(buf)
 {
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 decltype(auto) View<Vector<T>>::iterator::operator*() const
 {
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
@@ -846,7 +856,7 @@ decltype(auto) View<Vector<T>>::iterator::operator*() const
     }
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<Vector<T>>::iterator& View<Vector<T>>::iterator::operator++()
 {
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
@@ -861,7 +871,7 @@ View<Vector<T>>::iterator& View<Vector<T>>::iterator::operator++()
     return *this;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<Vector<T>>::iterator View<Vector<T>>::iterator::operator++(int)
 {
     iterator tmp = *this;
@@ -869,26 +879,26 @@ View<Vector<T>>::iterator View<Vector<T>>::iterator::operator++(int)
     return tmp;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool View<Vector<T>>::iterator::operator==(const View<Vector<T>>::iterator& other) const
 {
     return m_buf == other.m_buf;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool View<Vector<T>>::iterator::operator!=(const View<Vector<T>>::iterator& other) const
 {
     return !(*this == other);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<Vector<T>>::iterator View<Vector<T>>::begin()
 {
     assert(m_buf);
     return View<Vector<T>>::iterator(m_buf + Layout<Vector<T>>::vector_data_position);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<Vector<T>>::iterator View<Vector<T>>::end()
 {
     assert(m_buf);
@@ -903,17 +913,17 @@ View<Vector<T>>::iterator View<Vector<T>>::end()
     }
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<Vector<T>>::const_iterator::const_iterator() : m_buf(nullptr)
 {
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<Vector<T>>::const_iterator::const_iterator(const uint8_t* buf) : m_buf(buf)
 {
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 decltype(auto) View<Vector<T>>::const_iterator::operator*() const
 {
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
@@ -928,7 +938,7 @@ decltype(auto) View<Vector<T>>::const_iterator::operator*() const
     }
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<Vector<T>>::const_iterator& View<Vector<T>>::const_iterator::operator++()
 {
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
@@ -943,7 +953,7 @@ View<Vector<T>>::const_iterator& View<Vector<T>>::const_iterator::operator++()
     return *this;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<Vector<T>>::const_iterator View<Vector<T>>::const_iterator::operator++(int)
 {
     const_iterator tmp = *this;
@@ -951,26 +961,26 @@ View<Vector<T>>::const_iterator View<Vector<T>>::const_iterator::operator++(int)
     return tmp;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool View<Vector<T>>::const_iterator::operator==(const View<Vector<T>>::const_iterator& other) const
 {
     return m_buf == other.m_buf;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool View<Vector<T>>::const_iterator::operator!=(const View<Vector<T>>::const_iterator& other) const
 {
     return !(*this == other);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<Vector<T>>::const_iterator View<Vector<T>>::begin() const
 {
     assert(m_buf);
     return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<Vector<T>>::const_iterator View<Vector<T>>::end() const
 {
     assert(m_buf);
@@ -985,13 +995,13 @@ View<Vector<T>>::const_iterator View<Vector<T>>::end() const
     }
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool View<Vector<T>>::empty() const
 {
     return size() == 0;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 buffer_size_type View<Vector<T>>::buffer_size() const
 {
     assert(m_buf);
@@ -999,7 +1009,7 @@ buffer_size_type View<Vector<T>>::buffer_size() const
     return read_value<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_position);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 size_t View<Vector<T>>::size() const
 {
     assert(m_buf);
@@ -1009,18 +1019,18 @@ size_t View<Vector<T>>::size() const
 
 // ConstView
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 ConstView<Vector<T>>::ConstView(const uint8_t* buf) : m_buf(buf)
 {
     assert(buf);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 ConstView<Vector<T>>::ConstView(const View<Vector<T>>& view) : m_buf(view.buffer())
 {
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void ConstView<Vector<T>>::range_check(size_t pos) const
 {
     if (pos >= size())
@@ -1030,7 +1040,7 @@ void ConstView<Vector<T>>::range_check(size_t pos) const
     }
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool ConstView<Vector<T>>::operator==(const Builder<Vector<T>>& other) const
 {
     if (size() != other.size())
@@ -1047,7 +1057,7 @@ bool ConstView<Vector<T>>::operator==(const Builder<Vector<T>>& other) const
     return true;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool ConstView<Vector<T>>::operator==(const ConstView<Vector<T>>& other) const
 {
     if (m_buf != other.buffer())
@@ -1061,7 +1071,7 @@ bool ConstView<Vector<T>>::operator==(const ConstView<Vector<T>>& other) const
     return true;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool ConstView<Vector<T>>::operator==(const View<Vector<T>>& other) const
 {
     if (m_buf != other.buffer())
@@ -1075,25 +1085,25 @@ bool ConstView<Vector<T>>::operator==(const View<Vector<T>>& other) const
     return true;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool ConstView<Vector<T>>::operator!=(const Builder<Vector<T>>& other) const
 {
     return !(*this == other);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool ConstView<Vector<T>>::operator!=(const ConstView<Vector<T>>& other) const
 {
     return !(*this == other);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool ConstView<Vector<T>>::operator!=(const View<Vector<T>>& other) const
 {
     return !(*this == other);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 decltype(auto) ConstView<Vector<T>>::operator[](size_t pos) const
 {
     assert(m_buf);
@@ -1111,14 +1121,14 @@ decltype(auto) ConstView<Vector<T>>::operator[](size_t pos) const
     }
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 decltype(auto) ConstView<Vector<T>>::at(size_t pos) const
 {
     range_check(pos);
     return (*this)[pos];
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 size_t ConstView<Vector<T>>::hash() const
 {
     size_t seed = size();
@@ -1127,29 +1137,29 @@ size_t ConstView<Vector<T>>::hash() const
     return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 const ConstView<Vector<T>>::T_* ConstView<Vector<T>>::data() const
 {
     return reinterpret_cast<const ConstView<Vector<T>>::T_*>(m_buf + Layout<Vector<T>>::vector_data_position);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 const uint8_t* ConstView<Vector<T>>::buffer() const
 {
     return m_buf;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 ConstView<Vector<T>>::const_iterator::const_iterator() : m_buf(nullptr)
 {
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 ConstView<Vector<T>>::const_iterator::const_iterator(const uint8_t* buf) : m_buf(buf)
 {
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 decltype(auto) ConstView<Vector<T>>::const_iterator::operator*() const
 {
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
@@ -1164,7 +1174,7 @@ decltype(auto) ConstView<Vector<T>>::const_iterator::operator*() const
     }
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 ConstView<Vector<T>>::const_iterator& ConstView<Vector<T>>::const_iterator::operator++()
 {
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
@@ -1179,7 +1189,7 @@ ConstView<Vector<T>>::const_iterator& ConstView<Vector<T>>::const_iterator::oper
     return *this;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 ConstView<Vector<T>>::const_iterator ConstView<Vector<T>>::const_iterator::operator++(int)
 {
     const_iterator tmp = *this;
@@ -1187,26 +1197,26 @@ ConstView<Vector<T>>::const_iterator ConstView<Vector<T>>::const_iterator::opera
     return tmp;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool ConstView<Vector<T>>::const_iterator::operator==(const ConstView<Vector<T>>::const_iterator& other) const
 {
     return m_buf == other.m_buf;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool ConstView<Vector<T>>::const_iterator::operator!=(const ConstView<Vector<T>>::const_iterator& other) const
 {
     return !(*this == other);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 ConstView<Vector<T>>::const_iterator ConstView<Vector<T>>::begin() const
 {
     assert(m_buf);
     return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 ConstView<Vector<T>>::const_iterator ConstView<Vector<T>>::end() const
 {
     assert(m_buf);
@@ -1221,13 +1231,13 @@ ConstView<Vector<T>>::const_iterator ConstView<Vector<T>>::end() const
     }
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 bool ConstView<Vector<T>>::empty() const
 {
     return size() == 0;
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 buffer_size_type ConstView<Vector<T>>::buffer_size() const
 {
     assert(m_buf);
@@ -1235,7 +1245,7 @@ buffer_size_type ConstView<Vector<T>>::buffer_size() const
     return read_value<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_position);
 }
 
-template<IsTriviallyCopyableOrCustom T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 size_t ConstView<Vector<T>>::size() const
 {
     assert(m_buf);
@@ -1252,19 +1262,19 @@ static_assert(std::ranges::forward_range<View<Vector<uint64_t>>>);
 static_assert(std::ranges::forward_range<ConstView<Vector<uint64_t>>>);
 }
 
-template<flatmemory::IsTriviallyCopyableOrCustom T>
+template<flatmemory::IsTriviallyCopyableOrNonTrivialType T>
 struct std::hash<flatmemory::Vector<T>>
 {
     size_t operator()(const flatmemory::Builder<flatmemory::Vector<T>>& vector) const { return vector.hash(); }
 };
 
-template<flatmemory::IsTriviallyCopyableOrCustom T>
+template<flatmemory::IsTriviallyCopyableOrNonTrivialType T>
 struct std::hash<flatmemory::View<flatmemory::Vector<T>>>
 {
     size_t operator()(const flatmemory::View<flatmemory::Vector<T>>& vector) const { return vector.hash(); }
 };
 
-template<flatmemory::IsTriviallyCopyableOrCustom T>
+template<flatmemory::IsTriviallyCopyableOrNonTrivialType T>
 struct std::hash<flatmemory::ConstView<flatmemory::Vector<T>>>
 {
     size_t operator()(const flatmemory::ConstView<flatmemory::Vector<T>>& vector) const { return vector.hash(); }

@@ -27,7 +27,6 @@
 #include "flatmemory/details/layout_utils.hpp"
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
-#include "flatmemory/details/types/tags.hpp"
 
 #include <algorithm>
 #include <array>
@@ -40,11 +39,21 @@
 namespace flatmemory
 {
 
+/**
+ * ID class for non-trivial Tuple type.
+ */
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
+struct Tuple : public NonTrivialType
+{
+    /// @brief Non-trivial copy-constructor
+    /// @param other
+    Tuple(const Tuple& other) {}
+};
 
 /**
  * Layout
  */
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 class Layout<Tuple<Ts...>>
 {
 private:
@@ -103,7 +112,7 @@ public:
 /**
  * Builder
  */
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 class Builder<Tuple<Ts...>> : public IBuilder<Builder<Tuple<Ts...>>>
 {
 public:
@@ -170,7 +179,7 @@ public:
 /**
  * View
  */
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 class View<Tuple<Ts...>>
 {
 public:
@@ -245,7 +254,7 @@ public:
 /**
  * ConstView
  */
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 class ConstView<Tuple<Ts...>>
 {
 public:
@@ -325,7 +334,7 @@ public:
 
 // Layout
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<size_t... Is>
 consteval std::array<size_t, sizeof...(Ts) + 1> Layout<Tuple<Ts...>>::calculate_header_alignments(std::index_sequence<Is...>)
 {
@@ -341,7 +350,7 @@ consteval std::array<size_t, sizeof...(Ts) + 1> Layout<Tuple<Ts...>>::calculate_
     return alignments;
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<size_t... Is>
 consteval std::array<size_t, sizeof...(Ts) + 1> Layout<Tuple<Ts...>>::calculate_data_alignments(std::index_sequence<Is...>)
 {
@@ -357,7 +366,7 @@ consteval std::array<size_t, sizeof...(Ts) + 1> Layout<Tuple<Ts...>>::calculate_
     return alignments;
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<typename T>
 consteval size_t Layout<Tuple<Ts...>>::calculate_header_offset_type_size()
 {
@@ -372,13 +381,13 @@ consteval size_t Layout<Tuple<Ts...>>::calculate_header_offset_type_size()
     }
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 void Layout<Tuple<Ts...>>::ElementData::print() const
 {
     std::cout << "position: " << position << " end: " << end << " padding: " << padding << std::endl;
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 void Layout<Tuple<Ts...>>::LayoutData::print() const
 {
     std::cout << "buffer_size_position: " << buffer_size_position << "\n"
@@ -391,7 +400,7 @@ void Layout<Tuple<Ts...>>::LayoutData::print() const
     }
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<size_t... Is>
 consteval Layout<Tuple<Ts...>>::LayoutData Layout<Tuple<Ts...>>::calculate_layout_data(std::index_sequence<Is...> index_sequence)
 {
@@ -423,7 +432,7 @@ consteval Layout<Tuple<Ts...>>::LayoutData Layout<Tuple<Ts...>>::calculate_layou
     return LayoutData { buffer_size_position, buffer_size_end, buffer_size_padding, element_datas_position, element_datas };
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 void Layout<Tuple<Ts...>>::print() const
 {
     layout_data.print();
@@ -432,7 +441,7 @@ void Layout<Tuple<Ts...>>::print() const
 
 // Builder
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<size_t... Is>
 size_t Builder<Tuple<Ts...>>::finish_iterative_impl(std::index_sequence<Is...>, ByteBuffer& out, size_t pos)
 {
@@ -470,31 +479,31 @@ size_t Builder<Tuple<Ts...>>::finish_iterative_impl(std::index_sequence<Is...>, 
     return buffer_size;
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 void Builder<Tuple<Ts...>>::finish_impl()
 {
     this->finish(m_buffer, 0);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 size_t Builder<Tuple<Ts...>>::finish_impl(ByteBuffer& out, size_t pos)
 {
     return finish_iterative_impl(std::make_index_sequence<sizeof...(Ts)> {}, out, pos);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 auto& Builder<Tuple<Ts...>>::get_buffer_impl()
 {
     return m_buffer;
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 const auto& Builder<Tuple<Ts...>>::get_buffer_impl() const
 {
     return m_buffer;
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 bool Builder<Tuple<Ts...>>::operator==(const Builder& other) const
 {
     if (this != &other)
@@ -504,65 +513,65 @@ bool Builder<Tuple<Ts...>>::operator==(const Builder& other) const
     return true;
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t... Is>
 bool Builder<Tuple<Ts...>>::compare_tuples(std::index_sequence<Is...>, const ConstView<Tuple<Ts...>>& other) const
 {
     return (... && (std::get<Is>(m_data) == other.template get<Is>()));
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 bool Builder<Tuple<Ts...>>::operator==(const ConstView<Tuple<Ts...>> other) const
 {  //
     return compare_tuples(std::index_sequence_for<Ts...> {}, other);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t... Is>
 bool Builder<Tuple<Ts...>>::compare_tuples(std::index_sequence<Is...>, const View<Tuple<Ts...>>& other) const
 {
     return (... && (std::get<Is>(m_data) == other.template get<Is>()));
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 bool Builder<Tuple<Ts...>>::operator==(const View<Tuple<Ts...>> other) const
 {  //
     return compare_tuples(std::index_sequence_for<Ts...> {}, other);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 bool Builder<Tuple<Ts...>>::operator!=(const Builder& other) const
 {
     return !(*this == other);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 bool Builder<Tuple<Ts...>>::operator!=(const View<Tuple<Ts...>>& other) const
 {
     return !(*this == other);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 bool Builder<Tuple<Ts...>>::operator!=(const ConstView<Tuple<Ts...>>& other) const
 {
     return !(*this == other);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t I>
 auto& Builder<Tuple<Ts...>>::get()
 {
     return std::get<I>(m_data);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t I>
 const auto& Builder<Tuple<Ts...>>::get() const
 {
     return std::get<I>(m_data);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<size_t... Is>
 size_t Builder<Tuple<Ts...>>::hash_helper(std::index_sequence<Is...>) const
 {
@@ -584,7 +593,7 @@ size_t Builder<Tuple<Ts...>>::hash_helper(std::index_sequence<Is...>) const
     return seed;
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 size_t Builder<Tuple<Ts...>>::hash() const
 {
     return hash_helper(std::make_index_sequence<sizeof...(Ts)> {});
@@ -592,26 +601,26 @@ size_t Builder<Tuple<Ts...>>::hash() const
 
 // View
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 View<Tuple<Ts...>>::View(uint8_t* data) : m_buf(data)
 {
     assert(m_buf);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t... Is>
 bool View<Tuple<Ts...>>::compare_tuples(std::index_sequence<Is...>, const Builder<Tuple<Ts...>>& other) const
 {
     return (... && (get<Is>() == other.template get<Is>()));
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 bool View<Tuple<Ts...>>::operator==(const Builder<Tuple<Ts...>> other) const
 {  //
     return compare_tuples(std::index_sequence_for<Ts...> {}, other);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 bool View<Tuple<Ts...>>::operator==(const View& other) const
 {
     if (m_buf != other.buffer())
@@ -625,7 +634,7 @@ bool View<Tuple<Ts...>>::operator==(const View& other) const
     return true;
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 bool View<Tuple<Ts...>>::operator==(const ConstView<Tuple<Ts...>> other) const
 {
     if (m_buf != other.buffer())
@@ -639,25 +648,25 @@ bool View<Tuple<Ts...>>::operator==(const ConstView<Tuple<Ts...>> other) const
     return true;
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 bool View<Tuple<Ts...>>::operator!=(const Builder<Tuple<Ts...>>& other) const
 {
     return !(*this == other);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 bool View<Tuple<Ts...>>::operator!=(const View<Tuple<Ts...>>& other) const
 {
     return !(*this == other);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 bool View<Tuple<Ts...>>::operator!=(const ConstView<Tuple<Ts...>>& other) const
 {
     return !(*this == other);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t I>
 decltype(auto) View<Tuple<Ts...>>::get()
 {
@@ -675,7 +684,7 @@ decltype(auto) View<Tuple<Ts...>>::get()
     }
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t I>
 decltype(auto) View<Tuple<Ts...>>::get() const
 {
@@ -693,18 +702,18 @@ decltype(auto) View<Tuple<Ts...>>::get() const
     }
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 uint8_t* View<Tuple<Ts...>>::buffer()
 {
     return m_buf;
 }
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 const uint8_t* View<Tuple<Ts...>>::buffer() const
 {
     return m_buf;
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 buffer_size_type View<Tuple<Ts...>>::buffer_size() const
 {
     assert(m_buf);
@@ -712,13 +721,13 @@ buffer_size_type View<Tuple<Ts...>>::buffer_size() const
     return read_value<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 size_t View<Tuple<Ts...>>::size() const
 {
     return Layout<Tuple<Ts...>>::size;
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 size_t View<Tuple<Ts...>>::hash() const
 {
     size_t seed = Layout<Tuple<Ts...>>::size;
@@ -729,31 +738,31 @@ size_t View<Tuple<Ts...>>::hash() const
 
 // ConstView
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 ConstView<Tuple<Ts...>>::ConstView(const uint8_t* data) : m_buf(data)
 {
     assert(m_buf);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 ConstView<Tuple<Ts...>>::ConstView(const View<Tuple<Ts...>>& view) : m_buf(view.buffer())
 {
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t... Is>
 bool ConstView<Tuple<Ts...>>::compare_tuples(std::index_sequence<Is...>, const Builder<Tuple<Ts...>>& other) const
 {
     return (... && (get<Is>() == other.template get<Is>()));
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 bool ConstView<Tuple<Ts...>>::operator==(const Builder<Tuple<Ts...>> other) const
 {  //
     return compare_tuples(std::index_sequence_for<Ts...> {}, other);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 bool ConstView<Tuple<Ts...>>::operator==(const View<Tuple<Ts...>>& other) const
 {
     if (m_buf != other.buffer())
@@ -767,7 +776,7 @@ bool ConstView<Tuple<Ts...>>::operator==(const View<Tuple<Ts...>>& other) const
     return true;
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 bool ConstView<Tuple<Ts...>>::operator==(const ConstView<Tuple<Ts...>> other) const
 {
     if (m_buf != other.buffer())
@@ -781,25 +790,25 @@ bool ConstView<Tuple<Ts...>>::operator==(const ConstView<Tuple<Ts...>> other) co
     return true;
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 bool ConstView<Tuple<Ts...>>::operator!=(const Builder<Tuple<Ts...>>& other) const
 {
     return !(*this == other);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 bool ConstView<Tuple<Ts...>>::operator!=(const View<Tuple<Ts...>>& other) const
 {
     return !(*this == other);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 bool ConstView<Tuple<Ts...>>::operator!=(const ConstView<Tuple<Ts...>>& other) const
 {
     return !(*this == other);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t I>
 decltype(auto) ConstView<Tuple<Ts...>>::get() const
 {
@@ -817,7 +826,7 @@ decltype(auto) ConstView<Tuple<Ts...>>::get() const
     }
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 buffer_size_type ConstView<Tuple<Ts...>>::buffer_size() const
 {
     assert(m_buf);
@@ -825,19 +834,19 @@ buffer_size_type ConstView<Tuple<Ts...>>::buffer_size() const
     return read_value<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position);
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 const uint8_t* ConstView<Tuple<Ts...>>::buffer() const
 {
     return m_buf;
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 size_t ConstView<Tuple<Ts...>>::size() const
 {
     return Layout<Tuple<Ts...>>::size;
 }
 
-template<IsTriviallyCopyableOrCustom... Ts>
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
 size_t ConstView<Tuple<Ts...>>::hash() const
 {
     size_t seed = Layout<Tuple<Ts...>>::size;

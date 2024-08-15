@@ -29,7 +29,6 @@
 #include "flatmemory/details/types/vector.hpp"
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
-#include "flatmemory/details/types/tags.hpp"
 
 #include <algorithm>
 #include <bit>
@@ -39,6 +38,19 @@
 
 namespace flatmemory
 {
+/**
+ * ID class for non-trivial Bitset type.
+ * The optional tag can be used to disallow operations with bitsets with other non-default tags.
+ */
+
+template<IsUnsignedIntegral Block, typename Tag = void>
+struct Bitset : public NonTrivialType
+{
+    /// @brief Non-trivial copy-constructor
+    /// @param other
+    Bitset(const Bitset& other) {}
+};
+
 /**
  * Layout
  */
@@ -101,7 +113,8 @@ concept HasCompatibleTagType = std::is_same_v<typename T::TagType, Tag> || std::
 
 /// @brief Concept for user define bitsets based on the STL
 template<typename T>
-concept IsUserDefinedBitset = requires(T a, const T b) {
+concept IsUserDefinedBitset = requires(T a, const T b)
+{
     /* Common */
 
     requires IsIntegral<typename T::BlockType>;
@@ -110,24 +123,25 @@ concept IsUserDefinedBitset = requires(T a, const T b) {
 
     {
         a.get_default_bit_value()
-    } -> std::same_as<bool&>;
+        } -> std::same_as<bool&>;
     {
         a.get_blocks()
-    } -> std::same_as<std::vector<typename T::BlockType>&>;
+        } -> std::same_as<std::vector<typename T::BlockType>&>;
 
     /* Const version */
 
     {
         b.get_default_bit_value()
-    } -> std::same_as<bool>;
+        } -> std::same_as<bool>;
     {
         b.get_blocks()
-    } -> std::same_as<const std::vector<typename T::BlockType>&>;
+        } -> std::same_as<const std::vector<typename T::BlockType>&>;
 };
 
 /// @brief Concept for Builder
 template<typename T>
-concept IsBitsetBuilder = requires(T a, const T b) {
+concept IsBitsetBuilder = requires(T a, const T b)
+{
     /* Common */
 
     requires IsIntegral<typename T::BlockType>;
@@ -137,24 +151,25 @@ concept IsBitsetBuilder = requires(T a, const T b) {
 
     {
         a.get_default_bit_value()
-    } -> std::same_as<bool&>;
+        } -> std::same_as<bool&>;
     {
         a.get_blocks()
-    } -> std::same_as<Builder<Vector<typename T::BlockType>>&>;
+        } -> std::same_as<Builder<Vector<typename T::BlockType>>&>;
 
     /* Const version */
 
     {
         b.get_default_bit_value()
-    } -> std::same_as<bool>;
+        } -> std::same_as<bool>;
     {
         b.get_blocks()
-    } -> std::same_as<const Builder<Vector<typename T::BlockType>>&>;
+        } -> std::same_as<const Builder<Vector<typename T::BlockType>>&>;
 };
 
 /// @brief Concept for View
 template<typename T>
-concept IsBitsetView = requires(T a, const T b) {
+concept IsBitsetView = requires(T a, const T b)
+{
     /* Common */
 
     requires IsIntegral<typename T::BlockType>;
@@ -164,24 +179,25 @@ concept IsBitsetView = requires(T a, const T b) {
 
     {
         a.get_default_bit_value()
-    } -> std::same_as<bool&>;
+        } -> std::same_as<bool&>;
     {
         a.get_blocks()
-    } -> std::same_as<View<Vector<typename T::BlockType>>>;
+        } -> std::same_as<View<Vector<typename T::BlockType>>>;
 
     /* Const version */
 
     {
         b.get_default_bit_value()
-    } -> std::same_as<bool>;
+        } -> std::same_as<bool>;
     {
         b.get_blocks()
-    } -> std::same_as<ConstView<Vector<typename T::BlockType>>>;
+        } -> std::same_as<ConstView<Vector<typename T::BlockType>>>;
 };
 
 /// @brief Concept for ConstView
 template<typename T>
-concept IsBitsetConstView = requires(T a, const T b) {
+concept IsBitsetConstView = requires(T a, const T b)
+{
     /* Common */
 
     requires IsIntegral<typename T::BlockType>;
@@ -191,19 +207,19 @@ concept IsBitsetConstView = requires(T a, const T b) {
 
     {
         a.get_default_bit_value()
-    } -> std::same_as<bool>;
+        } -> std::same_as<bool>;
     {
         a.get_blocks()
-    } -> std::same_as<ConstView<Vector<typename T::BlockType>>>;
+        } -> std::same_as<ConstView<Vector<typename T::BlockType>>>;
 
     /* Const version */
 
     {
         b.get_default_bit_value()
-    } -> std::same_as<bool>;
+        } -> std::same_as<bool>;
     {
         b.get_blocks()
-    } -> std::same_as<ConstView<Vector<typename T::BlockType>>>;
+        } -> std::same_as<ConstView<Vector<typename T::BlockType>>>;
 };
 
 /// @brief Concept for Bitset
@@ -233,19 +249,19 @@ public:
      * Operators
      */
     template<IsBitset L, IsBitset R>
-        requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
+    requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
     static bool are_equal(const L& left_bitset, const R& right_bitset);
 
     template<IsBitset L, IsBitset R>
-        requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
+    requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
     static bool less(const L& left_bitset, const R& right_bitset);
 
     template<IsBitset L, IsBitset R>
-        requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
+    requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
     static bool is_superseteq(const L& left_bitset, const R& right_bitset);
 
     template<IsBitset L, IsBitset R>
-        requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
+    requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
     static bool are_disjoint(const L& left_bitset, const R& right_bitset);
 
     /**
@@ -359,19 +375,19 @@ public:
      */
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
     bool operator==(const Other& other) const;
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
     bool operator!=(const Other& other) const;
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
     bool is_superseteq(const Other& other) const;
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
     bool are_disjoint(const Other& other) const;
 
     /**
@@ -454,19 +470,19 @@ public:
      */
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
     bool operator==(const Other& other) const;
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
     bool operator!=(const Other& other) const;
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
     bool is_superseteq(const Other& other) const;
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
     bool are_disjoint(const Other& other) const;
 
     /**
@@ -542,11 +558,11 @@ private:
     const auto& get_buffer_impl() const;
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
     void resize_to_fit(const Other& other);
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
     void init_from_view(const Other& other);
 
 public:
@@ -582,23 +598,23 @@ public:
      */
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
     bool operator<(const Other& other) const;
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
     bool operator==(const Other& other) const;
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
     bool operator!=(const Other& other) const;
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
     bool is_superseteq(const Other& other) const;
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
     bool are_disjoint(const Other& other) const;
 
     /**
@@ -620,28 +636,22 @@ public:
     Builder& operator~();
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    Builder operator|(const Other& other) const;
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag> Builder operator|(const Other& other) const;
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    Builder& operator|=(const Other& other);
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag> Builder& operator|=(const Other& other);
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    Builder operator&(const Other& other) const;
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag> Builder operator&(const Other& other) const;
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    Builder& operator&=(const Other& other);
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag> Builder& operator&=(const Other& other);
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    Builder operator-(const Other& other) const;
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag> Builder operator-(const Other& other) const;
 
     template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    Builder& operator-=(const Other& other);
+    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag> Builder& operator-=(const Other& other);
 
     /**
      * Lookup
@@ -702,7 +712,7 @@ void Layout<Bitset<Block, Tag>>::print() const
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset L, IsBitset R>
-    requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
+requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
 bool Operator<Bitset<Block, Tag>>::are_equal(const L& left_bitset, const R& right_bitset)
 {
     // Fetch data
@@ -733,7 +743,7 @@ bool Operator<Bitset<Block, Tag>>::are_equal(const L& left_bitset, const R& righ
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset L, IsBitset R>
-    requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
+requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
 bool Operator<Bitset<Block, Tag>>::less(const L& left_bitset, const R& right_bitset)
 {
     // Fetch data
@@ -770,7 +780,7 @@ bool Operator<Bitset<Block, Tag>>::less(const L& left_bitset, const R& right_bit
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset L, IsBitset R>
-    requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
+requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
 bool Operator<Bitset<Block, Tag>>::is_superseteq(const L& left_bitset, const R& right_bitset)
 {
     // Fetch data
@@ -822,7 +832,7 @@ bool Operator<Bitset<Block, Tag>>::is_superseteq(const L& left_bitset, const R& 
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset L, IsBitset R>
-    requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
+requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
 bool Operator<Bitset<Block, Tag>>::are_disjoint(const L& left_bitset, const R& right_bitset)
 {
     // Fetch data
@@ -1087,7 +1097,7 @@ View<Bitset<Block, Tag>>::View(uint8_t* buf) : m_buf(buf)
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
 bool View<Bitset<Block, Tag>>::operator==(const Other& other) const
 {
     assert(m_buf);
@@ -1096,15 +1106,12 @@ bool View<Bitset<Block, Tag>>::operator==(const Other& other) const
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool View<Bitset<Block, Tag>>::operator!=(const Other& other) const
-{
-    return !(*this == other);
-}
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+bool View<Bitset<Block, Tag>>::operator!=(const Other& other) const { return !(*this == other); }
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
 bool View<Bitset<Block, Tag>>::is_superseteq(const Other& other) const
 {
     assert(m_buf);
@@ -1113,7 +1120,7 @@ bool View<Bitset<Block, Tag>>::is_superseteq(const Other& other) const
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
 bool View<Bitset<Block, Tag>>::are_disjoint(const Other& other) const
 {
     assert(m_buf);
@@ -1230,7 +1237,7 @@ ConstView<Bitset<Block, Tag>>::ConstView(const BitsetView& view) : m_buf(view.bu
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
 bool ConstView<Bitset<Block, Tag>>::operator==(const Other& other) const
 {
     assert(m_buf);
@@ -1239,15 +1246,12 @@ bool ConstView<Bitset<Block, Tag>>::operator==(const Other& other) const
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool ConstView<Bitset<Block, Tag>>::operator!=(const Other& other) const
-{
-    return !(*this == other);
-}
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+bool ConstView<Bitset<Block, Tag>>::operator!=(const Other& other) const { return !(*this == other); }
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
 bool ConstView<Bitset<Block, Tag>>::is_superseteq(const Other& other) const
 {
     assert(m_buf);
@@ -1256,7 +1260,7 @@ bool ConstView<Bitset<Block, Tag>>::is_superseteq(const Other& other) const
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
 bool ConstView<Bitset<Block, Tag>>::are_disjoint(const Other& other) const
 {
     assert(m_buf);
@@ -1396,7 +1400,7 @@ const auto& Builder<Bitset<Block, Tag>>::get_buffer_impl() const
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
 void Builder<Bitset<Block, Tag>>::resize_to_fit(const Other& other)
 {
     if (m_blocks.size() < other.get_blocks().size())
@@ -1409,7 +1413,7 @@ void Builder<Bitset<Block, Tag>>::resize_to_fit(const Other& other)
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
 void Builder<Bitset<Block, Tag>>::init_from_view(const Other& other)
 {
     m_default_bit_value = other.get_default_bit_value();
@@ -1468,43 +1472,28 @@ Builder<Bitset<Block, Tag>>& Builder<Bitset<Block, Tag>>::operator=(const Bitset
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool Builder<Bitset<Block, Tag>>::operator<(const Other& other) const
-{
-    return BitsetOperator::less(*this, other);
-}
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+bool Builder<Bitset<Block, Tag>>::operator<(const Other& other) const { return BitsetOperator::less(*this, other); }
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool Builder<Bitset<Block, Tag>>::operator==(const Other& other) const
-{
-    return BitsetOperator::are_equal(*this, other);
-}
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+bool Builder<Bitset<Block, Tag>>::operator==(const Other& other) const { return BitsetOperator::are_equal(*this, other); }
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool Builder<Bitset<Block, Tag>>::operator!=(const Other& other) const
-{
-    return !(*this == other);
-}
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+bool Builder<Bitset<Block, Tag>>::operator!=(const Other& other) const { return !(*this == other); }
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool Builder<Bitset<Block, Tag>>::is_superseteq(const Other& other) const
-{
-    return BitsetOperator::is_superseteq(*this, other);
-}
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+bool Builder<Bitset<Block, Tag>>::is_superseteq(const Other& other) const { return BitsetOperator::is_superseteq(*this, other); }
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool Builder<Bitset<Block, Tag>>::are_disjoint(const Other& other) const
-{
-    return BitsetOperator::are_disjoint(*this, other);
-}
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+bool Builder<Bitset<Block, Tag>>::are_disjoint(const Other& other) const { return BitsetOperator::are_disjoint(*this, other); }
 
 template<IsUnsignedIntegral Block, typename Tag>
 void Builder<Bitset<Block, Tag>>::shrink_to_fit()
@@ -1577,8 +1566,8 @@ Builder<Bitset<Block, Tag>>& Builder<Bitset<Block, Tag>>::operator~()
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-Builder<Bitset<Block, Tag>> Builder<Bitset<Block, Tag>>::operator|(const Other& other) const
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag> Builder<Bitset<Block, Tag>>
+Builder<Bitset<Block, Tag>>::operator|(const Other& other) const
 {
     auto result = Builder<Bitset<Block, Tag>>(*this);
     result |= other;
@@ -1588,8 +1577,8 @@ Builder<Bitset<Block, Tag>> Builder<Bitset<Block, Tag>>::operator|(const Other& 
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-Builder<Bitset<Block, Tag>>& Builder<Bitset<Block, Tag>>::operator|=(const Other& other)
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag> Builder<Bitset<Block, Tag>>
+&Builder<Bitset<Block, Tag>>::operator|=(const Other& other)
 {
     // Fetch data
     const auto& other_blocks = other.get_blocks();
@@ -1618,8 +1607,8 @@ Builder<Bitset<Block, Tag>>& Builder<Bitset<Block, Tag>>::operator|=(const Other
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-Builder<Bitset<Block, Tag>> Builder<Bitset<Block, Tag>>::operator&(const Other& other) const
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag> Builder<Bitset<Block, Tag>>
+Builder<Bitset<Block, Tag>>::operator&(const Other& other) const
 {
     auto result = Builder<Bitset<Block, Tag>>(*this);
     result &= other;
@@ -1629,8 +1618,8 @@ Builder<Bitset<Block, Tag>> Builder<Bitset<Block, Tag>>::operator&(const Other& 
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-Builder<Bitset<Block, Tag>>& Builder<Bitset<Block, Tag>>::operator&=(const Other& other)
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag> Builder<Bitset<Block, Tag>>
+&Builder<Bitset<Block, Tag>>::operator&=(const Other& other)
 {
     // Fetch data
     const auto& other_blocks = other.get_blocks();
@@ -1660,8 +1649,8 @@ Builder<Bitset<Block, Tag>>& Builder<Bitset<Block, Tag>>::operator&=(const Other
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-Builder<Bitset<Block, Tag>> Builder<Bitset<Block, Tag>>::operator-(const Other& other) const
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag> Builder<Bitset<Block, Tag>>
+Builder<Bitset<Block, Tag>>::operator-(const Other& other) const
 {
     auto result = Builder<Bitset<Block, Tag>>(*this);
     result -= other;
@@ -1671,8 +1660,8 @@ Builder<Bitset<Block, Tag>> Builder<Bitset<Block, Tag>>::operator-(const Other& 
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-Builder<Bitset<Block, Tag>>& Builder<Bitset<Block, Tag>>::operator-=(const Other& other)
+requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag> Builder<Bitset<Block, Tag>>
+&Builder<Bitset<Block, Tag>>::operator-=(const Other& other)
 {
     // Fetch data
     const auto& other_blocks = other.get_blocks();

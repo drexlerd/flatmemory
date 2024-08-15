@@ -5,7 +5,6 @@
 #include "flatmemory/details/builder.hpp"
 #include "flatmemory/details/byte_buffer_segmented.hpp"
 #include "flatmemory/details/concepts.hpp"
-#include "flatmemory/details/types/tags.hpp"
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
 
@@ -24,7 +23,7 @@ namespace flatmemory
 /// but does not support resize since the exact
 /// amount of needed bytes is not known in advance.
 /// @tparam T
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 class VariableSizedTypeVector
 {
 private:
@@ -91,7 +90,7 @@ public:
 /// @brief FixedSizedTypeVector can handle only equally sized objects
 /// because it is meant to be resizeable.
 /// @tparam T
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 class FixedSizedTypeVector
 {
 private:
@@ -167,13 +166,13 @@ public:
 
 // VariableSizedTypeVector
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 VariableSizedTypeVector<T>::VariableSizedTypeVector(NumBytes initial_num_bytes_per_segment, NumBytes maximum_num_bytes_per_segment) :
     m_storage(ByteBufferSegmented(initial_num_bytes_per_segment, maximum_num_bytes_per_segment))
 {
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void VariableSizedTypeVector<T>::range_check(size_t pos) const
 {
     if (pos >= size())
@@ -183,109 +182,109 @@ void VariableSizedTypeVector<T>::range_check(size_t pos) const
     }
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<T> VariableSizedTypeVector<T>::operator[](size_t pos)
 {
     assert(pos <= size());
     return m_data[pos];
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 ConstView<T> VariableSizedTypeVector<T>::operator[](size_t pos) const
 {
     assert(pos <= size());
     return m_data[pos];
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<T> VariableSizedTypeVector<T>::at(size_t pos)
 {
     range_check(pos);
     return m_data[pos];
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 ConstView<T> VariableSizedTypeVector<T>::at(size_t pos) const
 {
     range_check(pos);
     return m_data[pos];
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<T> VariableSizedTypeVector<T>::back()
 {
     assert(!m_data.empty());
     return m_data.back();
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 ConstView<T> VariableSizedTypeVector<T>::back() const
 {
     assert(!m_data.empty());
     return m_data.back();
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 const ByteBufferSegmented& VariableSizedTypeVector<T>::get_storage() const
 {
     return m_storage;
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 VariableSizedTypeVector<T>::iterator VariableSizedTypeVector<T>::begin()
 {
     return m_data.begin();
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 VariableSizedTypeVector<T>::const_iterator VariableSizedTypeVector<T>::begin() const
 {
     return m_data.begin();
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 VariableSizedTypeVector<T>::iterator VariableSizedTypeVector<T>::end()
 {
     return m_data.end();
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 VariableSizedTypeVector<T>::const_iterator VariableSizedTypeVector<T>::end() const
 {
     return m_data.end();
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 constexpr size_t VariableSizedTypeVector<T>::empty() const
 {
     return m_data.empty();
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 constexpr size_t VariableSizedTypeVector<T>::size() const
 {
     return m_data.size();
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void VariableSizedTypeVector<T>::push_back(const Builder<T>& builder)
 {
     m_data.push_back(View<T>(m_storage.write(builder.buffer().data(), builder.buffer().size())));
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void VariableSizedTypeVector<T>::push_back(const View<T>& view)
 {
     m_data.push_back(View<T>(m_storage.write(view.buffer(), view.buffer_size())));
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void VariableSizedTypeVector<T>::push_back(const ConstView<T>& view)
 {
     m_data.push_back(View<T>(m_storage.write(view.buffer(), view.buffer_size())));
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void VariableSizedTypeVector<T>::clear()
 {
     m_data.clear();
@@ -294,14 +293,14 @@ void VariableSizedTypeVector<T>::clear()
 
 // FixedSizedTypeVector
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 FixedSizedTypeVector<T>::FixedSizedTypeVector(NumBytes initial_num_bytes_per_segment, NumBytes maximum_num_bytes_per_segment) :
     m_storage(ByteBufferSegmented(initial_num_bytes_per_segment, maximum_num_bytes_per_segment))
 {  //
     m_default_builder.finish();
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 FixedSizedTypeVector<T>::FixedSizedTypeVector(Builder<T> default_builder, NumBytes initial_num_bytes_per_segment, NumBytes maximum_num_bytes_per_segment) :
     m_storage(ByteBufferSegmented(initial_num_bytes_per_segment, maximum_num_bytes_per_segment)),
     m_default_builder(std::move(default_builder))
@@ -312,7 +311,7 @@ FixedSizedTypeVector<T>::FixedSizedTypeVector(Builder<T> default_builder, NumByt
     }
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void FixedSizedTypeVector<T>::range_check(size_t pos) const
 {
     if (pos >= size())
@@ -322,7 +321,7 @@ void FixedSizedTypeVector<T>::range_check(size_t pos) const
     }
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<T> FixedSizedTypeVector<T>::operator[](size_t pos)
 {
     if (pos >= size())
@@ -332,14 +331,14 @@ View<T> FixedSizedTypeVector<T>::operator[](size_t pos)
     return m_data[pos];
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 ConstView<T> FixedSizedTypeVector<T>::operator[](size_t pos) const
 {
     range_check(pos);
     return m_data[pos];
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<T> FixedSizedTypeVector<T>::at(size_t pos)
 {
     if (pos >= size())
@@ -349,86 +348,86 @@ View<T> FixedSizedTypeVector<T>::at(size_t pos)
     return m_data[pos];
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 ConstView<T> FixedSizedTypeVector<T>::at(size_t pos) const
 {
     range_check(pos);
     return m_data[pos];
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<T> FixedSizedTypeVector<T>::back()
 {
     return m_data.back();
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 ConstView<T> FixedSizedTypeVector<T>::back() const
 {
     return m_data.back();
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 const ByteBufferSegmented& FixedSizedTypeVector<T>::get_storage() const
 {
     return m_storage;
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 FixedSizedTypeVector<T>::iterator FixedSizedTypeVector<T>::begin()
 {
     return m_data.begin();
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 FixedSizedTypeVector<T>::const_iterator FixedSizedTypeVector<T>::begin() const
 {
     return m_data.begin();
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 FixedSizedTypeVector<T>::iterator FixedSizedTypeVector<T>::end()
 {
     return m_data.end();
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 FixedSizedTypeVector<T>::const_iterator FixedSizedTypeVector<T>::end() const
 {
     return m_data.end();
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 constexpr size_t FixedSizedTypeVector<T>::empty() const
 {
     return m_data.empty();
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 constexpr size_t FixedSizedTypeVector<T>::size() const
 {
     return m_data.size();
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void FixedSizedTypeVector<T>::push_back(const Builder<T>& builder)
 {
     m_data.push_back(View<T>(m_storage.write(builder.buffer().data(), builder.buffer().size())));
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void FixedSizedTypeVector<T>::push_back(const View<T>& view)
 {
     m_data.push_back(View<T>(m_storage.write(view.buffer(), view.buffer_size())));
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void FixedSizedTypeVector<T>::push_back(const ConstView<T>& view)
 {
     m_data.push_back(View<T>(m_storage.write(view.buffer(), view.buffer_size())));
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void FixedSizedTypeVector<T>::resize(size_t count)
 {
     if (count < size())
@@ -444,7 +443,7 @@ void FixedSizedTypeVector<T>::resize(size_t count)
     }
 }
 
-template<IsTag T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 void FixedSizedTypeVector<T>::clear()
 {
     m_data.clear();
