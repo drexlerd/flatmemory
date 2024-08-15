@@ -413,7 +413,8 @@ void Builder<Vector<T>>::finish_impl()
 }
 
 template<IsTriviallyCopyableOrCustom T>
-size_t Builder<Vector<T>>::finish_impl(ByteBuffer& out, size_t pos) {
+size_t Builder<Vector<T>>::finish_impl(ByteBuffer& out, size_t pos)
+{
     /* Write header info */
     // Write vector size
     out.write(pos + Layout<Vector<T>>::vector_size_position, m_data.size());
@@ -455,7 +456,7 @@ size_t Builder<Vector<T>>::finish_impl(ByteBuffer& out, size_t pos) {
 
     /* Write buffer size */
     out.write(pos + Layout<Vector<T>>::buffer_size_position, static_cast<buffer_size_type>(buffer_size));
-    out.set_size(pos + buffer_size);
+    out.set_size(buffer_size);
 
     return buffer_size;
 }
@@ -1259,5 +1260,23 @@ static_assert(std::ranges::forward_range<Builder<Vector<uint64_t>>>);
 static_assert(std::ranges::forward_range<View<Vector<uint64_t>>>);
 static_assert(std::ranges::forward_range<ConstView<Vector<uint64_t>>>);
 }
+
+template<flatmemory::IsTriviallyCopyableOrCustom T>
+struct std::hash<flatmemory::Vector<T>>
+{
+    size_t operator()(const flatmemory::Builder<flatmemory::Vector<T>>& vector) const { return vector.hash(); }
+};
+
+template<flatmemory::IsTriviallyCopyableOrCustom T>
+struct std::hash<flatmemory::View<flatmemory::Vector<T>>>
+{
+    size_t operator()(const flatmemory::View<flatmemory::Vector<T>>& vector) const { return vector.hash(); }
+};
+
+template<flatmemory::IsTriviallyCopyableOrCustom T>
+struct std::hash<flatmemory::ConstView<flatmemory::Vector<T>>>
+{
+    size_t operator()(const flatmemory::ConstView<flatmemory::Vector<T>>& vector) const { return vector.hash(); }
+};
 
 #endif

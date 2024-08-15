@@ -473,7 +473,7 @@ size_t Builder<Tuple<Ts...>>::finish_iterative_impl(std::index_sequence<Is...>, 
     // No need to write padding because if size=0 then no padding is needed and otherwise, if size>0 then the loop adds final padding.
     /* Write buffer size */
     out.write(pos + Layout<Tuple<Ts...>>::layout_data.buffer_size_position, static_cast<buffer_size_type>(buffer_size));
-    out.set_size(pos + buffer_size);
+    out.set_size(buffer_size);
 
     return buffer_size;
 }
@@ -485,7 +485,8 @@ void Builder<Tuple<Ts...>>::finish_impl()
 }
 
 template<IsTriviallyCopyableOrCustom... Ts>
-size_t Builder<Tuple<Ts...>>::finish_impl(ByteBuffer& out, size_t pos) {
+size_t Builder<Tuple<Ts...>>::finish_impl(ByteBuffer& out, size_t pos)
+{
     return finish_iterative_impl(std::make_index_sequence<sizeof...(Ts)> {}, out, pos);
 }
 
@@ -854,5 +855,23 @@ size_t ConstView<Tuple<Ts...>>::hash() const
 }
 
 }
+
+template<typename... Ts>
+struct std::hash<flatmemory::Builder<flatmemory::Tuple<Ts...>>>
+{
+    size_t operator()(const flatmemory::Builder<flatmemory::Tuple<Ts...>>& tuple) const { return tuple.hash(); }
+};
+
+template<typename... Ts>
+struct std::hash<flatmemory::View<flatmemory::Tuple<Ts...>>>
+{
+    size_t operator()(const flatmemory::View<flatmemory::Tuple<Ts...>>& tuple) const { return tuple.hash(); }
+};
+
+template<typename... Ts>
+struct std::hash<flatmemory::ConstView<flatmemory::Tuple<Ts...>>>
+{
+    size_t operator()(const flatmemory::ConstView<flatmemory::Tuple<Ts...>>& tuple) const { return tuple.hash(); }
+};
 
 #endif

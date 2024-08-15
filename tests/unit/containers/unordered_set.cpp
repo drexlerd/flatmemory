@@ -24,19 +24,9 @@ namespace flatmemory::tests
 using StateLayout = Tuple<uint32_t, Bitset<uint64_t>>;
 using StateView = ConstView<StateLayout>;
 
-struct CustomHash
-{
-    std::size_t operator()(const StateView& view) const { return view.get<1>().hash(); }
-};
-
-struct CustomEqual
-{
-    bool operator()(const StateView& view_left, const StateView& view_right) const { return view_left.get<1>() == view_right.get<1>(); }
-};
-
 TEST(FlatmemoryTests, ContainersUnorderedSetTest)
 {
-    UnorderedSet<StateLayout, CustomHash, CustomEqual> unordered_set;
+    UnorderedSet<StateLayout> unordered_set;
 
     Builder<StateLayout> builder;
 
@@ -44,7 +34,7 @@ TEST(FlatmemoryTests, ContainersUnorderedSetTest)
     builder.get<1>().set(1);
     builder.finish();
     auto const_view1 = *unordered_set.insert(builder).first;
-    builder.get<0>() = 8;
+    builder.get<0>() = 9;
     builder.finish();
     auto const_view2 = *unordered_set.insert(builder).first;
 

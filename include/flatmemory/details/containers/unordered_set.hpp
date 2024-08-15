@@ -8,22 +8,11 @@
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
 
+#include <functional>
 #include <unordered_set>
 
 namespace flatmemory
 {
-
-template<typename T>
-struct CustomHash
-{
-    size_t operator()(const ConstView<T>& element) const { return element.hash(); }
-};
-
-template<typename T>
-struct CustomEqual
-{
-    bool operator()(const ConstView<T>& left_element, const ConstView<T>& right_element) const { return left_element == right_element; }
-};
 
 /**
  * Declarations
@@ -35,7 +24,7 @@ struct CustomEqual
 /// @tparam T
 /// @tparam Hash
 /// @tparam Equal
-template<typename T, typename Hash = CustomHash<T>, typename Equal = CustomEqual<T>>
+template<typename T, typename Hash = std::hash<ConstView<T>>, typename Equal = std::equal_to<ConstView<T>>>
 class UnorderedSet
 {
 private:
@@ -60,17 +49,17 @@ public:
      * Iterators
      */
 
-     iterator begin();
-     const_iterator begin() const;
-     iterator end();
-     const_iterator end() const;
+    iterator begin();
+    const_iterator begin() const;
+    iterator end();
+    const_iterator end() const;
 
     /**
      * Capacity
      */
 
-     bool empty() const;
-     size_t size() const;
+    bool empty() const;
+    size_t size() const;
 
     /**
      * Modifiers
@@ -78,20 +67,20 @@ public:
 
     void clear();
 
-     std::pair<const_iterator, bool> insert(const Builder<T>& builder);
-     std::pair<const_iterator, bool> insert(ConstView<T>& view);
-     std::pair<const_iterator, bool> insert(View<T>& view);
+    std::pair<const_iterator, bool> insert(const Builder<T>& builder);
+    std::pair<const_iterator, bool> insert(ConstView<T>& view);
+    std::pair<const_iterator, bool> insert(View<T>& view);
 
     /**
      * Lookup
      */
 
-     size_t count(ConstView<T> key) const;
-     iterator find(ConstView<T> key);
-     const_iterator find(ConstView<T> key) const;
-     bool contains(ConstView<T> key) const;
+    size_t count(ConstView<T> key) const;
+    iterator find(ConstView<T> key);
+    const_iterator find(ConstView<T> key) const;
+    bool contains(ConstView<T> key) const;
 
-     const ByteBufferSegmented& get_storage() const;
+    const ByteBufferSegmented& get_storage() const;
 };
 
 /**
