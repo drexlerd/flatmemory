@@ -31,6 +31,7 @@ template<typename Tag>
 class Layout
 {
 };
+
 }
 
 #endif

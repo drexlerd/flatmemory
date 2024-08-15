@@ -29,6 +29,7 @@
 #include "flatmemory/details/types/vector.hpp"
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
+#include "flatmemory/details/types/tags.hpp"
 
 #include <algorithm>
 #include <bit>
@@ -38,19 +39,6 @@
 
 namespace flatmemory
 {
-/**
- * Dispatcher for Bitset.
- * The optional tag can be used to disallow operations between bitsets have similar tag.
- */
-
-template<IsUnsignedIntegral Block, typename Tag = void>
-struct Bitset : public Custom
-{
-    /// @brief Non-trivial copy-constructor
-    /// @param other
-    Bitset(const Bitset& other) {}
-};
-
 /**
  * Layout
  */

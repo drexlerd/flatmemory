@@ -5,6 +5,7 @@
 #include "flatmemory/details/builder.hpp"
 #include "flatmemory/details/byte_buffer_segmented.hpp"
 #include "flatmemory/details/concepts.hpp"
+#include "flatmemory/details/types/tags.hpp"
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
 
@@ -24,7 +25,7 @@ namespace flatmemory
 /// @tparam T
 /// @tparam Hash
 /// @tparam Equal
-template<typename T, typename Hash = std::hash<ConstView<T>>, typename Equal = std::equal_to<ConstView<T>>>
+template<IsTag T, typename Hash = std::hash<ConstView<T>>, typename Equal = std::equal_to<ConstView<T>>>
 class UnorderedSet
 {
 private:
@@ -87,56 +88,56 @@ public:
  * Definitions
  */
 
-template<typename T, typename Hash, typename Equal>
+template<IsTag T, typename Hash, typename Equal>
 UnorderedSet<T, Hash, Equal>::UnorderedSet(NumBytes initial_num_bytes_per_segment, NumBytes maximum_num_bytes_per_segment) :
     m_storage(ByteBufferSegmented(initial_num_bytes_per_segment, maximum_num_bytes_per_segment))
 {
 }
 
-template<typename T, typename Hash, typename Equal>
+template<IsTag T, typename Hash, typename Equal>
 UnorderedSet<T, Hash, Equal>::iterator UnorderedSet<T, Hash, Equal>::begin()
 {
     return m_data.begin();
 }
 
-template<typename T, typename Hash, typename Equal>
+template<IsTag T, typename Hash, typename Equal>
 UnorderedSet<T, Hash, Equal>::const_iterator UnorderedSet<T, Hash, Equal>::begin() const
 {
     return m_data.begin();
 }
 
-template<typename T, typename Hash, typename Equal>
+template<IsTag T, typename Hash, typename Equal>
 UnorderedSet<T, Hash, Equal>::iterator UnorderedSet<T, Hash, Equal>::end()
 {
     return m_data.end();
 }
 
-template<typename T, typename Hash, typename Equal>
+template<IsTag T, typename Hash, typename Equal>
 UnorderedSet<T, Hash, Equal>::const_iterator UnorderedSet<T, Hash, Equal>::end() const
 {
     return m_data.end();
 }
 
-template<typename T, typename Hash, typename Equal>
+template<IsTag T, typename Hash, typename Equal>
 bool UnorderedSet<T, Hash, Equal>::empty() const
 {
     return m_data.empty();
 }
 
-template<typename T, typename Hash, typename Equal>
+template<IsTag T, typename Hash, typename Equal>
 size_t UnorderedSet<T, Hash, Equal>::size() const
 {
     return m_data.size();
 }
 
-template<typename T, typename Hash, typename Equal>
+template<IsTag T, typename Hash, typename Equal>
 void UnorderedSet<T, Hash, Equal>::clear()
 {
     m_storage.clear();
     m_data.clear();
 }
 
-template<typename T, typename Hash, typename Equal>
+template<IsTag T, typename Hash, typename Equal>
 std::pair<typename UnorderedSet<T, Hash, Equal>::const_iterator, bool> UnorderedSet<T, Hash, Equal>::insert(const Builder<T>& builder)
 {
     const uint8_t* data = builder.buffer().data();
@@ -154,7 +155,7 @@ std::pair<typename UnorderedSet<T, Hash, Equal>::const_iterator, bool> Unordered
     return std::make_pair(result.first, true);
 }
 
-template<typename T, typename Hash, typename Equal>
+template<IsTag T, typename Hash, typename Equal>
 std::pair<typename UnorderedSet<T, Hash, Equal>::const_iterator, bool> UnorderedSet<T, Hash, Equal>::insert(ConstView<T>& view)
 {
     const uint8_t* data = view.buffer();
@@ -173,7 +174,7 @@ std::pair<typename UnorderedSet<T, Hash, Equal>::const_iterator, bool> Unordered
     return std::make_pair(result.first, true);
 }
 
-template<typename T, typename Hash, typename Equal>
+template<IsTag T, typename Hash, typename Equal>
 std::pair<typename UnorderedSet<T, Hash, Equal>::const_iterator, bool> UnorderedSet<T, Hash, Equal>::insert(View<T>& view)
 {
     const uint8_t* data = view.buffer();
@@ -191,31 +192,31 @@ std::pair<typename UnorderedSet<T, Hash, Equal>::const_iterator, bool> Unordered
     return std::make_pair(result.first, true);
 }
 
-template<typename T, typename Hash, typename Equal>
+template<IsTag T, typename Hash, typename Equal>
 size_t UnorderedSet<T, Hash, Equal>::count(ConstView<T> key) const
 {
     return m_data.count(key);
 }
 
-template<typename T, typename Hash, typename Equal>
+template<IsTag T, typename Hash, typename Equal>
 UnorderedSet<T, Hash, Equal>::iterator UnorderedSet<T, Hash, Equal>::find(ConstView<T> key)
 {
     return m_data.find(key);
 }
 
-template<typename T, typename Hash, typename Equal>
+template<IsTag T, typename Hash, typename Equal>
 UnorderedSet<T, Hash, Equal>::const_iterator UnorderedSet<T, Hash, Equal>::find(ConstView<T> key) const
 {
     return m_data.find(key);
 }
 
-template<typename T, typename Hash, typename Equal>
+template<IsTag T, typename Hash, typename Equal>
 bool UnorderedSet<T, Hash, Equal>::contains(ConstView<T> key) const
 {
     return m_data.contains(key);
 }
 
-template<typename T, typename Hash, typename Equal>
+template<IsTag T, typename Hash, typename Equal>
 const ByteBufferSegmented& UnorderedSet<T, Hash, Equal>::get_storage() const
 {
     return m_storage;

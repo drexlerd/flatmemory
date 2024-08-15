@@ -29,6 +29,7 @@
 #include "flatmemory/details/operator.hpp"
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
+#include "flatmemory/details/types/tags.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -38,16 +39,6 @@
 
 namespace flatmemory
 {
-/**
- * Dispatcher for Vector.
- */
-template<IsTriviallyCopyableOrCustom T>
-struct Vector : public Custom
-{
-    /// @brief Non-trivial copy-constructor
-    /// @param other
-    Vector(const Vector& other) {}
-};
 
 /**
  * Data types

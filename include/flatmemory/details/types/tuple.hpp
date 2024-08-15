@@ -27,6 +27,7 @@
 #include "flatmemory/details/layout_utils.hpp"
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
+#include "flatmemory/details/types/tags.hpp"
 
 #include <algorithm>
 #include <array>
@@ -38,16 +39,7 @@
 
 namespace flatmemory
 {
-/**
- * Dispatcher for Tuple.
- */
-template<IsTriviallyCopyableOrCustom... Ts>
-struct Tuple : public Custom
-{
-    /// @brief Non-trivial copy-constructor
-    /// @param other
-    Tuple(const Tuple& other) {}
-};
+
 
 /**
  * Layout
