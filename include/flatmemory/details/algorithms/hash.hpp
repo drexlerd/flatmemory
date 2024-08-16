@@ -38,16 +38,17 @@ inline void hash_combine(size_t& seed, const Rest&... rest);
 
 template<typename... Ts>
 inline size_t hash_combine(const Ts&... rest);
-}
 
-/**
- * std::hash specializations
- */
+template<typename T>
+struct Hash
+{
+    size_t operator()(const T& element) const { return std::hash<T>()(element); }
+};
 
-/// @brief std::hash specialization for a forward range.
+/// @brief Hash specialization for a forward range.
 /// @tparam ForwardRange
 template<std::ranges::input_range R>
-struct std::hash<R>
+struct Hash<R>
 {
     size_t operator()(const R& range) const
     {
@@ -64,13 +65,10 @@ struct std::hash<R>
  * Definitions
  */
 
-namespace flatmemory
-{
-
 template<typename T>
 inline void hash_combine(size_t& seed, const T& value)
 {
-    seed ^= std::hash<T>()(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    seed ^= Hash<T>()(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
 template<typename T, typename... Rest>
