@@ -26,63 +26,66 @@
 namespace flatmemory
 {
 
-// --------------
-// Hash functions
-// --------------
+/**
+ * Forward declarations
+ */
 
 template<typename T>
-inline void hash_combine(size_t& seed, const T& val)
-{
-    seed ^= std::hash<T>()(val) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+inline void hash_combine(size_t& seed, const T& value);
+
+template<typename T, typename... Rest>
+inline void hash_combine(size_t& seed, const Rest&... rest);
+
+template<typename... Ts>
+inline size_t hash_combine(const Ts&... rest);
 }
 
-template<>
-inline void hash_combine(size_t& seed, const std::size_t& val)
+/**
+ * std::hash specializations
+ */
+
+/// @brief std::hash specialization for a forward range.
+/// @tparam ForwardRange
+template<std::ranges::input_range R>
+struct std::hash<R>
 {
-    seed ^= val + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    size_t operator()(const R& range) const
+    {
+        std::size_t aggregated_hash = 0;
+        for (const auto& item : range)
+        {
+            flatmemory::hash_combine(aggregated_hash, item);
+        }
+        return aggregated_hash;
+    }
+};
+
+/**
+ * Definitions
+ */
+
+namespace flatmemory
+{
+
+template<typename T>
+inline void hash_combine(size_t& seed, const T& value)
+{
+    seed ^= std::hash<T>()(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
-template<typename... Types>
-inline size_t hash_combine(const Types&... args)
+template<typename T, typename... Rest>
+inline void hash_combine(size_t& seed, const Rest&... rest)
+{
+    (flatmemory::hash_combine(seed, rest), ...);
+}
+
+template<typename... Ts>
+inline size_t hash_combine(const Ts&... rest)
 {
     size_t seed = 0;
-    (hash_combine(seed, args), ...);
+    (flatmemory::hash_combine(seed, rest), ...);
     return seed;
 }
-
-template<class Container>
-inline std::size_t hash_container(const Container& container)
-{
-    using T = typename Container::value_type;
-    const auto hash_function = std::hash<T>();
-    std::size_t aggregated_hash = 0;
-    for (const auto& item : container)
-    {
-        const auto item_hash = hash_function(item);
-        hash_combine(aggregated_hash, item_hash);
-    }
-    return aggregated_hash;
-}
-
-template<class Iterator>
-inline std::size_t hash_iteration(Iterator begin, Iterator end)
-{
-    using T = typename std::iterator_traits<Iterator>::value_type;
-    const std::hash<T> hash_function;
-    std::size_t aggregated_hash = 0;
-    for (Iterator iter = begin; iter != end; ++iter)
-    {
-        const auto item_hash = hash_function(*iter);
-        hash_combine(aggregated_hash, item_hash);
-    }
-    return aggregated_hash;
-}
-
-template<typename Container>
-struct hash_container_type
-{
-    size_t operator()(const Container& container) const { return hash_container(container); }
-};
 
 }
 

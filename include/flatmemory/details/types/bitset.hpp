@@ -1367,24 +1367,23 @@ void Builder<Bitset<Block, Tag>>::finish_impl()
 template<IsUnsignedIntegral Block, typename Tag>
 size_t Builder<Bitset<Block, Tag>>::finish_impl(ByteBuffer& out, size_t pos)
 {
-    /* Write header info */
-    // Write default_bit_value
+    /* Write the default_bit_value. */
     out.write(pos + BitsetLayout::default_bit_value_position, m_default_bit_value);
     out.write_padding(pos + BitsetLayout::default_bit_value_end, BitsetLayout::default_bit_value_padding);
 
-    /* Write dynamic info */
-    buffer_size_type buffer_size = BitsetLayout::blocks_position;
+    size_t data_pos = BitsetLayout::blocks_position;
 
-    // Write blocks
-    buffer_size += m_blocks.finish(out, pos + buffer_size);
-    // Write final padding
-    buffer_size += m_buffer.write_padding(pos + buffer_size, calculate_amount_padding(buffer_size, BitsetLayout::final_alignment));
+    /* Write the blocks inline because there is no other data. */
+    data_pos += m_blocks.finish(out, pos + data_pos);
 
-    /* Write buffer size */
-    out.write(pos + BitsetLayout::buffer_size_position, buffer_size);
-    out.set_size(buffer_size);
+    /* Write the final padding. */
+    data_pos += m_buffer.write_padding(pos + data_pos, calculate_amount_padding(data_pos, BitsetLayout::final_alignment));
 
-    return buffer_size;
+    /* Write the size of the buffer to the beginning. */
+    out.write(pos + BitsetLayout::buffer_size_position, static_cast<buffer_size_type>(data_pos));
+    out.set_size(data_pos);
+
+    return data_pos;
 }
 
 template<IsUnsignedIntegral Block, typename Tag>

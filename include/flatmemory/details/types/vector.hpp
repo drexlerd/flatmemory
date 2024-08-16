@@ -416,50 +416,51 @@ void Builder<Vector<T>>::finish_impl()
 template<IsTriviallyCopyableOrNonTrivialType T>
 size_t Builder<Vector<T>>::finish_impl(ByteBuffer& out, size_t pos)
 {
-    /* Write header info */
-    // Write vector size
+    /* Write the vector size */
     out.write(pos + Layout<Vector<T>>::vector_size_position, m_data.size());
     out.write_padding(pos + Layout<Vector<T>>::vector_size_end, Layout<Vector<T>>::vector_size_padding);
 
-    /* Write dynamic info */
-    offset_type buffer_size = Layout<Vector<T>>::vector_data_position;
-    // Write vector data
+    size_t data_pos = Layout<Vector<T>>::vector_data_position;
+
+    /* Write vector data */
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
     if constexpr (is_trivial)
     {
-        /* For trivial type we can write the data without additional padding. */
-        buffer_size += out.write(pos + buffer_size, reinterpret_cast<const uint8_t*>(m_data.data()), sizeof(T_) * m_data.size());
+        /* Write the data of the trivial type inline. */
+        data_pos += out.write(pos + data_pos, reinterpret_cast<const uint8_t*>(m_data.data()), sizeof(T_) * m_data.size());
     }
     else
     {
-        /* For non-trivial type T, we store the offsets first */
-        // position of offset
-        offset_type offset_pos = Layout<Vector<T>>::vector_data_position;
+        /* Write the offset inline and data at offset. */
+        size_t offset_pos = Layout<Vector<T>>::vector_data_position;
+        /* Write sufficiently much padding before the data. */
         size_t offset_end = offset_pos + m_data.size() * sizeof(offset_type);
         size_t offset_padding = calculate_amount_padding(offset_end, Layout<T>::final_alignment);
         out.write_padding(pos + offset_end, offset_padding);
-        // We have to add padding to ensure that the data is correctly aligned
-        buffer_size = offset_end + offset_padding;
+
+        /* Set data pos after the offset locations. */
+        data_pos = offset_end + offset_padding;
         for (size_t i = 0; i < m_data.size(); ++i)
         {
-            // write distance between written data position and offset position
-            offset_type distance = buffer_size - offset_pos;
+            /* Write the distance between written data pos and offset pos at the offset pos.
+               This allows for more efficient iterator logic.
+            */
+            offset_type distance = data_pos - offset_pos;
             offset_pos += out.write(pos + offset_pos, distance);
 
-            // write data
-            auto& nested_builder = m_data[i];
-            buffer_size += nested_builder.finish(out, pos + buffer_size);
-            buffer_size += out.write_padding(pos + buffer_size, calculate_amount_padding(buffer_size, Layout<Vector<T>>::final_alignment));
+            /* Write the data at offset. */
+            data_pos += m_data[i].finish(out, pos + data_pos);
+            data_pos += out.write_padding(pos + data_pos, calculate_amount_padding(data_pos, Layout<Vector<T>>::final_alignment));
         }
     }
-    // Write final padding to satisfy alignment requirements
-    buffer_size += out.write_padding(pos + buffer_size, calculate_amount_padding(buffer_size, Layout<Vector<T>>::final_alignment));
+    /* Write the final padding. */
+    data_pos += out.write_padding(pos + data_pos, calculate_amount_padding(data_pos, Layout<Vector<T>>::final_alignment));
 
-    /* Write buffer size */
-    out.write(pos + Layout<Vector<T>>::buffer_size_position, static_cast<buffer_size_type>(buffer_size));
-    out.set_size(buffer_size);
+    /* Write the size of the buffer to the beginning. */
+    out.write(pos + Layout<Vector<T>>::buffer_size_position, static_cast<buffer_size_type>(data_pos));
+    out.set_size(data_pos);
 
-    return buffer_size;
+    return data_pos;
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
@@ -574,20 +575,7 @@ const Builder<Vector<T>>::T_& Builder<Vector<T>>::at(size_t pos) const
 template<IsTriviallyCopyableOrNonTrivialType T>
 size_t Builder<Vector<T>>::hash() const
 {
-    constexpr bool is_trivial = IsTriviallyCopyable<T>;
-    if constexpr (is_trivial)
-    {
-        return hash_combine(hash_iteration(m_data.begin(), m_data.end()));
-    }
-    else
-    {
-        size_t seed = size();
-        for (auto iter = m_data.begin(); iter < m_data.end(); ++iter)
-        {
-            seed = hash_combine(seed, iter->hash());
-        }
-        return seed;
-    }
+    return flatmemory::hash_combine(m_data);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>

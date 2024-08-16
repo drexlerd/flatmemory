@@ -445,38 +445,42 @@ template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<size_t... Is>
 size_t Builder<Tuple<Ts...>>::finish_iterative_impl(std::index_sequence<Is...>, ByteBuffer& out, size_t pos)
 {
-    offset_type buffer_size = Layout<Tuple<Ts...>>::layout_data.element_datas_position;
+    size_t data_pos = Layout<Tuple<Ts...>>::layout_data.element_datas_position;
     (
         [&]
         {
             using T = element_type<Is>;
             constexpr auto& element_data = Layout<Tuple<Ts...>>::layout_data.element_datas[Is];
             constexpr bool is_trivial = IsTriviallyCopyable<T>;
+
             if constexpr (is_trivial)
             {
+                /* Write the data inline. */
                 auto& value = std::get<Is>(m_data);
                 out.write(pos + element_data.position, value);
                 out.write_padding(pos + element_data.end, element_data.padding);
             }
             else
             {
-                // write offset
-                out.write(pos + element_data.position, buffer_size);
+                /* Write the data pos at the offset pos. */
+                out.write(pos + element_data.position, data_pos);
                 out.write_padding(pos + element_data.end, element_data.padding);
 
-                // write data
+                /* Write the data at offset */
                 auto& nested_builder = std::get<Is>(m_data);
-                buffer_size += nested_builder.finish(out, pos + buffer_size);
-                buffer_size += out.write_padding(pos + buffer_size, calculate_amount_padding(buffer_size, element_data.next_data_alignment));
+                data_pos += nested_builder.finish(out, pos + data_pos);
+                data_pos += out.write_padding(pos + data_pos, calculate_amount_padding(data_pos, element_data.next_data_alignment));
             }
         }(),
         ...);
-    // No need to write padding because if size=0 then no padding is needed and otherwise, if size>0 then the loop adds final padding.
-    /* Write buffer size */
-    out.write(pos + Layout<Tuple<Ts...>>::layout_data.buffer_size_position, static_cast<buffer_size_type>(buffer_size));
-    out.set_size(buffer_size);
 
-    return buffer_size;
+    // There is no need to write padding here because if size=0 then no padding is needed and otherwise, if size>0 then the loop adds final padding.
+
+    /* Write size of the buffer to the beginning. */
+    out.write(pos + Layout<Tuple<Ts...>>::layout_data.buffer_size_position, static_cast<buffer_size_type>(data_pos));
+    out.set_size(data_pos);
+
+    return data_pos;
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
@@ -576,20 +580,7 @@ template<size_t... Is>
 size_t Builder<Tuple<Ts...>>::hash_helper(std::index_sequence<Is...>) const
 {
     size_t seed = Layout<Tuple<Ts...>>::size;
-    (
-        [&]
-        {
-            constexpr bool is_trivial = IsTriviallyCopyable<element_type<Is>>;
-            if constexpr (is_trivial)
-            {
-                hash_combine(seed, std::hash<element_type<Is>>()(get<Is>()));
-            }
-            else
-            {
-                hash_combine(seed, get<Is>().hash());
-            }
-        }(),
-        ...);
+    ([&] { flatmemory::hash_combine(seed, get<Is>()); }(), ...);
     return seed;
 }
 
@@ -670,8 +661,8 @@ template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t I>
 decltype(auto) View<Tuple<Ts...>>::get()
 {
+    static_assert(I < Layout<Tuple<Ts...>>::size);
     assert(m_buf);
-    assert(I < Layout<Tuple<Ts...>>::size);
     constexpr bool is_trivial = IsTriviallyCopyable<element_type<I>>;
     if constexpr (is_trivial)
     {
@@ -688,8 +679,8 @@ template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t I>
 decltype(auto) View<Tuple<Ts...>>::get() const
 {
+    static_assert(I < Layout<Tuple<Ts...>>::size);
     assert(m_buf);
-    assert(I < Layout<Tuple<Ts...>>::size);
     constexpr bool is_trivial = IsTriviallyCopyable<element_type<I>>;
     if constexpr (is_trivial)
     {
@@ -812,8 +803,8 @@ template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t I>
 decltype(auto) ConstView<Tuple<Ts...>>::get() const
 {
+    static_assert(I < Layout<Tuple<Ts...>>::size);
     assert(m_buf);
-    assert(I < Layout<Tuple<Ts...>>::size);
     constexpr bool is_trivial = IsTriviallyCopyable<element_type<I>>;
     if constexpr (is_trivial)
     {

@@ -31,9 +31,13 @@ namespace flatmemory
 /**
  * Common data types
  */
+
 using offset_type = uint32_t;
 
 using buffer_size_type = uint32_t;
+
+// It does not make sense the other way around, since potentially many offsets are stored within a single buffer.
+static_assert(sizeof(buffer_size_type) >= sizeof(offset_type));
 
 /**
  * Compute padding needed to store an object with given alignment factor from the given position.
