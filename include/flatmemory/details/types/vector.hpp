@@ -445,8 +445,7 @@ size_t Builder<Vector<T>>::finish_impl(ByteBuffer& out, size_t pos)
             /* Write the distance between written data pos and offset pos at the offset pos.
                This allows for more efficient iterator logic.
             */
-            offset_type distance = data_pos - offset_pos;
-            offset_pos += out.write(pos + offset_pos, distance);
+            offset_pos += out.write(pos + offset_pos, static_cast<offset_type>(data_pos - offset_pos));
 
             /* Write the data at offset. */
             data_pos += m_data[i].finish(out, pos + data_pos);

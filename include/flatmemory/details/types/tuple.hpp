@@ -463,7 +463,7 @@ size_t Builder<Tuple<Ts...>>::finish_iterative_impl(std::index_sequence<Is...>, 
             else
             {
                 /* Write the data pos at the offset pos. */
-                out.write(pos + element_data.position, data_pos);
+                out.write(pos + element_data.position, static_cast<offset_type>(data_pos));
                 out.write_padding(pos + element_data.end, element_data.padding);
 
                 /* Write the data at offset */
