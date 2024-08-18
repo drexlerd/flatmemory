@@ -138,14 +138,6 @@ private:
     auto& get_buffer_impl();
     const auto& get_buffer_impl() const;
 
-    // Helper function to set properties using an index sequence.
-    template<std::size_t... Is>
-    void set_attributes(std::index_sequence<Is...>, Ts&&... attributes)
-    {
-        // This uses a fold expression to set each property.
-        ((m_data.template get<Is>() = std::forward<Ts>(attributes)), ...);
-    }
-
 public:
     /**
      * Constructors
@@ -531,9 +523,8 @@ bool Builder<Tuple<Ts...>>::operator==(const Builder& other) const
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
-Builder<Tuple<Ts...>>::Builder(Ts&&... args) : m_buffer()
+Builder<Tuple<Ts...>>::Builder(Ts&&... args) : m_data(std::forward<Ts>(args)...), m_buffer()
 {
-    set_attributes(std::make_index_sequence<sizeof...(Ts)> {}, std::forward<Ts>(args)...);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
