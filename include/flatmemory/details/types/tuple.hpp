@@ -138,10 +138,23 @@ private:
     auto& get_buffer_impl();
     const auto& get_buffer_impl() const;
 
+    // Helper function to set properties using an index sequence.
+    template<std::size_t... Is>
+    void set_attributes(std::index_sequence<Is...>, Ts&&... attributes)
+    {
+        // This uses a fold expression to set each property.
+        ((m_data.template get<Is>() = std::forward<Ts>(attributes)), ...);
+    }
+
 public:
     /**
      * Constructors
      */
+
+    Builder(Ts&&... args);
+
+    /// @brief Default constructor enabled only if all Ts are default-constructible
+    Builder() requires(std::default_initializable<typename maybe_builder<Ts>::type>&&...);
 
     /**
      * Operators
@@ -515,6 +528,17 @@ bool Builder<Tuple<Ts...>>::operator==(const Builder& other) const
         return m_data == other.m_data;
     }
     return true;
+}
+
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
+Builder<Tuple<Ts...>>::Builder(Ts&&... args) : m_buffer()
+{
+    set_attributes(std::make_index_sequence<sizeof...(Ts)> {}, std::forward<Ts>(args)...);
+}
+
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
+Builder<Tuple<Ts...>>::Builder() requires(std::default_initializable<typename maybe_builder<Ts>::type>&&...) : m_data(), m_buffer()
+{
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
