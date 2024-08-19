@@ -69,7 +69,7 @@ public:
     static constexpr size_t default_bit_value_padding = calculate_amount_padding(default_bit_value_end, calculate_data_alignment<Vector<Block>>());
     static constexpr size_t blocks_position = default_bit_value_end + default_bit_value_padding;
 
-    void print() const;
+    constexpr void print() const;
 };
 
 /**
@@ -552,7 +552,7 @@ private:
     friend class IBuilder;
 
     void finish_impl();
-    size_t finish_impl(ByteBuffer& out, size_t pos);
+    size_t finish_impl(size_t pos, ByteBuffer& out);
 
     auto& get_buffer_impl();
     const auto& get_buffer_impl() const;
@@ -696,7 +696,7 @@ public:
 // Layout
 
 template<IsUnsignedIntegral Block, typename Tag>
-void Layout<Bitset<Block, Tag>>::print() const
+constexpr void Layout<Bitset<Block, Tag>>::print() const
 {
     std::cout << "buffer_size_position: " << buffer_size_position << "\n"
               << "buffer_size_end: " << buffer_size_end << "\n"
@@ -1361,11 +1361,11 @@ ConstView<Vector<Block>> ConstView<Bitset<Block, Tag>>::get_blocks() const
 template<IsUnsignedIntegral Block, typename Tag>
 void Builder<Bitset<Block, Tag>>::finish_impl()
 {
-    this->finish(m_buffer, 0);
+    this->finish(0, m_buffer);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-size_t Builder<Bitset<Block, Tag>>::finish_impl(ByteBuffer& out, size_t pos)
+size_t Builder<Bitset<Block, Tag>>::finish_impl(size_t pos, ByteBuffer& out)
 {
     /* Write the default_bit_value. */
     out.write(pos + BitsetLayout::default_bit_value_position, m_default_bit_value);
@@ -1374,7 +1374,7 @@ size_t Builder<Bitset<Block, Tag>>::finish_impl(ByteBuffer& out, size_t pos)
     size_t data_pos = BitsetLayout::blocks_position;
 
     /* Write the blocks inline because there is no other data. */
-    data_pos += m_blocks.finish(out, pos + data_pos);
+    data_pos += m_blocks.finish(pos + data_pos, out);
 
     /* Write the final padding. */
     data_pos += m_buffer.write_padding(pos + data_pos, calculate_amount_padding(data_pos, BitsetLayout::final_alignment));

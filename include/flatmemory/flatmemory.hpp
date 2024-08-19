@@ -25,6 +25,7 @@
 #include "flatmemory/details/types/bitset.hpp"
 #include "flatmemory/details/types/tuple.hpp"
 #include "flatmemory/details/types/vector.hpp"
+#include "flatmemory/details/types/optional.hpp"
 
 /**
  * Containers

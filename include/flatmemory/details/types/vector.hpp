@@ -94,7 +94,7 @@ public:
     static constexpr size_t vector_size_padding = calculate_amount_padding(vector_size_end, calculate_data_alignment<T>());
     static constexpr size_t vector_data_position = vector_size_end + vector_size_padding;
 
-    void print() const;
+    constexpr void print() const;
 };
 
 /**
@@ -118,7 +118,7 @@ private:
     friend class IBuilder;
 
     void finish_impl();
-    size_t finish_impl(ByteBuffer& out, size_t pos);
+    size_t finish_impl(size_t pos, ByteBuffer& out);
 
     auto& get_buffer_impl();
     const auto& get_buffer_impl() const;
@@ -393,7 +393,7 @@ public:
 // Layout
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-void Layout<Vector<T>>::print() const
+constexpr void Layout<Vector<T>>::print() const
 {
     std::cout << "buffer_size_position: " << buffer_size_position << "\n"
               << "buffer_size_end: " << buffer_size_end << "\n"
@@ -410,11 +410,11 @@ void Layout<Vector<T>>::print() const
 template<IsTriviallyCopyableOrNonTrivialType T>
 void Builder<Vector<T>>::finish_impl()
 {
-    this->finish(m_buffer, 0);
+    this->finish(0, m_buffer);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-size_t Builder<Vector<T>>::finish_impl(ByteBuffer& out, size_t pos)
+size_t Builder<Vector<T>>::finish_impl(size_t pos, ByteBuffer& out)
 {
     /* Write the vector size */
     out.write(pos + Layout<Vector<T>>::vector_size_position, m_data.size());
@@ -448,7 +448,7 @@ size_t Builder<Vector<T>>::finish_impl(ByteBuffer& out, size_t pos)
             offset_pos += out.write(pos + offset_pos, static_cast<offset_type>(data_pos - offset_pos));
 
             /* Write the data at offset. */
-            data_pos += m_data[i].finish(out, pos + data_pos);
+            data_pos += m_data[i].finish(pos + data_pos, out);
             data_pos += out.write_padding(pos + data_pos, calculate_amount_padding(data_pos, Layout<Vector<T>>::final_alignment));
         }
     }

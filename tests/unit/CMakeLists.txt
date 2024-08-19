@@ -4,17 +4,13 @@ find_package(GTest "1.11.0" REQUIRED COMPONENTS GTest Main PATHS ${CMAKE_PREFIX_
 # Set result variables
 find_package(GTest)
 
-file(GLOB_RECURSE FLATMEMORY_TEST_SOURCE_FILES
-    "*.cpp" "**/*.cpp")
-file(GLOB_RECURSE FLATMEMORY_TEST_SOURCE_FILES
-    "*.hpp" "**/*.hpp")
-
 set(TEST_NAME ${CMAKE_PROJECT_NAME}_tests)
 
 add_executable(${TEST_NAME}
     "containers/unordered_set.cpp"
     "containers/vector.cpp"
     "types/bitset.cpp"
+    "types/optional.cpp"
     "types/tuple.cpp"
     "types/vector.cpp"
 )

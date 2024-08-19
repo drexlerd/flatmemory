@@ -50,7 +50,7 @@ public:
     /// @param out the buffer to write the data.
     /// @param pos the next free position in the out buffer.
     /// @return the number of bytest written to out.
-    size_t finish(ByteBuffer& out, size_t pos) { return self().finish_impl(out, pos); }
+    size_t finish(size_t pos, ByteBuffer& out) { return self().finish_impl(pos, out); }
 
     /// @brief Access the serialized buffer
     auto& buffer() { return self().get_buffer_impl(); }

@@ -81,7 +81,7 @@ private:
         size_t padding;
         size_t next_data_alignment;
 
-        void print() const;
+        constexpr void print() const;
     };
 
     struct LayoutData
@@ -93,7 +93,7 @@ private:
         size_t element_datas_position;
         std::array<ElementData, sizeof...(Ts)> element_datas;
 
-        void print() const;
+        constexpr void print() const;
     };
 
     template<size_t... Is>
@@ -106,7 +106,7 @@ public:
 
     static constexpr LayoutData layout_data = calculate_layout_data(std::make_index_sequence<sizeof...(Ts)> {});
 
-    void print() const;
+    constexpr void print() const;
 };
 
 /**
@@ -130,10 +130,10 @@ private:
     friend class IBuilder;
 
     template<size_t... Is>
-    size_t finish_iterative_impl(std::index_sequence<Is...>, ByteBuffer& out, size_t pos);
+    size_t finish_iterative_impl(std::index_sequence<Is...>, size_t pos, ByteBuffer& out);
 
     void finish_impl();
-    size_t finish_impl(ByteBuffer& out, size_t pos);
+    size_t finish_impl(size_t pos, ByteBuffer& out);
 
     auto& get_buffer_impl();
     const auto& get_buffer_impl() const;
@@ -387,13 +387,13 @@ consteval size_t Layout<Tuple<Ts...>>::calculate_header_offset_type_size()
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
-void Layout<Tuple<Ts...>>::ElementData::print() const
+constexpr void Layout<Tuple<Ts...>>::ElementData::print() const
 {
     std::cout << "position: " << position << " end: " << end << " padding: " << padding << std::endl;
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
-void Layout<Tuple<Ts...>>::LayoutData::print() const
+constexpr void Layout<Tuple<Ts...>>::LayoutData::print() const
 {
     std::cout << "buffer_size_position: " << buffer_size_position << "\n"
               << "buffer_size_end: " << buffer_size_end << "\n"
@@ -438,7 +438,7 @@ consteval Layout<Tuple<Ts...>>::LayoutData Layout<Tuple<Ts...>>::calculate_layou
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
-void Layout<Tuple<Ts...>>::print() const
+constexpr void Layout<Tuple<Ts...>>::print() const
 {
     layout_data.print();
     std::cout << "final_alignment: " << final_alignment << std::endl;
@@ -448,7 +448,7 @@ void Layout<Tuple<Ts...>>::print() const
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<size_t... Is>
-size_t Builder<Tuple<Ts...>>::finish_iterative_impl(std::index_sequence<Is...>, ByteBuffer& out, size_t pos)
+size_t Builder<Tuple<Ts...>>::finish_iterative_impl(std::index_sequence<Is...>, size_t pos, ByteBuffer& out)
 {
     size_t data_pos = Layout<Tuple<Ts...>>::layout_data.element_datas_position;
     (
@@ -473,7 +473,7 @@ size_t Builder<Tuple<Ts...>>::finish_iterative_impl(std::index_sequence<Is...>, 
 
                 /* Write the data at offset */
                 auto& nested_builder = std::get<Is>(m_data);
-                data_pos += nested_builder.finish(out, pos + data_pos);
+                data_pos += nested_builder.finish(pos + data_pos, out);
                 data_pos += out.write_padding(pos + data_pos, calculate_amount_padding(data_pos, element_data.next_data_alignment));
             }
         }(),
@@ -491,13 +491,13 @@ size_t Builder<Tuple<Ts...>>::finish_iterative_impl(std::index_sequence<Is...>, 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
 void Builder<Tuple<Ts...>>::finish_impl()
 {
-    this->finish(m_buffer, 0);
+    this->finish(0, m_buffer);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
-size_t Builder<Tuple<Ts...>>::finish_impl(ByteBuffer& out, size_t pos)
+size_t Builder<Tuple<Ts...>>::finish_impl(size_t pos, ByteBuffer& out)
 {
-    return finish_iterative_impl(std::make_index_sequence<sizeof...(Ts)> {}, out, pos);
+    return finish_iterative_impl(std::make_index_sequence<sizeof...(Ts)> {}, pos, out);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
