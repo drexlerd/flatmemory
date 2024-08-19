@@ -6,9 +6,8 @@ Flatmemory is a C++20 library for serialization and zero-cost deserialization. S
 
 1. **Efficient Memory Management:** Flatmemory excels in scenarios where minimal memory allocations are critical. Builders reuse their memory, and serialized data can be efficiently written to large preallocated buffers. This minimizes the overhead typically associated with object creation and memory management.
 2. **Cache-Friendly Data Layout:** The library stores data contiguously in memory, enhancing cache locality. This leads to improved runtime performance, especially in scenarios where large datasets are processed.
-3. **Composite and Trivial Types:** Flatmemory supports a variety of composite types like `Tuple`, `Vector`, and `Bitset`, as well as nested types. Trivial types `T` that satisfy `std::is_trivially_copyable_v<T>` are stored in place, while non-trivial types are managed using offsets. This balance ensures flexibility while maintaining performance.
-4. **No Code Generation Required:** Unlike some serialization libraries, Flatmemory does not rely on code generation tools, simplifying the build process and reducing dependencies.
-4. **Optimized for Immutable Data:** Flatmemory is particularly well-suited for scenarios involving the creation of many immutable objects. While mutability is allowed, structural changes to serialized objects (like inserting elements into a vector) are restricted to prevent overwriting adjacent data.
+3. **Composite and Trivial Types:** Flatmemory supports a variety of non-trivial composite types like `Tuple`, `Vector`, and `Bitset`. Trivial types `T` that satisfy `std::is_trivially_copyable_v<T>` are stored in place, while non-trivial types are managed using offsets. 
+4. **No Code Generation Required:** Unlike some serialization libraries, Flatmemory does not rely on code generation tools.
 
 ## Limitations
 
