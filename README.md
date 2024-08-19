@@ -65,11 +65,33 @@ EXPECT_EQ(const_view2, const_view3);
 
 ## Getting Started
 
-We recommend the following sequence of cmake commands to install the headers. No build step required.
+### Installing the Dependencies
+
+Flatmemory depends on the following set of libraries:
+
+- [GoogleBenchmark](https://github.com/google/benchmark) for automated performance benchmarking, and
+- [GoogleTest](https://github.com/google/googletest) for unit testing.
+
+Run the following sequence of commands to download, configure, build, and install all dependencies:
 
 ```console
-cmake -S . -B build -DCMAKE_INSTALL_DIR="path/to/install/dir"
-cmake --install build
+# Configure dependencies
+cmake -S dependencies -B dependencies/build -DCMAKE_INSTALL_PREFIX=dependencies/installs
+# Build and install dependencies
+cmake --build dependencies/build -j16
+```
+
+### Configuring and Building Flatmemory
+
+Run the following sequence of commands to configure, build, and install Flatmemory:
+
+```console
+# Configure with installation prefixes of all dependencies
+cmake -S . -B build -DCMAKE_PREFIX_PATH=${PWD}/dependencies/installs
+# Build
+cmake --build build -j16
+# Install (optional)
+cmake --install build --prefix=<path/to/installation-directory>
 ```
 
 We recommend adding the following to your root `CMakeLists.txt` for making the headers available for your CMake project where `CMAKE_PREFIX_PATH` is the installation directory
@@ -79,17 +101,7 @@ find_package(flatmemory REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 target_link_libraries(<your_target> flatmemory::flatmemory)
 ```
 
-
 ## For Developers
-
-We provide a CMake Superbuild project that takes care of downloading, building, and installing all dependencies.
-
-```console
-# Configure dependencies
-cmake -S dependencies -B dependencies/build -DCMAKE_INSTALL_PREFIX=dependencies/installs
-# Build and install dependencies
-cmake --build dependencies/build -j16
-```
 
 Flatmemory's testing framework depends on [GoogleTest](https://github.com/google/googletest) and requires the additional compile flag `-DBUILD_TESTS=ON` to be set in the cmake configure step.
 
