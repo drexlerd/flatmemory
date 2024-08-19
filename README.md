@@ -17,6 +17,7 @@ Flatmemory is a C++20 library for serialization and zero-cost deserialization. S
 ## Example
 
 In this example, we use a `Builder` to serialize a 2-dimensional `Vector` of `uint16_t` into a sequence of bytes. A respective `View` can interpret the data.
+For a sequence of `N` insert operations, zero memory allocations on average are needed to construct a two dimensional vector (assuming a fixed size), and the usual `log(N)` memory allocations are needed to store them in a buffer that uses doubling strategy for memory allocation. Instead of reallocating memory, an additional buffer segment of double the size is allocated.
 
 ```cpp
 #include <flatmemory/flatmemory.hpp>
