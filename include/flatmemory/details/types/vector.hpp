@@ -20,17 +20,12 @@
 
 #include "flatmemory/details/algorithms/hash.hpp"
 #include "flatmemory/details/algorithms/murmurhash3.hpp"
-#include "flatmemory/details/builder.hpp"
 #include "flatmemory/details/byte_buffer.hpp"
 #include "flatmemory/details/byte_buffer_utils.hpp"
-#include "flatmemory/details/concepts.hpp"
 #include "flatmemory/details/layout.hpp"
 #include "flatmemory/details/layout_utils.hpp"
-#include "flatmemory/details/operator.hpp"
 #include "flatmemory/details/types/declarations.hpp"
 #include "flatmemory/details/types/formatter.hpp"
-#include "flatmemory/details/view.hpp"
-#include "flatmemory/details/view_const.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -56,78 +51,6 @@ struct Vector : public NonTrivialType
  * Data types
  */
 using vector_size_type = uint32_t;
-
-/**
- * Forward declarations
- */
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-class View<Vector<T>>;
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-class ConstView<Vector<T>>;
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-class Builder<Vector<T>>;
-
-/**
- * Concepts
- */
-
-template<typename T1, typename T2>
-concept HaveSameValueType = std::is_same_v<typename T1::ValueType, typename T2::ValueType>;
-
-template<typename T>
-struct is_vector_builder_helper : std::false_type
-{
-};
-
-template<typename T>
-struct is_vector_view_helper : std::false_type
-{
-};
-
-template<typename T>
-struct is_vector_const_view_helper : std::false_type
-{
-};
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-struct is_vector_builder_helper<Builder<Vector<T>>> : std::true_type
-{
-};
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-struct is_vector_view_helper<View<Vector<T>>> : std::true_type
-{
-};
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-struct is_vector_const_view_helper<ConstView<Vector<T>>> : std::true_type
-{
-};
-
-template<typename T>
-concept IsVectorBuilder = is_vector_builder_helper<T>::value;
-
-template<typename T>
-concept IsVectorView = is_vector_view_helper<T>::value;
-
-template<typename T>
-concept IsVectorConstView = is_vector_const_view_helper<T>::value;
-
-template<typename T>
-concept IsVector = IsVectorBuilder<T> || IsVectorView<T> || IsVectorConstView<T>;
-
-/**
- * Operator
- */
-template<IsTriviallyCopyableOrNonTrivialType T>
-class Operator<Vector<T>>
-{
-private:
-public:
-};
 
 /**
  * Layout
@@ -170,6 +93,7 @@ bool operator!=(const V1& lhs, const V2& rhs);
 /**
  * Builder
  */
+
 template<IsTriviallyCopyableOrNonTrivialType T>
 class Builder<Vector<T>> : public IBuilder<Builder<Vector<T>>>
 {

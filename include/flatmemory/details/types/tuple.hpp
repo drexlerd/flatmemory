@@ -19,16 +19,12 @@
 #define FLATMEMORY_TYPES_TUPLE_HPP_
 
 #include "flatmemory/details/algorithms/hash.hpp"
-#include "flatmemory/details/builder.hpp"
 #include "flatmemory/details/byte_buffer.hpp"
 #include "flatmemory/details/byte_buffer_utils.hpp"
-#include "flatmemory/details/concepts.hpp"
 #include "flatmemory/details/layout.hpp"
 #include "flatmemory/details/layout_utils.hpp"
 #include "flatmemory/details/types/declarations.hpp"
 #include "flatmemory/details/types/formatter.hpp"
-#include "flatmemory/details/view.hpp"
-#include "flatmemory/details/view_const.hpp"
 
 #include <algorithm>
 #include <array>
@@ -51,55 +47,6 @@ struct Tuple : public NonTrivialType
     /// @param other
     Tuple(const Tuple& other) {}
 };
-
-/**
- * Concepts
- */
-
-template<typename T>
-struct is_tuple_builder_helper : std::false_type
-{
-};
-
-template<typename T>
-struct is_tuple_view_helper : std::false_type
-{
-};
-
-template<typename T>
-struct is_tuple_const_view_helper : std::false_type
-{
-};
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-struct is_tuple_builder_helper<Builder<Tuple<Ts...>>> : std::true_type
-{
-};
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-struct is_tuple_view_helper<View<Tuple<Ts...>>> : std::true_type
-{
-};
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-struct is_tuple_const_view_helper<ConstView<Tuple<Ts...>>> : std::true_type
-{
-};
-
-template<typename T>
-concept IsTupleBuilder = is_tuple_builder_helper<T>::value;
-
-template<typename T>
-concept IsTupleView = is_tuple_view_helper<T>::value;
-
-template<typename T>
-concept IsTupleConstView = is_tuple_const_view_helper<T>::value;
-
-template<typename T>
-concept IsTuple = IsTupleBuilder<T> || IsTupleView<T> || IsTupleConstView<T>;
-
-template<typename T1, typename T2>
-concept HaveSameValueTypes = std::is_same_v<typename T1::ValueTypes, typename T2::ValueTypes>;
 
 /**
  * Operators

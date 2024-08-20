@@ -19,18 +19,14 @@
 #define FLATMEMORY_TYPES_BITSET_HPP_
 
 #include "flatmemory/details/algorithms/murmurhash3.hpp"
-#include "flatmemory/details/builder.hpp"
 #include "flatmemory/details/byte_buffer.hpp"
 #include "flatmemory/details/byte_buffer_utils.hpp"
 #include "flatmemory/details/concepts.hpp"
 #include "flatmemory/details/layout.hpp"
 #include "flatmemory/details/layout_utils.hpp"
-#include "flatmemory/details/operator.hpp"
 #include "flatmemory/details/types/declarations.hpp"
 #include "flatmemory/details/types/formatter.hpp"
 #include "flatmemory/details/types/vector.hpp"
-#include "flatmemory/details/view.hpp"
-#include "flatmemory/details/view_const.hpp"
 
 #include <algorithm>
 #include <bit>
@@ -75,89 +71,9 @@ public:
 };
 
 /**
- * Forward declarations
- */
-
-template<IsUnsignedIntegral Block, typename Tag>
-class View<Bitset<Block, Tag>>;
-
-template<IsUnsignedIntegral Block, typename Tag>
-class ConstView<Bitset<Block, Tag>>;
-
-template<IsUnsignedIntegral Block, typename Tag>
-class Builder<Bitset<Block, Tag>>;
-
-/**
- * Concepts
- */
-
-/// @brief Concept to check if two types `T1` and `T2` have the same Block type.
-template<typename T1, typename T2>
-concept HaveSameBlockType = std::is_same_v<typename T1::BlockType, typename T2::BlockType>;
-
-/// @brief Concept to check if two types have a compatible `Tag`,
-/// i.e., either one is void or both are the same.
-template<typename T1, typename T2>
-concept HaveCompatibleTagType =
-    std::is_same_v<typename T1::TagType, typename T2::TagType> || std::is_same_v<typename T1::TagType, void> || std::is_same_v<typename T2::TagType, void>;
-
-/// @brief Concept to check the `Block` type of another bitset
-/// is compatible with the block type of the bitset of type `T`, i.e.,
-/// the block types are the same.
-template<typename T, typename Block>
-concept HasBlockType = std::is_same_v<typename T::BlockType, Block>;
-
-/// @brief Concept to check whether the `Tag` type of another bitset
-/// is compatible with the tag type of the bitset of type `T`,
-/// i.e., either one is void or both are the same.
-template<typename T, typename Tag>
-concept HasCompatibleTagType = std::is_same_v<typename T::TagType, Tag> || std::is_same_v<Tag, void> || std::is_same_v<typename T::TagType, void>;
-
-template<typename T>
-struct is_bitset_builder_helper : std::false_type
-{
-};
-
-template<typename T>
-struct is_bitset_view_helper : std::false_type
-{
-};
-
-template<typename T>
-struct is_bitset_const_view_helper : std::false_type
-{
-};
-
-template<typename Block, typename Tag>
-struct is_bitset_builder_helper<Builder<Bitset<Block, Tag>>> : std::true_type
-{
-};
-
-template<typename Block, typename Tag>
-struct is_bitset_view_helper<View<Bitset<Block, Tag>>> : std::true_type
-{
-};
-
-template<typename Block, typename Tag>
-struct is_bitset_const_view_helper<ConstView<Bitset<Block, Tag>>> : std::true_type
-{
-};
-
-template<typename T>
-concept IsBitsetBuilder = is_bitset_builder_helper<T>::value;
-
-template<typename T>
-concept IsBitsetView = is_bitset_view_helper<T>::value;
-
-template<typename T>
-concept IsBitsetConstView = is_bitset_const_view_helper<T>::value;
-
-template<typename T>
-concept IsBitset = IsBitsetBuilder<T> || IsBitsetView<T> || IsBitsetConstView<T>;
-
-/**
  * Operator
  */
+
 template<IsUnsignedIntegral Block, typename Tag>
 class Operator<Bitset<Block, Tag>>
 {
@@ -173,22 +89,6 @@ public:
     static constexpr Block block_msb_zero = block_ones & (~block_msb_one);
     // 111...
     static constexpr std::size_t no_position = std::size_t(-1);
-
-    /**
-     * Operators
-     */
-
-    template<IsBitset L, IsBitset R>
-    requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
-    static bool less(const L& left_bitset, const R& right_bitset);
-
-    template<IsBitset L, IsBitset R>
-    requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
-    static bool is_superseteq(const L& left_bitset, const R& right_bitset);
-
-    template<IsBitset L, IsBitset R>
-    requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
-    static bool are_disjoint(const L& left_bitset, const R& right_bitset);
 
     /**
      * Helpers
@@ -257,7 +157,7 @@ public:
 };
 
 /**
- * Operators
+ * Free function operators
  */
 
 template<IsBitset B>
@@ -274,169 +174,21 @@ template<IsBitset B1, IsBitset B2>
 requires HaveSameBlockType<B1, B2>
 bool operator!=(const B1& lhs, const B2& rhs);
 
-/**
- * View
- */
-template<IsUnsignedIntegral Block, typename Tag>
-class View<Bitset<Block, Tag>>
-{
-public:
-    using BlockType = Block;
-    using TagType = Tag;
+template<IsBitset B>
+Builder<Bitset<typename B::BlockType, typename B::TagType>> operator~(const B& element);
 
-    using BitsetLayout = Layout<Bitset<Block, Tag>>;
-    using BitsetOperator = Operator<Bitset<Block, Tag>>;
-    using BitsetView = View<Bitset<Block, Tag>>;
-    using BitsetConstView = ConstView<Bitset<Block, Tag>>;
-    using const_iterator = typename BitsetOperator::const_iterator;
+template<IsBitset B1, IsBitset B2>
+requires HaveSameBlockType<B1, B2>
+bool is_superseteq(const B1& lhs, const B2& rhs);
 
-private:
-    uint8_t* m_buf;
-
-    /**
-     * Default constructor to make view a trivial data type and serializable
-     */
-    View() = default;
-
-    template<typename>
-    friend class Builder;
-
-public:
-    /**
-     * Constructor to interpret raw data created by its corresponding builder
-     */
-    explicit View(uint8_t* buf);
-
-    /**
-     * Operators
-     */
-
-    template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    bool is_superseteq(const Other& other) const;
-
-    template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    bool are_disjoint(const Other& other) const;
-
-    /**
-     * Lookup
-     */
-
-    bool get(std::size_t position) const;
-
-    size_t count() const;
-
-    /**
-     * Iterators
-     */
-
-    const_iterator begin();
-    const_iterator begin() const;
-    const_iterator end();
-    const_iterator end() const;
-
-    /**
-     * Getters
-     */
-    uint8_t* buffer();
-    const uint8_t* buffer() const;
-    buffer_size_type buffer_size() const;
-
-    bool& get_default_bit_value();
-    bool get_default_bit_value() const;
-
-    View<Vector<Block>> get_blocks();
-    ConstView<Vector<Block>> get_blocks() const;
-};
-
-/**
- * ConstView
- */
-template<IsUnsignedIntegral Block, typename Tag>
-class ConstView<Bitset<Block, Tag>>
-{
-public:
-    using BlockType = Block;
-    using TagType = Tag;
-
-    using BitsetLayout = Layout<Bitset<Block, Tag>>;
-    using BitsetOperator = Operator<Bitset<Block, Tag>>;
-    using BitsetView = View<Bitset<Block, Tag>>;
-    using BitsetConstView = ConstView<Bitset<Block, Tag>>;
-    using const_iterator = typename BitsetOperator::const_iterator;
-
-private:
-    const uint8_t* m_buf;
-
-    /**
-     * Default constructor to make view a trivial data type and serializable
-     */
-    ConstView() = default;
-
-    template<typename>
-    friend class Builder;
-
-public:
-    /**
-     * Constructor to interpret raw data created by its corresponding builder
-     */
-    ConstView(const uint8_t* data);
-
-    /**
-     * Conversion constructor
-     */
-    ConstView(const BitsetView& view);
-
-    /**
-     * Operators
-     */
-
-    template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    bool is_superseteq(const Other& other) const;
-
-    template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    bool are_disjoint(const Other& other) const;
-
-    /**
-     * Lookup
-     */
-
-    bool get(std::size_t position) const;
-
-    size_t count() const;
-
-    /**
-     * Iterators
-     */
-
-    const_iterator begin();
-    const_iterator begin() const;
-    const_iterator end();
-    const_iterator end() const;
-
-    /**
-     * Getters
-     */
-
-    const uint8_t* buffer() const;
-
-    buffer_size_type buffer_size() const;
-
-    bool get_default_bit_value();
-
-    bool get_default_bit_value() const;
-
-    ConstView<Vector<Block>> get_blocks();
-
-    ConstView<Vector<Block>> get_blocks() const;
-};
+template<IsBitset B1, IsBitset B2>
+requires HaveSameBlockType<B1, B2>
+bool are_disjoint(const B1& lhs, const B2& rhs);
 
 /**
  * Builder
  */
+
 template<IsUnsignedIntegral Block, typename Tag>
 class Builder<Bitset<Block, Tag>> : public IBuilder<Builder<Bitset<Block, Tag>>>
 {
@@ -480,7 +232,6 @@ public:
      */
 
     Builder();
-    // Initialize the bitset with a certain size
     Builder(std::size_t size);
     Builder(std::size_t size, bool default_bit_value);
     Builder(const Builder& other) = default;
@@ -503,35 +254,21 @@ public:
     Builder& operator=(const BitsetConstView& other);
 
     /**
-     * Operators
-     */
-
-    template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    bool operator<(const Other& other) const;
-
-    template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    bool is_superseteq(const Other& other) const;
-
-    template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    bool are_disjoint(const Other& other) const;
-
-    /**
      * Modifiers
      */
 
     /// @brief Shrink the bitset to minimum number of blocks (at least 1) to represent its bits.
     void shrink_to_fit();
 
-    // Set a bit at a specific position
+    /// @brief Set a bit at a specific position
+    /// @param position
     void set(std::size_t position);
 
-    // Unset a bit at a specific position
+    /// @brief Unset a bit at a specific position
+    /// @param position
     void unset(std::size_t position);
 
-    // Unset all bits and shrink its size to represent the bits
+    /// @brief Unset all bits and shrink its size to represent the bits
     void unset_all();
 
     Builder& operator~();
@@ -558,12 +295,18 @@ public:
      * Lookup
      */
 
-    // Get the value of a bit at a specific position
+    /// @brief Get the value of a bit at a specific position
+    /// @param position
+    /// @return
     bool get(std::size_t position) const;
 
+    /// @brief Count the number of set bits.
+    /// @return
     size_t count() const;
 
-    // Find the next set bit, inclusive the given position
+    /// @brief Find the next set bit, inclusive the given position
+    /// @param position
+    /// @return
     std::size_t next_set_bit(std::size_t position) const;
 
     /**
@@ -585,10 +328,144 @@ public:
 };
 
 /**
+ * View
+ */
+
+template<IsUnsignedIntegral Block, typename Tag>
+class View<Bitset<Block, Tag>>
+{
+public:
+    using BlockType = Block;
+    using TagType = Tag;
+
+    using BitsetLayout = Layout<Bitset<Block, Tag>>;
+    using BitsetOperator = Operator<Bitset<Block, Tag>>;
+    using BitsetView = View<Bitset<Block, Tag>>;
+    using BitsetConstView = ConstView<Bitset<Block, Tag>>;
+    using const_iterator = typename BitsetOperator::const_iterator;
+
+private:
+    uint8_t* m_buf;
+
+    /// @brief Default constructor to make view a trivial data type and serializable
+    View() = default;
+
+    template<typename>
+    friend class Builder;
+
+public:
+    /// @brief Constructor to interpret raw data created by its corresponding builder
+    /// @param buf
+    explicit View(uint8_t* buf);
+
+    /**
+     * Lookup
+     */
+
+    bool get(std::size_t position) const;
+
+    size_t count() const;
+
+    /**
+     * Iterators
+     */
+
+    const_iterator begin();
+    const_iterator begin() const;
+    const_iterator end();
+    const_iterator end() const;
+
+    /**
+     * Getters
+     */
+
+    uint8_t* buffer();
+    const uint8_t* buffer() const;
+    buffer_size_type buffer_size() const;
+
+    bool& get_default_bit_value();
+    bool get_default_bit_value() const;
+
+    View<Vector<Block>> get_blocks();
+    ConstView<Vector<Block>> get_blocks() const;
+};
+
+/**
+ * ConstView
+ */
+
+template<IsUnsignedIntegral Block, typename Tag>
+class ConstView<Bitset<Block, Tag>>
+{
+public:
+    using BlockType = Block;
+    using TagType = Tag;
+
+    using BitsetLayout = Layout<Bitset<Block, Tag>>;
+    using BitsetOperator = Operator<Bitset<Block, Tag>>;
+    using BitsetView = View<Bitset<Block, Tag>>;
+    using BitsetConstView = ConstView<Bitset<Block, Tag>>;
+    using const_iterator = typename BitsetOperator::const_iterator;
+
+private:
+    const uint8_t* m_buf;
+
+    /// @brief Default constructor to make view a trivial data type and serializable
+    ConstView() = default;
+
+    template<typename>
+    friend class Builder;
+
+public:
+    /// @brief Constructor to interpret raw data created by its corresponding builder
+    /// @param data
+    ConstView(const uint8_t* data);
+
+    /**
+     * Conversion constructors
+     */
+
+    ConstView(const BitsetView& view);
+
+    /**
+     * Lookup
+     */
+
+    bool get(std::size_t position) const;
+
+    size_t count() const;
+
+    /**
+     * Iterators
+     */
+
+    const_iterator begin();
+    const_iterator begin() const;
+    const_iterator end();
+    const_iterator end() const;
+
+    /**
+     * Getters
+     */
+
+    const uint8_t* buffer() const;
+
+    buffer_size_type buffer_size() const;
+
+    bool get_default_bit_value();
+
+    bool get_default_bit_value() const;
+
+    ConstView<Vector<Block>> get_blocks();
+
+    ConstView<Vector<Block>> get_blocks() const;
+};
+
+/**
  * Definitions
  */
 
-// Layout
+/* Layout */
 
 template<IsUnsignedIntegral Block, typename Tag>
 constexpr void Layout<Bitset<Block, Tag>>::print() const
@@ -603,158 +480,14 @@ constexpr void Layout<Bitset<Block, Tag>>::print() const
               << "final_alignment: " << final_alignment << std::endl;
 }
 
-// Operator
-
-template<IsUnsignedIntegral Block, typename Tag>
-template<IsBitset L, IsBitset R>
-requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
-bool Operator<Bitset<Block, Tag>>::less(const L& left_bitset, const R& right_bitset)
-{
-    // Fetch data
-    const auto& blocks = left_bitset.get_blocks();
-    bool default_bit_value = left_bitset.get_default_bit_value();
-    const auto& other_blocks = right_bitset.get_blocks();
-    bool other_default_bit_value = right_bitset.get_default_bit_value();
-
-    std::size_t common_size = std::min(blocks.size(), other_blocks.size());
-
-    for (std::size_t index = 0; index < common_size; ++index)
-    {
-        if (blocks[index] < other_blocks[index])
-        {
-            return true;
-        }
-    }
-
-    std::size_t max_size = std::max(blocks.size(), other_blocks.size());
-
-    for (std::size_t index = common_size; index < max_size; ++index)
-    {
-        Block this_value = index < blocks.size() ? blocks[index] : (default_bit_value ? block_ones : block_zeroes);
-        Block other_value = index < other_blocks.size() ? other_blocks[index] : (other_default_bit_value ? block_ones : block_zeroes);
-
-        if (this_value < other_value)
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-template<IsBitset L, IsBitset R>
-requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
-bool Operator<Bitset<Block, Tag>>::is_superseteq(const L& left_bitset, const R& right_bitset)
-{
-    // Fetch data
-    const auto& blocks = left_bitset.get_blocks();
-    bool default_bit_value = left_bitset.get_default_bit_value();
-    const auto& other_blocks = right_bitset.get_blocks();
-    bool other_default_bit_value = right_bitset.get_default_bit_value();
-
-    if (other_default_bit_value && !default_bit_value)
-    {
-        // blocks has finitely many and other blocks has infinitely many set bits.
-        // Hence blocks cannot be a superseteq of other_blocks.
-        return false;
-    }
-
-    std::size_t common_size = std::min(blocks.size(), other_blocks.size());
-
-    for (std::size_t index = 0; index < common_size; ++index)
-    {
-        if ((blocks[index] & other_blocks[index]) != other_blocks[index])
-        {
-            // There exists a set bit in other block that is not set in block.
-            return false;
-        }
-    }
-
-    if (other_blocks.size() <= blocks.size())
-    {
-        // blocks can only contain additional set bits
-        return true;
-    }
-
-    if (default_bit_value)
-    {
-        return true;
-    }
-
-    for (std::size_t index = common_size; index < other_blocks.size(); ++index)
-    {
-        if (other_blocks[index])
-        {
-            // other_block contains additional set bits
-            return false;
-        }
-    }
-
-    return true;
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-template<IsBitset L, IsBitset R>
-requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
-bool Operator<Bitset<Block, Tag>>::are_disjoint(const L& left_bitset, const R& right_bitset)
-{
-    // Fetch data
-    const auto& blocks = left_bitset.get_blocks();
-    bool default_bit_value = left_bitset.get_default_bit_value();
-    const auto& other_blocks = right_bitset.get_blocks();
-    bool other_default_bit_value = right_bitset.get_default_bit_value();
-
-    if (default_bit_value && other_default_bit_value)
-    {
-        // blocks and other blocks have infinitely many set bits after finite sized explicit bitsets.
-        // Hence blocks and other_blocks cannot be disjoint.
-        return false;
-    }
-
-    std::size_t common_size = std::min(blocks.size(), other_blocks.size());
-
-    for (std::size_t index = 0; index < common_size; ++index)
-    {
-        if ((blocks[index] & other_blocks[index]) > 0)
-        {
-            // block and other_block have set bits in common
-            return false;
-        }
-    }
-
-    if (default_bit_value && !other_default_bit_value)
-    {
-        for (std::size_t index = common_size; index < other_blocks.size(); ++index)
-        {
-            if (other_blocks[index] > 0)
-            {
-                // other_blocks has a set bit in common with blocks in the infinite part.
-                return false;
-            }
-        }
-    }
-
-    if (!default_bit_value && other_default_bit_value)
-    {
-        for (std::size_t index = common_size; index < blocks.size(); ++index)
-        {
-            if (blocks[index] > 0)
-            {
-                // blocks has a set bit in common with other_blocks in the infinite part.
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
+/* Operator */
 
 template<IsUnsignedIntegral Block, typename Tag>
 int64_t Operator<Bitset<Block, Tag>>::find_last_relevant_block(const std::vector<Block>& blocks, bool default_bit_value)
 {
     int64_t last_relevant_block_index = static_cast<int64_t>(blocks.size()) - 1;
-    for (; (last_relevant_block_index >= 0) && (blocks[last_relevant_block_index] == (default_bit_value ? block_ones : block_zeroes));
+    for (; (last_relevant_block_index >= 0)
+           && (blocks[last_relevant_block_index] == (default_bit_value ? Layout<Bitset<Block, Tag>>::block_ones : Layout<Bitset<Block, Tag>>::block_zeroes));
          --last_relevant_block_index)
     {
     }
@@ -802,13 +535,13 @@ void Operator<Bitset<Block, Tag>>::const_iterator::next_set_bit()
         // Advance position
         ++m_pos;
         ++m_bit_index;
-        if (m_bit_index == Operator::block_size)
+        if (m_bit_index == block_size)
         {
             ++m_block_index;
             if (m_block_index == m_num_blocks)
             {
                 // Reached end of blocks, set m_pos to end
-                m_pos += Operator::block_size - 1;
+                m_pos += block_size - 1;
                 break;
             }
             m_bit_index = 0;
@@ -828,11 +561,11 @@ void Operator<Bitset<Block, Tag>>::const_iterator::next_set_bit()
         else
         {
             // Skip the remaining bits, point to last position in the current block
-            m_pos += Operator::block_size - m_bit_index - 1;
+            m_pos += block_size - m_bit_index - 1;
             ++m_block_index;
             m_bit_index = -1;
             // Fetch next data block or zeroes
-            m_cur_block = m_block_index < m_num_blocks ? m_blocks[m_block_index] : Operator::block_zeroes;
+            m_cur_block = m_block_index < m_num_blocks ? m_blocks[m_block_index] : block_zeroes;
         }
     } while (m_pos < m_end_pos);
 }
@@ -848,8 +581,8 @@ Operator<Bitset<Block, Tag>>::const_iterator::const_iterator(bool default_bit_va
     m_num_blocks(num_blocks),
     m_block_index(0),
     m_bit_index(-1),
-    m_cur_block(num_blocks > 0 ? m_blocks[m_block_index] : Operator::block_zeroes),
-    m_end_pos((m_num_blocks + 1) * Operator::block_size - 1),
+    m_cur_block(num_blocks > 0 ? m_blocks[m_block_index] : block_zeroes),
+    m_end_pos((m_num_blocks + 1) * block_size - 1),
     m_pos(begin ? -1 : m_end_pos)
 {
     if (default_bit_value)
@@ -929,30 +662,12 @@ size_t Operator<Bitset<Block, Tag>>::get_offset(size_t position) noexcept
     return position % block_size;
 }
 
-// View
+/* View */
 
 template<IsUnsignedIntegral Block, typename Tag>
 View<Bitset<Block, Tag>>::View(uint8_t* buf) : m_buf(buf)
 {
     assert(m_buf);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-template<IsBitset Other>
-requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool View<Bitset<Block, Tag>>::is_superseteq(const Other& other) const
-{
-    assert(m_buf);
-    return BitsetOperator::is_superseteq(*this, other);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-template<IsBitset Other>
-requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool View<Bitset<Block, Tag>>::are_disjoint(const Other& other) const
-{
-    assert(m_buf);
-    return BitsetOperator::are_disjoint(*this, other);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
@@ -1043,7 +758,7 @@ ConstView<Vector<Block>> View<Bitset<Block, Tag>>::get_blocks() const
     return ConstView<Vector<Block>>(m_buf + BitsetLayout::blocks_position);
 }
 
-// ConstView
+/* ConstView */
 
 template<IsUnsignedIntegral Block, typename Tag>
 ConstView<Bitset<Block, Tag>>::ConstView(const uint8_t* data) : m_buf(data)
@@ -1054,24 +769,6 @@ ConstView<Bitset<Block, Tag>>::ConstView(const uint8_t* data) : m_buf(data)
 template<IsUnsignedIntegral Block, typename Tag>
 ConstView<Bitset<Block, Tag>>::ConstView(const BitsetView& view) : m_buf(view.buffer())
 {
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-template<IsBitset Other>
-requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool ConstView<Bitset<Block, Tag>>::is_superseteq(const Other& other) const
-{
-    assert(m_buf);
-    return BitsetOperator::is_superseteq(*this, other);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-template<IsBitset Other>
-requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool ConstView<Bitset<Block, Tag>>::are_disjoint(const Other& other) const
-{
-    assert(m_buf);
-    return BitsetOperator::are_disjoint(*this, other);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
@@ -1156,7 +853,7 @@ ConstView<Vector<Block>> ConstView<Bitset<Block, Tag>>::get_blocks() const
     return ConstView<Vector<Block>>(m_buf + BitsetLayout::blocks_position);
 }
 
-// Builder
+/* Builder */
 
 template<IsUnsignedIntegral Block, typename Tag>
 void Builder<Bitset<Block, Tag>>::finish_impl()
@@ -1268,21 +965,6 @@ Builder<Bitset<Block, Tag>>& Builder<Bitset<Block, Tag>>::operator=(const Bitset
     init_from_view(other);
     return *this;
 }
-
-template<IsUnsignedIntegral Block, typename Tag>
-template<IsBitset Other>
-requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool Builder<Bitset<Block, Tag>>::operator<(const Other& other) const { return BitsetOperator::less(*this, other); }
-
-template<IsUnsignedIntegral Block, typename Tag>
-template<IsBitset Other>
-requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool Builder<Bitset<Block, Tag>>::is_superseteq(const Other& other) const { return BitsetOperator::is_superseteq(*this, other); }
-
-template<IsUnsignedIntegral Block, typename Tag>
-template<IsBitset Other>
-requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool Builder<Bitset<Block, Tag>>::are_disjoint(const Other& other) const { return BitsetOperator::are_disjoint(*this, other); }
 
 template<IsUnsignedIntegral Block, typename Tag>
 void Builder<Bitset<Block, Tag>>::shrink_to_fit()
@@ -1560,9 +1242,62 @@ const auto& Builder<Bitset<Block, Tag>>::get_blocks() const
     return m_blocks;
 }
 
-/**
- * Operators
- */
+/* Free function operators */
+
+template<IsBitset B1, IsBitset B2>
+requires HaveSameBlockType<B1, B2>
+bool are_disjoint(const B1& lhs, const B2& rhs)
+{
+    // Fetch data
+    const auto& blocks = lhs.get_blocks();
+    bool default_bit_value = lhs.get_default_bit_value();
+    const auto& other_blocks = rhs.get_blocks();
+    bool other_default_bit_value = rhs.get_default_bit_value();
+
+    if (default_bit_value && other_default_bit_value)
+    {
+        // blocks and other blocks have infinitely many set bits after finite sized explicit bitsets.
+        // Hence blocks and other_blocks cannot be disjoint.
+        return false;
+    }
+
+    std::size_t common_size = std::min(blocks.size(), other_blocks.size());
+
+    for (std::size_t index = 0; index < common_size; ++index)
+    {
+        if ((blocks[index] & other_blocks[index]) > 0)
+        {
+            // block and other_block have set bits in common
+            return false;
+        }
+    }
+
+    if (default_bit_value && !other_default_bit_value)
+    {
+        for (std::size_t index = common_size; index < other_blocks.size(); ++index)
+        {
+            if (other_blocks[index] > 0)
+            {
+                // other_blocks has a set bit in common with blocks in the infinite part.
+                return false;
+            }
+        }
+    }
+
+    if (!default_bit_value && other_default_bit_value)
+    {
+        for (std::size_t index = common_size; index < blocks.size(); ++index)
+        {
+            if (blocks[index] > 0)
+            {
+                // blocks has a set bit in common with other_blocks in the infinite part.
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
 
 template<IsBitset B>
 bool operator==(const B& lhs, const B& rhs)
@@ -1640,6 +1375,65 @@ template<IsBitset B1, IsBitset B2>
 requires HaveSameBlockType<B1, B2>
 bool operator!=(const B1& lhs, const B2& rhs) { return !(lhs == rhs); }
 
+template<IsBitset B>
+Builder<Bitset<typename B::BlockType, typename B::TagType>> operator~(const B& element)
+{
+    Builder<Bitset<typename B::BlockType, typename B::TagType>> result(element);
+    ~result;
+    return result;
+}
+
+template<IsBitset B1, IsBitset B2>
+requires HaveSameBlockType<B1, B2>
+bool is_superseteq(const B1& lhs, const B2& rhs)
+{
+    // Fetch data
+    const auto& blocks = lhs.get_blocks();
+    bool default_bit_value = lhs.get_default_bit_value();
+    const auto& other_blocks = rhs.get_blocks();
+    bool other_default_bit_value = rhs.get_default_bit_value();
+
+    if (other_default_bit_value && !default_bit_value)
+    {
+        // blocks has finitely many and other blocks has infinitely many set bits.
+        // Hence blocks cannot be a superseteq of other_blocks.
+        return false;
+    }
+
+    std::size_t common_size = std::min(blocks.size(), other_blocks.size());
+
+    for (std::size_t index = 0; index < common_size; ++index)
+    {
+        if ((blocks[index] & other_blocks[index]) != other_blocks[index])
+        {
+            // There exists a set bit in other block that is not set in block.
+            return false;
+        }
+    }
+
+    if (other_blocks.size() <= blocks.size())
+    {
+        // blocks can only contain additional set bits
+        return true;
+    }
+
+    if (default_bit_value)
+    {
+        return true;
+    }
+
+    for (std::size_t index = common_size; index < other_blocks.size(); ++index)
+    {
+        if (other_blocks[index])
+        {
+            // other_block contains additional set bits
+            return false;
+        }
+    }
+
+    return true;
+}
+
 /**
  * Static assertions
  */
@@ -1678,6 +1472,10 @@ std::ostream& operator<<(std::ostream& out, ConstView<Bitset<Block, Tag>> elemen
     return out;
 }
 }
+
+/**
+ * Hashing
+ */
 
 template<flatmemory::IsBitset B>
 struct std::hash<B>
