@@ -63,15 +63,6 @@ public:
         return sizeof(value);
     }
 
-    /// @brief Writes a pointer to the stream
-    template<typename T>
-    size_t write(size_t pos, const T* pointer)
-    {
-        uintptr_t address = reinterpret_cast<uintptr_t>(pointer);
-        write(pos, reinterpret_cast<const uint8_t*>(&address), sizeof(address));
-        return sizeof(address);
-    }
-
     size_t write_padding(size_t pos, size_t amount)
     {
         if (amount > 0)

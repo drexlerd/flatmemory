@@ -26,6 +26,7 @@
 #include "flatmemory/details/layout.hpp"
 #include "flatmemory/details/layout_utils.hpp"
 #include "flatmemory/details/operator.hpp"
+#include "flatmemory/details/types/formatter.hpp"
 #include "flatmemory/details/types/vector.hpp"
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
@@ -43,7 +44,7 @@ namespace flatmemory
  * The optional tag can be used to disallow operations with bitsets with other non-default tags.
  */
 
-template<IsUnsignedIntegral Block, typename Tag = void>
+template<IsUnsignedIntegral Block, typename Tag>
 struct Bitset : public NonTrivialType
 {
     /// @brief Non-trivial copy-constructor
@@ -111,120 +112,47 @@ concept HasBlockType = std::is_same_v<typename T::BlockType, Block>;
 template<typename T, typename Tag>
 concept HasCompatibleTagType = std::is_same_v<typename T::TagType, Tag> || std::is_same_v<Tag, void> || std::is_same_v<typename T::TagType, void>;
 
-/// @brief Concept for user define bitsets based on the STL
 template<typename T>
-concept IsUserDefinedBitset = requires(T a, const T b)
+struct is_bitset_builder_helper : std::false_type
 {
-    /* Common */
-
-    requires IsIntegral<typename T::BlockType>;
-
-    /* Non const version*/
-
-    {
-        a.get_default_bit_value()
-        } -> std::same_as<bool&>;
-    {
-        a.get_blocks()
-        } -> std::same_as<std::vector<typename T::BlockType>&>;
-
-    /* Const version */
-
-    {
-        b.get_default_bit_value()
-        } -> std::same_as<bool>;
-    {
-        b.get_blocks()
-        } -> std::same_as<const std::vector<typename T::BlockType>&>;
 };
 
-/// @brief Concept for Builder
 template<typename T>
-concept IsBitsetBuilder = requires(T a, const T b)
+struct is_bitset_nonconst_view_helper : std::false_type
 {
-    /* Common */
-
-    requires IsIntegral<typename T::BlockType>;
-    typename T::TagType;
-
-    /* Non const version*/
-
-    {
-        a.get_default_bit_value()
-        } -> std::same_as<bool&>;
-    {
-        a.get_blocks()
-        } -> std::same_as<Builder<Vector<typename T::BlockType>>&>;
-
-    /* Const version */
-
-    {
-        b.get_default_bit_value()
-        } -> std::same_as<bool>;
-    {
-        b.get_blocks()
-        } -> std::same_as<const Builder<Vector<typename T::BlockType>>&>;
 };
 
-/// @brief Concept for View
 template<typename T>
-concept IsBitsetView = requires(T a, const T b)
+struct is_bitset_const_view_helper : std::false_type
 {
-    /* Common */
-
-    requires IsIntegral<typename T::BlockType>;
-    typename T::TagType;
-
-    /* Non const version*/
-
-    {
-        a.get_default_bit_value()
-        } -> std::same_as<bool&>;
-    {
-        a.get_blocks()
-        } -> std::same_as<View<Vector<typename T::BlockType>>>;
-
-    /* Const version */
-
-    {
-        b.get_default_bit_value()
-        } -> std::same_as<bool>;
-    {
-        b.get_blocks()
-        } -> std::same_as<ConstView<Vector<typename T::BlockType>>>;
 };
 
-/// @brief Concept for ConstView
-template<typename T>
-concept IsBitsetConstView = requires(T a, const T b)
+template<typename Block, typename Tag>
+struct is_bitset_builder_helper<Builder<Bitset<Block, Tag>>> : std::true_type
 {
-    /* Common */
-
-    requires IsIntegral<typename T::BlockType>;
-    typename T::TagType;
-
-    /* Non const version*/
-
-    {
-        a.get_default_bit_value()
-        } -> std::same_as<bool>;
-    {
-        a.get_blocks()
-        } -> std::same_as<ConstView<Vector<typename T::BlockType>>>;
-
-    /* Const version */
-
-    {
-        b.get_default_bit_value()
-        } -> std::same_as<bool>;
-    {
-        b.get_blocks()
-        } -> std::same_as<ConstView<Vector<typename T::BlockType>>>;
 };
 
-/// @brief Concept for Bitset
+template<typename Block, typename Tag>
+struct is_bitset_nonconst_view_helper<View<Bitset<Block, Tag>>> : std::true_type
+{
+};
+
+template<typename Block, typename Tag>
+struct is_bitset_const_view_helper<ConstView<Bitset<Block, Tag>>> : std::true_type
+{
+};
+
 template<typename T>
-concept IsBitset = IsUserDefinedBitset<T> || IsBitsetBuilder<T> || IsBitsetView<T> || IsBitsetConstView<T>;
+concept IsBitsetBuilder = is_bitset_builder_helper<T>::value;
+
+template<typename T>
+concept IsBitsetView = is_bitset_nonconst_view_helper<T>::value;
+
+template<typename T>
+concept IsBitsetConstView = is_bitset_const_view_helper<T>::value;
+
+template<typename T>
+concept IsBitset = IsBitsetBuilder<T> || IsBitsetView<T> || IsBitsetConstView<T>;
 
 /**
  * Operator
@@ -1801,6 +1729,18 @@ static_assert(!HaveCompatibleTagType<Builder<Bitset<uint64_t, Tag1>>, Builder<Bi
 
 static_assert(HaveCompatibleTagType<Builder<Bitset<uint64_t, Tag1>>, View<Bitset<uint64_t, Tag1>>>);
 static_assert(!HaveCompatibleTagType<Builder<Bitset<uint64_t, Tag1>>, View<Bitset<uint64_t, Tag2>>>);
+
+/**
+ * Pretty printing
+ */
+
+template<flatmemory::IsUnsignedIntegral Block, typename Tag>
+std::ostream& operator<<(std::ostream& out, ConstView<Bitset<Block, Tag>> element)
+{
+    auto formatter = Formatter(0, 4);
+    formatter.write(element, out);
+    return out;
+}
 }
 
 template<flatmemory::IsUnsignedIntegral Block, typename Tag>

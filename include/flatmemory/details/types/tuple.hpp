@@ -25,6 +25,7 @@
 #include "flatmemory/details/concepts.hpp"
 #include "flatmemory/details/layout.hpp"
 #include "flatmemory/details/layout_utils.hpp"
+#include "flatmemory/details/types/formatter.hpp"
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
 
@@ -467,8 +468,8 @@ size_t Builder<Tuple<Ts...>>::finish_iterative_impl(std::index_sequence<Is...>, 
             }
             else
             {
-                /* Write the data pos at the offset pos. */
-                out.write(pos + element_data.position, static_cast<offset_type>(data_pos));
+                /* Write the distance between written data pos and offset pos at the offset pos. */
+                out.write(pos + element_data.position, static_cast<offset_type>(data_pos - element_data.position));
                 out.write_padding(pos + element_data.end, element_data.padding);
 
                 /* Write the data at offset */
@@ -686,7 +687,8 @@ decltype(auto) View<Tuple<Ts...>>::get()
     }
     else
     {
-        return element_view_type<I>(m_buf + read_value<offset_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position));
+        const auto offset_pos = m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position;
+        return element_view_type<I>(offset_pos + read_value<offset_type>(offset_pos));
     }
 }
 
@@ -704,7 +706,8 @@ decltype(auto) View<Tuple<Ts...>>::get() const
     }
     else
     {
-        return const_element_view_type<I>(m_buf + read_value<offset_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position));
+        const auto offset_pos = m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position;
+        return const_element_view_type<I>(offset_pos + read_value<offset_type>(offset_pos));
     }
 }
 
@@ -828,7 +831,8 @@ decltype(auto) ConstView<Tuple<Ts...>>::get() const
     }
     else
     {
-        return const_element_view_type<I>(m_buf + read_value<offset_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position));
+        const auto offset_pos = m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position;
+        return const_element_view_type<I>(offset_pos + read_value<offset_type>(offset_pos));
     }
 }
 
@@ -859,6 +863,18 @@ size_t ConstView<Tuple<Ts...>>::hash() const
     int64_t hash[2];
     MurmurHash3_x64_128(m_buf, buffer_size(), seed, hash);
     return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
+}
+
+/**
+ * Pretty printing
+ */
+
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
+std::ostream& operator<<(std::ostream& out, ConstView<Tuple<Ts...>> element)
+{
+    auto formatter = Formatter(0, 4);
+    formatter.write(element, out);
+    return out;
 }
 
 }

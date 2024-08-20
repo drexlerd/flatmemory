@@ -15,25 +15,28 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef FLATMEMORY_FLATMEMORY_HPP_
-#define FLATMEMORY_FLATMEMORY_HPP_
+#ifndef FLATMEMORY_TYPES_FORMATTER_IMPL_HPP_
+#define FLATMEMORY_TYPES_FORMATTER_IMPL_HPP_
 
-/**
- * Types
- */
-
-#include "flatmemory/details/types/bitset.hpp"
 #include "flatmemory/details/types/formatter.hpp"
-#include "flatmemory/details/types/formatter_impl.hpp"
-#include "flatmemory/details/types/tuple.hpp"
-#include "flatmemory/details/types/vector.hpp"
-#include "flatmemory/details/types/optional.hpp"
 
-/**
- * Containers
- */
+namespace flatmemory
+{
 
-#include "flatmemory/details/containers/unordered_set.hpp"
-#include "flatmemory/details/containers/vector.hpp"
+template<IsUnsignedIntegral Block, typename Tag>
+void Formatter::write(ConstView<Bitset<Block, Tag>> element, std::ostream& out)
+{
+}
+
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
+void Formatter::write(ConstView<Tuple<Ts...>> element, std::ostream& out)
+{
+}
+
+template<IsTriviallyCopyableOrNonTrivialType T>
+void Formatter::write(ConstView<Vector<T>> element, std::ostream& out)
+{
+}
+}
 
 #endif

@@ -29,6 +29,7 @@
 
 namespace flatmemory
 {
+
 class ByteBufferSegmented
 {
 private:

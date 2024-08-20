@@ -27,6 +27,7 @@
 #include "flatmemory/details/layout.hpp"
 #include "flatmemory/details/layout_utils.hpp"
 #include "flatmemory/details/operator.hpp"
+#include "flatmemory/details/types/formatter.hpp"
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
 
@@ -67,6 +68,51 @@ class ConstView<Vector<T>>;
 template<IsTriviallyCopyableOrNonTrivialType T>
 class Builder<Vector<T>>;
 
+template<typename T1, typename T2>
+concept HaveSameValueType = std::is_same_v<typename T1::ValueType, typename T2::ValueType>;
+
+template<typename T>
+struct is_vector_builder_helper : std::false_type
+{
+};
+
+template<typename T>
+struct is_vector_nonconst_view_helper : std::false_type
+{
+};
+
+template<typename T>
+struct is_vector_const_view_helper : std::false_type
+{
+};
+
+template<IsTriviallyCopyableOrNonTrivialType T>
+struct is_vector_builder_helper<Builder<Vector<T>>> : std::true_type
+{
+};
+
+template<IsTriviallyCopyableOrNonTrivialType T>
+struct is_vector_nonconst_view_helper<View<Vector<T>>> : std::true_type
+{
+};
+
+template<IsTriviallyCopyableOrNonTrivialType T>
+struct is_vector_const_view_helper<ConstView<Vector<T>>> : std::true_type
+{
+};
+
+template<typename T>
+concept IsVectorBuilder = is_vector_builder_helper<T>::value;
+
+template<typename T>
+concept IsVectorView = is_vector_nonconst_view_helper<T>::value;
+
+template<typename T>
+concept IsVectorConstView = is_vector_const_view_helper<T>::value;
+
+template<typename T>
+concept IsVector = IsVectorBuilder<T> || IsVectorView<T> || IsVectorConstView<T>;
+
 /**
  * Operator
  */
@@ -104,6 +150,7 @@ template<IsTriviallyCopyableOrNonTrivialType T>
 class Builder<Vector<T>> : public IBuilder<Builder<Vector<T>>>
 {
 public:
+    using ValueType = T;
     using T_ = typename maybe_builder<T>::type;
 
     using iterator = typename std::vector<T_>::iterator;
@@ -131,15 +178,6 @@ public:
     Builder();
     explicit Builder(size_t count);
     explicit Builder(size_t count, const T_& value);
-
-    /**
-     * Operators
-     */
-
-    bool operator==(const Builder& other) const;
-    bool operator==(const ConstView<Vector<T>> other) const;
-    bool operator==(const View<Vector<T>> other) const;
-    bool operator!=(const Builder& other) const;
 
     /**
      * Element access
@@ -187,6 +225,7 @@ template<IsTriviallyCopyableOrNonTrivialType T>
 class View<Vector<T>>
 {
 public:
+    using ValueType = T;
     using T_ = typename maybe_builder<T>::type;
 
 private:
@@ -203,17 +242,6 @@ private:
 public:
     /// @brief Constructor to interpret raw data created by its corresponding builder.
     View(uint8_t* buf);
-
-    /**
-     * Operators
-     */
-
-    bool operator==(const Builder<Vector<T>>& other) const;
-    bool operator==(const View<Vector<T>>& other) const;
-    bool operator==(const ConstView<Vector<T>>& other) const;
-    bool operator!=(const Builder<Vector<T>>& other) const;
-    bool operator!=(const View<Vector<T>>& other) const;
-    bool operator!=(const ConstView<Vector<T>>& other) const;
 
     /**
      * Element access.
@@ -299,6 +327,7 @@ template<IsTriviallyCopyableOrNonTrivialType T>
 class ConstView<Vector<T>>
 {
 public:
+    using ValueType = T;
     using T_ = typename maybe_builder<T>::type;
 
 private:
@@ -321,16 +350,6 @@ public:
      */
 
     ConstView(const View<Vector<T>>& view);
-
-    /**
-     * Operators
-     */
-    bool operator==(const Builder<Vector<T>>& other) const;
-    bool operator==(const ConstView<Vector<T>>& other) const;
-    bool operator==(const View<Vector<T>>& other) const;
-    bool operator!=(const Builder<Vector<T>>& other) const;
-    bool operator!=(const ConstView<Vector<T>>& other) const;
-    bool operator!=(const View<Vector<T>>& other) const;
 
     /**
      * Element access
@@ -385,6 +404,24 @@ public:
      * Views cannot be modified!
      */
 };
+
+/**
+ * Operators
+ */
+
+template<IsVector V>
+bool operator==(const V& lhs, const V& rhs);
+
+template<IsVector V1, IsVector V2>
+requires HaveSameValueType<V1, V2>
+bool operator==(const V1& lhs, const V2& rhs);
+
+template<IsVector V>
+bool operator!=(const V& lhs, const V& rhs);
+
+template<IsVector V1, IsVector V2>
+requires HaveSameValueType<V1, V2>
+bool operator!=(const V1& lhs, const V2& rhs);
 
 /**
  * Definitions
@@ -487,62 +524,6 @@ Builder<Vector<T>>::Builder(size_t count) : m_data(count)
 template<IsTriviallyCopyableOrNonTrivialType T>
 Builder<Vector<T>>::Builder(size_t count, const T_& value) : m_data(count, value)
 {
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool Builder<Vector<T>>::operator==(const Builder& other) const
-{
-    if (this != &other)
-    {
-        return m_data == other.m_data;
-    }
-    return true;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool Builder<Vector<T>>::operator==(const ConstView<Vector<T>> other) const
-{
-    if (size() != other.size())
-    {
-        return false;
-    }
-
-    for (size_t i = 0; i < size(); ++i)
-    {
-        // Requires comparison between nested builder and constview/view types
-        if ((*this)[i] != other[i])
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool Builder<Vector<T>>::operator==(const View<Vector<T>> other) const
-{
-    if (size() != other.size())
-    {
-        return false;
-    }
-
-    for (size_t i = 0; i < size(); ++i)
-    {
-        // Requires comparison between nested builder and constview/view types
-        if ((*this)[i] != other[i])
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool Builder<Vector<T>>::operator!=(const Builder& other) const
-{
-    return !(*this == other);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
@@ -671,69 +652,6 @@ void View<Vector<T>>::range_check(size_t pos) const
         throw std::out_of_range("View<Vector<T>>::range_check: pos (which is " + std::to_string(pos) + ") >= this->size() (which is " + std::to_string(size())
                                 + ")");
     }
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool View<Vector<T>>::operator==(const Builder<Vector<T>>& other) const
-{
-    if (size() != other.size())
-    {
-        return false;
-    }
-    for (size_t i = 0; i < size(); ++i)
-    {
-        if ((*this)[i] != other[i])
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool View<Vector<T>>::operator==(const View<Vector<T>>& other) const
-{
-    if (m_buf != other.buffer())
-    {
-        if (buffer_size() != other.buffer_size())
-        {
-            return false;
-        }
-        return std::memcmp(m_buf, other.buffer(), buffer_size()) == 0;
-    }
-    return true;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool View<Vector<T>>::operator==(const ConstView<Vector<T>>& other) const
-{
-    if (m_buf != other.buffer())
-    {
-        if (buffer_size() != other.buffer_size())
-        {
-            return false;
-        }
-        return std::memcmp(m_buf, other.buffer(), buffer_size()) == 0;
-    }
-    return true;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool View<Vector<T>>::operator!=(const Builder<Vector<T>>& other) const
-{
-    return !(*this == other);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool View<Vector<T>>::operator!=(const View<Vector<T>>& other) const
-{
-    return !(*this == other);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool View<Vector<T>>::operator!=(const ConstView<Vector<T>>& other) const
-{
-    return !(*this == other);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
@@ -1027,16 +945,37 @@ void ConstView<Vector<T>>::range_check(size_t pos) const
     }
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool ConstView<Vector<T>>::operator==(const Builder<Vector<T>>& other) const
+template<IsVector V>
+bool operator==(const V& lhs, const V& rhs)
 {
-    if (size() != other.size())
+    if (&lhs != &rhs)
+    {
+        if (lhs.size() != rhs.size())
+        {
+            return false;
+        }
+        for (size_t i = 0; i < lhs.size(); ++i)
+        {
+            if (lhs[i] != rhs[i])
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+template<IsVector V1, IsVector V2>
+requires HaveSameValueType<V1, V2>
+bool operator==(const V1& lhs, const V2& rhs)
+{
+    if (lhs.size() != rhs.size())
     {
         return false;
     }
-    for (size_t i = 0; i < size(); ++i)
+    for (size_t i = 0; i < lhs.size(); ++i)
     {
-        if ((*this)[i] != other[i])
+        if (lhs[i] != rhs[i])
         {
             return false;
         }
@@ -1044,51 +983,15 @@ bool ConstView<Vector<T>>::operator==(const Builder<Vector<T>>& other) const
     return true;
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool ConstView<Vector<T>>::operator==(const ConstView<Vector<T>>& other) const
+template<IsVector V>
+bool operator!=(const V& lhs, const V& rhs)
 {
-    if (m_buf != other.buffer())
-    {
-        if (buffer_size() != other.buffer_size())
-        {
-            return false;
-        }
-        return std::memcmp(m_buf, other.buffer(), buffer_size()) == 0;
-    }
-    return true;
+    return !(lhs == rhs);
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool ConstView<Vector<T>>::operator==(const View<Vector<T>>& other) const
-{
-    if (m_buf != other.buffer())
-    {
-        if (buffer_size() != other.buffer_size())
-        {
-            return false;
-        }
-        return std::memcmp(m_buf, other.buffer(), buffer_size()) == 0;
-    }
-    return true;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool ConstView<Vector<T>>::operator!=(const Builder<Vector<T>>& other) const
-{
-    return !(*this == other);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool ConstView<Vector<T>>::operator!=(const ConstView<Vector<T>>& other) const
-{
-    return !(*this == other);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool ConstView<Vector<T>>::operator!=(const View<Vector<T>>& other) const
-{
-    return !(*this == other);
-}
+template<IsVector V1, IsVector V2>
+requires HaveSameValueType<V1, V2>
+bool operator!=(const V1& lhs, const V2& rhs) { return !(lhs == rhs); }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
 decltype(auto) ConstView<Vector<T>>::operator[](size_t pos) const
@@ -1247,6 +1150,18 @@ size_t ConstView<Vector<T>>::size() const
 static_assert(std::ranges::forward_range<Builder<Vector<uint64_t>>>);
 static_assert(std::ranges::forward_range<View<Vector<uint64_t>>>);
 static_assert(std::ranges::forward_range<ConstView<Vector<uint64_t>>>);
+
+/**
+ * Pretty printing
+ */
+
+template<IsTriviallyCopyableOrNonTrivialType T>
+std::ostream& operator<<(std::ostream& out, ConstView<Vector<T>> element)
+{
+    auto formatter = Formatter(0, 4);
+    formatter.write(element, out);
+    return out;
+}
 }
 
 template<flatmemory::IsTriviallyCopyableOrNonTrivialType T>
