@@ -176,9 +176,6 @@ public:
     /**
      * Operators
      */
-    template<IsBitset L, IsBitset R>
-    requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
-    static bool are_equal(const L& left_bitset, const R& right_bitset);
 
     template<IsBitset L, IsBitset R>
     requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
@@ -304,14 +301,6 @@ public:
 
     template<IsBitset Other>
     requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    bool operator==(const Other& other) const;
-
-    template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    bool operator!=(const Other& other) const;
-
-    template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
     bool is_superseteq(const Other& other) const;
 
     template<IsBitset Other>
@@ -396,14 +385,6 @@ public:
     /**
      * Operators
      */
-
-    template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    bool operator==(const Other& other) const;
-
-    template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    bool operator!=(const Other& other) const;
 
     template<IsBitset Other>
     requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
@@ -531,14 +512,6 @@ public:
 
     template<IsBitset Other>
     requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    bool operator==(const Other& other) const;
-
-    template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    bool operator!=(const Other& other) const;
-
-    template<IsBitset Other>
-    requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
     bool is_superseteq(const Other& other) const;
 
     template<IsBitset Other>
@@ -618,6 +591,24 @@ public:
 };
 
 /**
+ * Operators
+ */
+
+template<IsBitset B>
+bool operator==(const B& lhs, const B& rhs);
+
+template<IsBitset B1, IsBitset B2>
+requires HaveSameBlockType<B1, B2>
+bool operator==(const B1& lhs, const B2& rhs);
+
+template<IsBitset B>
+bool operator!=(const B& lhs, const B& rhs);
+
+template<IsBitset B1, IsBitset B2>
+requires HaveSameBlockType<B1, B2>
+bool operator!=(const B1& lhs, const B2& rhs);
+
+/**
  * Definitions
  */
 
@@ -637,37 +628,6 @@ constexpr void Layout<Bitset<Block, Tag>>::print() const
 }
 
 // Operator
-
-template<IsUnsignedIntegral Block, typename Tag>
-template<IsBitset L, IsBitset R>
-requires HaveSameBlockType<L, R> && HaveCompatibleTagType<L, R>
-bool Operator<Bitset<Block, Tag>>::are_equal(const L& left_bitset, const R& right_bitset)
-{
-    // Fetch data
-    const auto& blocks = left_bitset.get_blocks();
-    bool default_bit_value = left_bitset.get_default_bit_value();
-    const auto& other_blocks = right_bitset.get_blocks();
-    bool other_default_bit_value = right_bitset.get_default_bit_value();
-
-    std::size_t common_size = std::min(blocks.size(), other_blocks.size());
-    if (std::memcmp(blocks.data(), other_blocks.data(), common_size * sizeof(Block)) != 0)
-        return false;
-
-    std::size_t max_size = std::max(blocks.size(), other_blocks.size());
-
-    for (std::size_t index = common_size; index < max_size; ++index)
-    {
-        Block this_value = index < blocks.size() ? blocks[index] : (default_bit_value ? block_ones : block_zeroes);
-        Block other_value = index < other_blocks.size() ? other_blocks[index] : (other_default_bit_value ? block_ones : block_zeroes);
-
-        if (this_value != other_value)
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset L, IsBitset R>
@@ -1026,20 +986,6 @@ View<Bitset<Block, Tag>>::View(uint8_t* buf) : m_buf(buf)
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
 requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool View<Bitset<Block, Tag>>::operator==(const Other& other) const
-{
-    assert(m_buf);
-    return BitsetOperator::are_equal(*this, other);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-template<IsBitset Other>
-requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool View<Bitset<Block, Tag>>::operator!=(const Other& other) const { return !(*this == other); }
-
-template<IsUnsignedIntegral Block, typename Tag>
-template<IsBitset Other>
-requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
 bool View<Bitset<Block, Tag>>::is_superseteq(const Other& other) const
 {
     assert(m_buf);
@@ -1162,20 +1108,6 @@ template<IsUnsignedIntegral Block, typename Tag>
 ConstView<Bitset<Block, Tag>>::ConstView(const BitsetView& view) : m_buf(view.buffer())
 {
 }
-
-template<IsUnsignedIntegral Block, typename Tag>
-template<IsBitset Other>
-requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool ConstView<Bitset<Block, Tag>>::operator==(const Other& other) const
-{
-    assert(m_buf);
-    return BitsetOperator::are_equal(*this, other);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-template<IsBitset Other>
-requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool ConstView<Bitset<Block, Tag>>::operator!=(const Other& other) const { return !(*this == other); }
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
@@ -1401,16 +1333,6 @@ template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
 requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
 bool Builder<Bitset<Block, Tag>>::operator<(const Other& other) const { return BitsetOperator::less(*this, other); }
-
-template<IsUnsignedIntegral Block, typename Tag>
-template<IsBitset Other>
-requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool Builder<Bitset<Block, Tag>>::operator==(const Other& other) const { return BitsetOperator::are_equal(*this, other); }
-
-template<IsUnsignedIntegral Block, typename Tag>
-template<IsBitset Other>
-requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-bool Builder<Bitset<Block, Tag>>::operator!=(const Other& other) const { return !(*this == other); }
 
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset Other>
@@ -1703,6 +1625,86 @@ const auto& Builder<Bitset<Block, Tag>>::get_blocks() const
 {
     return m_blocks;
 }
+
+/**
+ * Operators
+ */
+
+template<IsBitset B>
+bool operator==(const B& lhs, const B& rhs)
+{
+    if (&lhs != &rhs)
+    {
+        // Fetch data
+        const auto& blocks = lhs.get_blocks();
+        bool default_bit_value = lhs.get_default_bit_value();
+        const auto& other_blocks = rhs.get_blocks();
+        bool other_default_bit_value = rhs.get_default_bit_value();
+
+        std::size_t common_size = std::min(blocks.size(), other_blocks.size());
+        if (std::memcmp(blocks.data(), other_blocks.data(), common_size * sizeof(typename B::BlockType)) != 0)
+            return false;
+
+        std::size_t max_size = std::max(blocks.size(), other_blocks.size());
+
+        for (std::size_t index = common_size; index < max_size; ++index)
+        {
+            auto this_value = index < blocks.size() ? blocks[index] : (default_bit_value ? B::BitsetOperator::block_ones : B::BitsetOperator::block_zeroes);
+            auto other_value =
+                index < other_blocks.size() ? other_blocks[index] : (other_default_bit_value ? B::BitsetOperator::block_ones : B::BitsetOperator::block_zeroes);
+
+            if (this_value != other_value)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    return true;
+}
+
+template<IsBitset B1, IsBitset B2>
+requires HaveSameBlockType<B1, B2>
+bool operator==(const B1& lhs, const B2& rhs)
+{
+    // Fetch data
+    const auto& blocks = lhs.get_blocks();
+    bool default_bit_value = lhs.get_default_bit_value();
+    const auto& other_blocks = rhs.get_blocks();
+    bool other_default_bit_value = rhs.get_default_bit_value();
+
+    std::size_t common_size = std::min(blocks.size(), other_blocks.size());
+    if (std::memcmp(blocks.data(), other_blocks.data(), common_size * sizeof(typename B1::BlockType)) != 0)
+        return false;
+
+    std::size_t max_size = std::max(blocks.size(), other_blocks.size());
+
+    for (std::size_t index = common_size; index < max_size; ++index)
+    {
+        auto this_value = index < blocks.size() ? blocks[index] : (default_bit_value ? B1::BitsetOperator::block_ones : B1::BitsetOperator::block_zeroes);
+        auto other_value =
+            index < other_blocks.size() ? other_blocks[index] : (other_default_bit_value ? B1::BitsetOperator::block_ones : B1::BitsetOperator::block_zeroes);
+
+        if (this_value != other_value)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+template<IsBitset B>
+bool operator!=(const B& lhs, const B& rhs)
+{
+    return !(lhs == rhs);
+}
+
+template<IsBitset B1, IsBitset B2>
+requires HaveSameBlockType<B1, B2>
+bool operator!=(const B1& lhs, const B2& rhs) { return !(lhs == rhs); }
 
 /**
  * Static assertions

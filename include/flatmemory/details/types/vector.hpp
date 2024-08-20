@@ -59,6 +59,7 @@ using vector_size_type = uint32_t;
 /**
  * Forward declarations
  */
+
 template<IsTriviallyCopyableOrNonTrivialType T>
 class View<Vector<T>>;
 
@@ -67,6 +68,10 @@ class ConstView<Vector<T>>;
 
 template<IsTriviallyCopyableOrNonTrivialType T>
 class Builder<Vector<T>>;
+
+/**
+ * Concepts
+ */
 
 template<typename T1, typename T2>
 concept HaveSameValueType = std::is_same_v<typename T1::ValueType, typename T2::ValueType>;
@@ -945,54 +950,6 @@ void ConstView<Vector<T>>::range_check(size_t pos) const
     }
 }
 
-template<IsVector V>
-bool operator==(const V& lhs, const V& rhs)
-{
-    if (&lhs != &rhs)
-    {
-        if (lhs.size() != rhs.size())
-        {
-            return false;
-        }
-        for (size_t i = 0; i < lhs.size(); ++i)
-        {
-            if (lhs[i] != rhs[i])
-            {
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
-template<IsVector V1, IsVector V2>
-requires HaveSameValueType<V1, V2>
-bool operator==(const V1& lhs, const V2& rhs)
-{
-    if (lhs.size() != rhs.size())
-    {
-        return false;
-    }
-    for (size_t i = 0; i < lhs.size(); ++i)
-    {
-        if (lhs[i] != rhs[i])
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-template<IsVector V>
-bool operator!=(const V& lhs, const V& rhs)
-{
-    return !(lhs == rhs);
-}
-
-template<IsVector V1, IsVector V2>
-requires HaveSameValueType<V1, V2>
-bool operator!=(const V1& lhs, const V2& rhs) { return !(lhs == rhs); }
-
 template<IsTriviallyCopyableOrNonTrivialType T>
 decltype(auto) ConstView<Vector<T>>::operator[](size_t pos) const
 {
@@ -1142,6 +1099,58 @@ size_t ConstView<Vector<T>>::size() const
     assert(test_correct_alignment<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_position));
     return read_value<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_position);
 }
+
+/**
+ * Operators
+ */
+
+template<IsVector V>
+bool operator==(const V& lhs, const V& rhs)
+{
+    if (&lhs != &rhs)
+    {
+        if (lhs.size() != rhs.size())
+        {
+            return false;
+        }
+        for (size_t i = 0; i < lhs.size(); ++i)
+        {
+            if (lhs[i] != rhs[i])
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+template<IsVector V1, IsVector V2>
+requires HaveSameValueType<V1, V2>
+bool operator==(const V1& lhs, const V2& rhs)
+{
+    if (lhs.size() != rhs.size())
+    {
+        return false;
+    }
+    for (size_t i = 0; i < lhs.size(); ++i)
+    {
+        if (lhs[i] != rhs[i])
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+template<IsVector V>
+bool operator!=(const V& lhs, const V& rhs)
+{
+    return !(lhs == rhs);
+}
+
+template<IsVector V1, IsVector V2>
+requires HaveSameValueType<V1, V2>
+bool operator!=(const V1& lhs, const V2& rhs) { return !(lhs == rhs); }
 
 /**
  * Static assertions
