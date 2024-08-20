@@ -662,197 +662,6 @@ size_t Operator<Bitset<Block, Tag>>::get_offset(size_t position) noexcept
     return position % block_size;
 }
 
-/* View */
-
-template<IsUnsignedIntegral Block, typename Tag>
-View<Bitset<Block, Tag>>::View(uint8_t* buf) : m_buf(buf)
-{
-    assert(m_buf);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-bool View<Bitset<Block, Tag>>::get(std::size_t position) const
-{
-    assert(m_buf);
-    return BitsetOperator::get(*this, position);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-size_t View<Bitset<Block, Tag>>::count() const
-{
-    assert(m_buf);
-    return BitsetOperator::count(*this);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-View<Bitset<Block, Tag>>::const_iterator View<Bitset<Block, Tag>>::begin()
-{
-    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-View<Bitset<Block, Tag>>::const_iterator View<Bitset<Block, Tag>>::begin() const
-{
-    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-View<Bitset<Block, Tag>>::const_iterator View<Bitset<Block, Tag>>::end()
-{
-    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), false);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-View<Bitset<Block, Tag>>::const_iterator View<Bitset<Block, Tag>>::end() const
-{
-    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), false);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-uint8_t* View<Bitset<Block, Tag>>::buffer()
-{
-    return m_buf;
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-const uint8_t* View<Bitset<Block, Tag>>::buffer() const
-{
-    return m_buf;
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-buffer_size_type View<Bitset<Block, Tag>>::buffer_size() const
-{
-    assert(m_buf);
-    assert(test_correct_alignment<buffer_size_type>(m_buf + BitsetLayout::buffer_size_position));
-    return read_value<buffer_size_type>(m_buf + BitsetLayout::buffer_size_position);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-bool& View<Bitset<Block, Tag>>::get_default_bit_value()
-{
-    assert(m_buf);
-    assert(test_correct_alignment<bool>(m_buf + BitsetLayout::default_bit_value_position));
-    return read_value<bool>(m_buf + BitsetLayout::default_bit_value_position);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-bool View<Bitset<Block, Tag>>::get_default_bit_value() const
-{
-    assert(m_buf);
-    assert(test_correct_alignment<bool>(m_buf + BitsetLayout::default_bit_value_position));
-    return read_value<bool>(m_buf + BitsetLayout::default_bit_value_position);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-View<Vector<Block>> View<Bitset<Block, Tag>>::get_blocks()
-{
-    assert(m_buf);
-    return View<Vector<Block>>(m_buf + BitsetLayout::blocks_position);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-ConstView<Vector<Block>> View<Bitset<Block, Tag>>::get_blocks() const
-{
-    assert(m_buf);
-    return ConstView<Vector<Block>>(m_buf + BitsetLayout::blocks_position);
-}
-
-/* ConstView */
-
-template<IsUnsignedIntegral Block, typename Tag>
-ConstView<Bitset<Block, Tag>>::ConstView(const uint8_t* data) : m_buf(data)
-{
-    assert(m_buf);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-ConstView<Bitset<Block, Tag>>::ConstView(const BitsetView& view) : m_buf(view.buffer())
-{
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-bool ConstView<Bitset<Block, Tag>>::get(std::size_t position) const
-{
-    assert(m_buf);
-    return BitsetOperator::get(*this, position);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-size_t ConstView<Bitset<Block, Tag>>::count() const
-{
-    assert(m_buf);
-    return BitsetOperator::count(*this);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-ConstView<Bitset<Block, Tag>>::const_iterator ConstView<Bitset<Block, Tag>>::begin()
-{
-    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-ConstView<Bitset<Block, Tag>>::const_iterator ConstView<Bitset<Block, Tag>>::begin() const
-{
-    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-ConstView<Bitset<Block, Tag>>::const_iterator ConstView<Bitset<Block, Tag>>::end()
-{
-    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), false);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-ConstView<Bitset<Block, Tag>>::const_iterator ConstView<Bitset<Block, Tag>>::end() const
-{
-    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), false);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-const uint8_t* ConstView<Bitset<Block, Tag>>::buffer() const
-{
-    return m_buf;
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-buffer_size_type ConstView<Bitset<Block, Tag>>::buffer_size() const
-{
-    assert(m_buf);
-    assert(test_correct_alignment<buffer_size_type>(m_buf + BitsetLayout::buffer_size_position));
-    return read_value<buffer_size_type>(m_buf + BitsetLayout::buffer_size_position);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-bool ConstView<Bitset<Block, Tag>>::get_default_bit_value()
-{
-    assert(m_buf);
-    assert(test_correct_alignment<bool>(m_buf + BitsetLayout::default_bit_value_position));
-    return read_value<bool>(m_buf + BitsetLayout::default_bit_value_position);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-bool ConstView<Bitset<Block, Tag>>::get_default_bit_value() const
-{
-    assert(m_buf);
-    assert(test_correct_alignment<bool>(m_buf + BitsetLayout::default_bit_value_position));
-    return read_value<bool>(m_buf + BitsetLayout::default_bit_value_position);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-ConstView<Vector<Block>> ConstView<Bitset<Block, Tag>>::get_blocks()
-{
-    assert(m_buf);
-    return ConstView<Vector<Block>>(m_buf + BitsetLayout::blocks_position);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-ConstView<Vector<Block>> ConstView<Bitset<Block, Tag>>::get_blocks() const
-{
-    assert(m_buf);
-    return ConstView<Vector<Block>>(m_buf + BitsetLayout::blocks_position);
-}
-
 /* Builder */
 
 template<IsUnsignedIntegral Block, typename Tag>
@@ -1240,6 +1049,197 @@ template<IsUnsignedIntegral Block, typename Tag>
 const auto& Builder<Bitset<Block, Tag>>::get_blocks() const
 {
     return m_blocks;
+}
+
+/* View */
+
+template<IsUnsignedIntegral Block, typename Tag>
+View<Bitset<Block, Tag>>::View(uint8_t* buf) : m_buf(buf)
+{
+    assert(m_buf);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+bool View<Bitset<Block, Tag>>::get(std::size_t position) const
+{
+    assert(m_buf);
+    return BitsetOperator::get(*this, position);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+size_t View<Bitset<Block, Tag>>::count() const
+{
+    assert(m_buf);
+    return BitsetOperator::count(*this);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+View<Bitset<Block, Tag>>::const_iterator View<Bitset<Block, Tag>>::begin()
+{
+    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+View<Bitset<Block, Tag>>::const_iterator View<Bitset<Block, Tag>>::begin() const
+{
+    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+View<Bitset<Block, Tag>>::const_iterator View<Bitset<Block, Tag>>::end()
+{
+    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), false);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+View<Bitset<Block, Tag>>::const_iterator View<Bitset<Block, Tag>>::end() const
+{
+    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), false);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+uint8_t* View<Bitset<Block, Tag>>::buffer()
+{
+    return m_buf;
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+const uint8_t* View<Bitset<Block, Tag>>::buffer() const
+{
+    return m_buf;
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+buffer_size_type View<Bitset<Block, Tag>>::buffer_size() const
+{
+    assert(m_buf);
+    assert(test_correct_alignment<buffer_size_type>(m_buf + BitsetLayout::buffer_size_position));
+    return read_value<buffer_size_type>(m_buf + BitsetLayout::buffer_size_position);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+bool& View<Bitset<Block, Tag>>::get_default_bit_value()
+{
+    assert(m_buf);
+    assert(test_correct_alignment<bool>(m_buf + BitsetLayout::default_bit_value_position));
+    return read_value<bool>(m_buf + BitsetLayout::default_bit_value_position);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+bool View<Bitset<Block, Tag>>::get_default_bit_value() const
+{
+    assert(m_buf);
+    assert(test_correct_alignment<bool>(m_buf + BitsetLayout::default_bit_value_position));
+    return read_value<bool>(m_buf + BitsetLayout::default_bit_value_position);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+View<Vector<Block>> View<Bitset<Block, Tag>>::get_blocks()
+{
+    assert(m_buf);
+    return View<Vector<Block>>(m_buf + BitsetLayout::blocks_position);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+ConstView<Vector<Block>> View<Bitset<Block, Tag>>::get_blocks() const
+{
+    assert(m_buf);
+    return ConstView<Vector<Block>>(m_buf + BitsetLayout::blocks_position);
+}
+
+/* ConstView */
+
+template<IsUnsignedIntegral Block, typename Tag>
+ConstView<Bitset<Block, Tag>>::ConstView(const uint8_t* data) : m_buf(data)
+{
+    assert(m_buf);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+ConstView<Bitset<Block, Tag>>::ConstView(const BitsetView& view) : m_buf(view.buffer())
+{
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+bool ConstView<Bitset<Block, Tag>>::get(std::size_t position) const
+{
+    assert(m_buf);
+    return BitsetOperator::get(*this, position);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+size_t ConstView<Bitset<Block, Tag>>::count() const
+{
+    assert(m_buf);
+    return BitsetOperator::count(*this);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+ConstView<Bitset<Block, Tag>>::const_iterator ConstView<Bitset<Block, Tag>>::begin()
+{
+    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+ConstView<Bitset<Block, Tag>>::const_iterator ConstView<Bitset<Block, Tag>>::begin() const
+{
+    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+ConstView<Bitset<Block, Tag>>::const_iterator ConstView<Bitset<Block, Tag>>::end()
+{
+    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), false);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+ConstView<Bitset<Block, Tag>>::const_iterator ConstView<Bitset<Block, Tag>>::end() const
+{
+    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), false);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+const uint8_t* ConstView<Bitset<Block, Tag>>::buffer() const
+{
+    return m_buf;
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+buffer_size_type ConstView<Bitset<Block, Tag>>::buffer_size() const
+{
+    assert(m_buf);
+    assert(test_correct_alignment<buffer_size_type>(m_buf + BitsetLayout::buffer_size_position));
+    return read_value<buffer_size_type>(m_buf + BitsetLayout::buffer_size_position);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+bool ConstView<Bitset<Block, Tag>>::get_default_bit_value()
+{
+    assert(m_buf);
+    assert(test_correct_alignment<bool>(m_buf + BitsetLayout::default_bit_value_position));
+    return read_value<bool>(m_buf + BitsetLayout::default_bit_value_position);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+bool ConstView<Bitset<Block, Tag>>::get_default_bit_value() const
+{
+    assert(m_buf);
+    assert(test_correct_alignment<bool>(m_buf + BitsetLayout::default_bit_value_position));
+    return read_value<bool>(m_buf + BitsetLayout::default_bit_value_position);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+ConstView<Vector<Block>> ConstView<Bitset<Block, Tag>>::get_blocks()
+{
+    assert(m_buf);
+    return ConstView<Vector<Block>>(m_buf + BitsetLayout::blocks_position);
+}
+
+template<IsUnsignedIntegral Block, typename Tag>
+ConstView<Vector<Block>> ConstView<Bitset<Block, Tag>>::get_blocks() const
+{
+    assert(m_buf);
+    return ConstView<Vector<Block>>(m_buf + BitsetLayout::blocks_position);
 }
 
 /* Free function operators */
