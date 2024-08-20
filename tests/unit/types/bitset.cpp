@@ -156,75 +156,83 @@ TEST(FlatmemoryTests, TypesBitsetAssignmentTest)
 
 TEST(FlatmemoryTests, TypesBitsetEqualTest)
 {
-    auto builder = Builder<Bitset<uint64_t>>();
-    builder.set(42);
-    builder.finish();
+    using BitsetLayout = Bitset<uint64_t>;
 
-    auto builder2 = Builder<Bitset<uint64_t>>();
+    auto builder1 = Builder<BitsetLayout>();
+    builder1.set(42);
+    builder1.finish();
+
+    auto builder2 = Builder<BitsetLayout>();
     builder2.set(42);
     builder2.set(64);
     builder2.finish();
 
-    auto builder3 = Builder<Bitset<uint64_t>>();
+    auto builder3 = Builder<BitsetLayout>();
     builder3.set(42);
     builder3.finish();
 
     // Test Builder
-    EXPECT_EQ(builder, builder3);
-    EXPECT_NE(builder, builder2);
+    EXPECT_TRUE((builder1 == builder3));
+    EXPECT_EQ(std::hash<Builder<BitsetLayout>>()(builder1), std::hash<Builder<BitsetLayout>>()(builder3));
+    EXPECT_FALSE((builder1 == builder2));
+    EXPECT_NE(std::hash<Builder<BitsetLayout>>()(builder1), std::hash<Builder<BitsetLayout>>()(builder2));
 
     // Test View
-    auto view = View<Bitset<uint64_t>>(builder.buffer().data());
-    auto view2 = View<Bitset<uint64_t>>(builder2.buffer().data());
-    auto view3 = View<Bitset<uint64_t>>(builder3.buffer().data());
-    EXPECT_EQ(view, view3);
-    EXPECT_NE(view, view2);
+    auto view1 = View<BitsetLayout>(builder1.buffer().data());
+    auto view2 = View<BitsetLayout>(builder2.buffer().data());
+    auto view3 = View<BitsetLayout>(builder3.buffer().data());
+    EXPECT_EQ(view1, view3);
+    EXPECT_EQ(std::hash<View<BitsetLayout>>()(view1), std::hash<View<BitsetLayout>>()(view3));
+    EXPECT_NE(view1, view2);
+    EXPECT_NE(std::hash<View<BitsetLayout>>()(view1), std::hash<View<BitsetLayout>>()(view2));
 
     // Test ConstView
-    auto const_view = ConstView<Bitset<uint64_t>>(builder.buffer().data());
-    auto const_view2 = ConstView<Bitset<uint64_t>>(builder2.buffer().data());
-    auto const_view3 = ConstView<Bitset<uint64_t>>(builder3.buffer().data());
-    EXPECT_EQ(const_view, const_view3);
-    EXPECT_NE(const_view, const_view2);
+    auto const_view1 = ConstView<BitsetLayout>(builder1.buffer().data());
+    auto const_view2 = ConstView<BitsetLayout>(builder2.buffer().data());
+    auto const_view3 = ConstView<BitsetLayout>(builder3.buffer().data());
+    EXPECT_EQ(const_view1, const_view3);
+    EXPECT_EQ(std::hash<ConstView<BitsetLayout>>()(const_view1), std::hash<ConstView<BitsetLayout>>()(const_view3));
+    EXPECT_NE(const_view1, const_view2);
+    EXPECT_NE(std::hash<ConstView<BitsetLayout>>()(const_view1), std::hash<ConstView<BitsetLayout>>()(const_view2));
 
     // Test Builder and View
-    EXPECT_EQ(builder, view);
+    EXPECT_EQ(builder1, view1);
     EXPECT_EQ(builder2, view2);
     EXPECT_EQ(builder3, view3);
-    EXPECT_EQ(builder, view3);
-    EXPECT_NE(builder, view2);
+    EXPECT_EQ(builder1, view3);
+    EXPECT_NE(builder1, view2);
     // Test View and Builder
-    EXPECT_EQ(view, builder);
+    EXPECT_EQ(view1, builder1);
     EXPECT_EQ(view2, builder2);
     EXPECT_EQ(view3, builder3);
-    EXPECT_EQ(view, builder3);
-    EXPECT_NE(view, builder2);
+    EXPECT_EQ(view1, builder3);
+    EXPECT_NE(view1, builder2);
 
     // Test Builder and ConstView
-    EXPECT_EQ(builder, const_view);
+    EXPECT_EQ(builder1, const_view1);
     EXPECT_EQ(builder2, const_view2);
     EXPECT_EQ(builder3, const_view3);
-    EXPECT_EQ(builder, const_view3);
-    EXPECT_NE(builder, const_view2);
+    EXPECT_EQ(builder1, const_view3);
+    EXPECT_NE(builder1, const_view2);
     // Test ConstView and Builder
-    EXPECT_EQ(const_view, builder);
+    EXPECT_EQ(const_view1, builder1);
     EXPECT_EQ(const_view2, builder2);
     EXPECT_EQ(const_view3, builder3);
-    EXPECT_EQ(const_view, builder3);
-    EXPECT_NE(const_view, builder2);
+    EXPECT_EQ(const_view1, builder3);
+    EXPECT_NE(const_view1, builder2);
 
     // Test View and ConstView
-    EXPECT_EQ(view, const_view);
+    EXPECT_EQ(view1, const_view1);
     EXPECT_EQ(view2, const_view2);
     EXPECT_EQ(view3, const_view3);
-    EXPECT_EQ(view, const_view3);
-    EXPECT_NE(view, const_view2);
+    EXPECT_EQ(view1, const_view3);
+    EXPECT_NE(view1, const_view2);
     // Test ConstView and View
-    EXPECT_EQ(const_view, view);
+    EXPECT_EQ(const_view1, view1);
     EXPECT_EQ(const_view2, view2);
     EXPECT_EQ(const_view3, view3);
-    EXPECT_EQ(const_view, view3);
-    EXPECT_NE(const_view, view2);
+    EXPECT_EQ(const_view1, view3);
+    EXPECT_NE(const_view1, view2);
 }
 
 TEST(FlatmemoryTests, TypesBitsetAreDisjointTest)

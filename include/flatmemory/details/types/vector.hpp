@@ -82,7 +82,7 @@ struct is_vector_builder_helper : std::false_type
 };
 
 template<typename T>
-struct is_vector_nonconst_view_helper : std::false_type
+struct is_vector_view_helper : std::false_type
 {
 };
 
@@ -97,7 +97,7 @@ struct is_vector_builder_helper<Builder<Vector<T>>> : std::true_type
 };
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-struct is_vector_nonconst_view_helper<View<Vector<T>>> : std::true_type
+struct is_vector_view_helper<View<Vector<T>>> : std::true_type
 {
 };
 
@@ -110,7 +110,7 @@ template<typename T>
 concept IsVectorBuilder = is_vector_builder_helper<T>::value;
 
 template<typename T>
-concept IsVectorView = is_vector_nonconst_view_helper<T>::value;
+concept IsVectorView = is_vector_view_helper<T>::value;
 
 template<typename T>
 concept IsVectorConstView = is_vector_const_view_helper<T>::value;
@@ -147,6 +147,24 @@ public:
 
     constexpr void print() const;
 };
+
+/**
+ * Operators
+ */
+
+template<IsVector V>
+bool operator==(const V& lhs, const V& rhs);
+
+template<IsVector V1, IsVector V2>
+requires HaveSameValueType<V1, V2>
+bool operator==(const V1& lhs, const V2& rhs);
+
+template<IsVector V>
+bool operator!=(const V& lhs, const V& rhs);
+
+template<IsVector V1, IsVector V2>
+requires HaveSameValueType<V1, V2>
+bool operator!=(const V1& lhs, const V2& rhs);
 
 /**
  * Builder
@@ -192,7 +210,6 @@ public:
     const T_& operator[](size_t pos) const;
     T_& at(size_t pos);
     const T_& at(size_t pos) const;
-    size_t hash() const;
     T_* data();
     const T_* data() const;
 
@@ -256,7 +273,6 @@ public:
     decltype(auto) operator[](size_t pos) const;
     decltype(auto) at(size_t pos);
     decltype(auto) at(size_t pos) const;
-    size_t hash() const;
     T_* data();
     const T_* data() const;
     uint8_t* buffer();
@@ -362,7 +378,6 @@ public:
 
     decltype(auto) operator[](size_t pos) const;
     decltype(auto) at(size_t pos) const;
-    size_t hash() const;
     const T_* data() const;
     const uint8_t* buffer() const;
 
@@ -409,24 +424,6 @@ public:
      * Views cannot be modified!
      */
 };
-
-/**
- * Operators
- */
-
-template<IsVector V>
-bool operator==(const V& lhs, const V& rhs);
-
-template<IsVector V1, IsVector V2>
-requires HaveSameValueType<V1, V2>
-bool operator==(const V1& lhs, const V2& rhs);
-
-template<IsVector V>
-bool operator!=(const V& lhs, const V& rhs);
-
-template<IsVector V1, IsVector V2>
-requires HaveSameValueType<V1, V2>
-bool operator!=(const V1& lhs, const V2& rhs);
 
 /**
  * Definitions
@@ -555,12 +552,6 @@ template<IsTriviallyCopyableOrNonTrivialType T>
 const Builder<Vector<T>>::T_& Builder<Vector<T>>::at(size_t pos) const
 {
     return m_data.at(pos);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-size_t Builder<Vector<T>>::hash() const
-{
-    return flatmemory::hash_combine(m_data);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
@@ -707,15 +698,6 @@ decltype(auto) View<Vector<T>>::at(size_t pos) const
 {
     range_check(pos);
     return (*this)[pos];
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-size_t View<Vector<T>>::hash() const
-{
-    size_t seed = size();
-    int64_t hash[2];
-    MurmurHash3_x64_128(m_buf, buffer_size(), seed, hash);
-    return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
@@ -976,15 +958,6 @@ decltype(auto) ConstView<Vector<T>>::at(size_t pos) const
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-size_t ConstView<Vector<T>>::hash() const
-{
-    size_t seed = size();
-    int64_t hash[2];
-    MurmurHash3_x64_128(m_buf, buffer_size(), seed, hash);
-    return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
 const ConstView<Vector<T>>::T_* ConstView<Vector<T>>::data() const
 {
     return reinterpret_cast<const ConstView<Vector<T>>::T_*>(m_buf + Layout<Vector<T>>::vector_data_position);
@@ -1174,21 +1147,41 @@ std::ostream& operator<<(std::ostream& out, ConstView<Vector<T>> element)
 }
 
 template<flatmemory::IsTriviallyCopyableOrNonTrivialType T>
-struct std::hash<flatmemory::Vector<T>>
+struct std::hash<flatmemory::Builder<flatmemory::Vector<T>>>
 {
-    size_t operator()(const flatmemory::Builder<flatmemory::Vector<T>>& vector) const { return vector.hash(); }
+    size_t operator()(const flatmemory::Builder<flatmemory::Vector<T>>& vector) const
+    {
+        size_t seed = vector.size();
+        for (const auto& element : vector)
+        {
+            flatmemory::hash_combine(seed, element);
+        }
+        return seed;
+    }
 };
 
 template<flatmemory::IsTriviallyCopyableOrNonTrivialType T>
 struct std::hash<flatmemory::View<flatmemory::Vector<T>>>
 {
-    size_t operator()(const flatmemory::View<flatmemory::Vector<T>>& vector) const { return vector.hash(); }
+    size_t operator()(const flatmemory::View<flatmemory::Vector<T>>& vector) const
+    {
+        size_t seed = vector.size();
+        int64_t hash[2];
+        flatmemory::MurmurHash3_x64_128(vector.buffer(), vector.buffer_size(), seed, hash);
+        return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
+    }
 };
 
 template<flatmemory::IsTriviallyCopyableOrNonTrivialType T>
 struct std::hash<flatmemory::ConstView<flatmemory::Vector<T>>>
 {
-    size_t operator()(const flatmemory::ConstView<flatmemory::Vector<T>>& vector) const { return vector.hash(); }
+    size_t operator()(const flatmemory::ConstView<flatmemory::Vector<T>>& vector) const
+    {
+        size_t seed = vector.size();
+        int64_t hash[2];
+        flatmemory::MurmurHash3_x64_128(vector.buffer(), vector.buffer_size(), seed, hash);
+        return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
+    }
 };
 
 #endif

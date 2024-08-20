@@ -52,6 +52,73 @@ struct Tuple : public NonTrivialType
 };
 
 /**
+ * Concepts
+ */
+
+template<typename T>
+struct is_tuple_builder_helper : std::false_type
+{
+};
+
+template<typename T>
+struct is_tuple_view_helper : std::false_type
+{
+};
+
+template<typename T>
+struct is_tuple_const_view_helper : std::false_type
+{
+};
+
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
+struct is_tuple_builder_helper<Builder<Tuple<Ts...>>> : std::true_type
+{
+};
+
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
+struct is_tuple_view_helper<View<Tuple<Ts...>>> : std::true_type
+{
+};
+
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
+struct is_tuple_const_view_helper<ConstView<Tuple<Ts...>>> : std::true_type
+{
+};
+
+template<typename T>
+concept IsTupleBuilder = is_tuple_builder_helper<T>::value;
+
+template<typename T>
+concept IsTupleView = is_tuple_view_helper<T>::value;
+
+template<typename T>
+concept IsTupleConstView = is_tuple_const_view_helper<T>::value;
+
+template<typename T>
+concept IsTuple = IsTupleBuilder<T> || IsTupleView<T> || IsTupleConstView<T>;
+
+template<typename T1, typename T2>
+concept HaveSameValueTypes = std::is_same_v<typename T1::ValueTypes, typename T2::ValueTypes>;
+
+/**
+ * Operators
+ */
+
+template<IsTuple T>
+bool operator==(const T& lhs, const T& rhs);
+
+template<IsTuple T1, IsTuple T2>
+requires HaveSameValueTypes<T1, T2>
+bool operator==(const T1& lhs, const T2& rhs);
+
+template<IsTuple T>
+bool operator!=(const T& lhs, const T& rhs);
+
+template<IsTuple T1, IsTuple T2>
+requires HaveSameValueTypes<T1, T2>
+bool operator!=(const T1& lhs, const T2& rhs);
+
+/**
  * Layout
  */
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
@@ -117,6 +184,7 @@ template<IsTriviallyCopyableOrNonTrivialType... Ts>
 class Builder<Tuple<Ts...>> : public IBuilder<Builder<Tuple<Ts...>>>
 {
 public:
+    using ValueTypes = std::tuple<Ts...>;
     template<size_t I>
     using element_type = std::tuple_element_t<I, std::tuple<Ts...>>;
     template<size_t I>
@@ -150,23 +218,6 @@ public:
     Builder() requires(std::default_initializable<typename maybe_builder<Ts>::type>&&...);
 
     /**
-     * Operators
-     */
-
-    template<std::size_t... Is>
-    bool compare_tuples(std::index_sequence<Is...>, const ConstView<Tuple<Ts...>>& other) const;
-
-    template<std::size_t... Is>
-    bool compare_tuples(std::index_sequence<Is...>, const View<Tuple<Ts...>>& other) const;
-
-    bool operator==(const Builder& other) const;
-    bool operator==(const ConstView<Tuple<Ts...>> other) const;
-    bool operator==(const View<Tuple<Ts...>> other) const;
-    bool operator!=(const Builder& other) const;
-    bool operator!=(const View<Tuple<Ts...>>& other) const;
-    bool operator!=(const ConstView<Tuple<Ts...>>& other) const;
-
-    /**
      * Lookup
      */
 
@@ -175,11 +226,6 @@ public:
 
     template<std::size_t I>
     const auto& get() const;
-
-    template<size_t... Is>
-    size_t hash_helper(std::index_sequence<Is...>) const;
-
-    size_t hash() const;
 };
 
 /**
@@ -189,6 +235,7 @@ template<IsTriviallyCopyableOrNonTrivialType... Ts>
 class View<Tuple<Ts...>>
 {
 public:
+    using ValueTypes = std::tuple<Ts...>;
     template<size_t I>
     using element_type = std::tuple_element_t<I, std::tuple<Ts...>>;
     template<size_t I>
@@ -214,20 +261,6 @@ public:
     View(uint8_t* data);
 
     /**
-     * Operators
-     */
-
-    template<std::size_t... Is>
-    bool compare_tuples(std::index_sequence<Is...>, const Builder<Tuple<Ts...>>& other) const;
-
-    bool operator==(const Builder<Tuple<Ts...>> other) const;
-    bool operator==(const View& other) const;
-    bool operator==(const ConstView<Tuple<Ts...>> other) const;
-    bool operator!=(const Builder<Tuple<Ts...>>& other) const;
-    bool operator!=(const View<Tuple<Ts...>>& other) const;
-    bool operator!=(const ConstView<Tuple<Ts...>>& other) const;
-
-    /**
      * Lookup
      */
 
@@ -249,21 +282,17 @@ public:
      * Capacity
      */
     size_t size() const;
-
-    /**
-     * Hashing
-     */
-
-    size_t hash() const;
 };
 
 /**
  * ConstView
  */
+
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
 class ConstView<Tuple<Ts...>>
 {
 public:
+    using ValueTypes = std::tuple<Ts...>;
     template<size_t I>
     using element_type = std::tuple_element_t<I, std::tuple<Ts...>>;
     template<size_t I>
@@ -294,20 +323,6 @@ public:
     ConstView(const View<Tuple<Ts...>>& view);
 
     /**
-     * Operators
-     */
-
-    template<std::size_t... Is>
-    bool compare_tuples(std::index_sequence<Is...>, const Builder<Tuple<Ts...>>& other) const;
-
-    bool operator==(const Builder<Tuple<Ts...>> other) const;
-    bool operator==(const View<Tuple<Ts...>>& other) const;
-    bool operator==(const ConstView<Tuple<Ts...>> other) const;
-    bool operator!=(const Builder<Tuple<Ts...>>& other) const;
-    bool operator!=(const View<Tuple<Ts...>>& other) const;
-    bool operator!=(const ConstView<Tuple<Ts...>>& other) const;
-
-    /**
      * Lookup
      */
 
@@ -326,19 +341,45 @@ public:
      */
 
     size_t size() const;
-
-    /**
-     * Hashing
-     */
-
-    size_t hash() const;
 };
 
 /**
  * Definitions
  */
 
-// Layout
+/**
+ * Operators
+ */
+
+template<IsTuple T1, IsTuple T2, std::size_t... Is>
+static bool compare_tuples(std::index_sequence<Is...>, const T1& lhs, const T2& rhs)
+{
+    return (... && (lhs.template get<Is>() == rhs.template get<Is>()));
+}
+
+template<IsTuple T>
+bool operator==(const T& lhs, const T& rhs)
+{
+    return compare_tuples(std::make_index_sequence<std::tuple_size_v<typename T::ValueTypes>> {}, lhs, rhs);
+}
+
+template<IsTuple T1, IsTuple T2>
+requires HaveSameValueTypes<T1, T2>
+bool operator==(const T1& lhs, const T2& rhs) { return compare_tuples(std::make_index_sequence<std::tuple_size_v<typename T1::ValueTypes>> {}, lhs, rhs); }
+
+template<IsTuple T>
+bool operator!=(const T& lhs, const T& rhs)
+{
+    return !(lhs == rhs);
+}
+
+template<IsTuple T1, IsTuple T2>
+requires HaveSameValueTypes<T1, T2>
+bool operator!=(const T1& lhs, const T2& rhs) { return !(lhs == rhs); }
+
+/**
+ * Layout
+ */
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<size_t... Is>
@@ -514,16 +555,6 @@ const auto& Builder<Tuple<Ts...>>::get_buffer_impl() const
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
-bool Builder<Tuple<Ts...>>::operator==(const Builder& other) const
-{
-    if (this != &other)
-    {
-        return m_data == other.m_data;
-    }
-    return true;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
 Builder<Tuple<Ts...>>::Builder(Ts&&... args) : m_data(std::forward<Ts>(args)...), m_buffer()
 {
 }
@@ -534,53 +565,10 @@ Builder<Tuple<Ts...>>::Builder() requires(std::default_initializable<typename ma
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
-template<std::size_t... Is>
-bool Builder<Tuple<Ts...>>::compare_tuples(std::index_sequence<Is...>, const ConstView<Tuple<Ts...>>& other) const
-{
-    return (... && (std::get<Is>(m_data) == other.template get<Is>()));
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-bool Builder<Tuple<Ts...>>::operator==(const ConstView<Tuple<Ts...>> other) const
-{  //
-    return compare_tuples(std::index_sequence_for<Ts...> {}, other);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-template<std::size_t... Is>
-bool Builder<Tuple<Ts...>>::compare_tuples(std::index_sequence<Is...>, const View<Tuple<Ts...>>& other) const
-{
-    return (... && (std::get<Is>(m_data) == other.template get<Is>()));
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-bool Builder<Tuple<Ts...>>::operator==(const View<Tuple<Ts...>> other) const
-{  //
-    return compare_tuples(std::index_sequence_for<Ts...> {}, other);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-bool Builder<Tuple<Ts...>>::operator!=(const Builder& other) const
-{
-    return !(*this == other);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-bool Builder<Tuple<Ts...>>::operator!=(const View<Tuple<Ts...>>& other) const
-{
-    return !(*this == other);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-bool Builder<Tuple<Ts...>>::operator!=(const ConstView<Tuple<Ts...>>& other) const
-{
-    return !(*this == other);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t I>
 auto& Builder<Tuple<Ts...>>::get()
 {
+    static_assert(I < sizeof...(Ts));
     return std::get<I>(m_data);
 }
 
@@ -588,22 +576,8 @@ template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t I>
 const auto& Builder<Tuple<Ts...>>::get() const
 {
+    static_assert(I < sizeof...(Ts));
     return std::get<I>(m_data);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-template<size_t... Is>
-size_t Builder<Tuple<Ts...>>::hash_helper(std::index_sequence<Is...>) const
-{
-    size_t seed = Layout<Tuple<Ts...>>::size;
-    ([&] { flatmemory::hash_combine(seed, get<Is>()); }(), ...);
-    return seed;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-size_t Builder<Tuple<Ts...>>::hash() const
-{
-    return hash_helper(std::make_index_sequence<sizeof...(Ts)> {});
 }
 
 // View
@@ -615,69 +589,10 @@ View<Tuple<Ts...>>::View(uint8_t* data) : m_buf(data)
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
-template<std::size_t... Is>
-bool View<Tuple<Ts...>>::compare_tuples(std::index_sequence<Is...>, const Builder<Tuple<Ts...>>& other) const
-{
-    return (... && (get<Is>() == other.template get<Is>()));
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-bool View<Tuple<Ts...>>::operator==(const Builder<Tuple<Ts...>> other) const
-{  //
-    return compare_tuples(std::index_sequence_for<Ts...> {}, other);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-bool View<Tuple<Ts...>>::operator==(const View& other) const
-{
-    if (m_buf != other.buffer())
-    {
-        if (buffer_size() != other.buffer_size())
-        {
-            return false;
-        }
-        return std::memcmp(m_buf, other.buffer(), buffer_size()) == 0;
-    }
-    return true;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-bool View<Tuple<Ts...>>::operator==(const ConstView<Tuple<Ts...>> other) const
-{
-    if (m_buf != other.buffer())
-    {
-        if (buffer_size() != other.buffer_size())
-        {
-            return false;
-        }
-        return std::memcmp(m_buf, other.buffer(), buffer_size()) == 0;
-    }
-    return true;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-bool View<Tuple<Ts...>>::operator!=(const Builder<Tuple<Ts...>>& other) const
-{
-    return !(*this == other);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-bool View<Tuple<Ts...>>::operator!=(const View<Tuple<Ts...>>& other) const
-{
-    return !(*this == other);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-bool View<Tuple<Ts...>>::operator!=(const ConstView<Tuple<Ts...>>& other) const
-{
-    return !(*this == other);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t I>
 decltype(auto) View<Tuple<Ts...>>::get()
 {
-    static_assert(I < Layout<Tuple<Ts...>>::size);
+    static_assert(I < sizeof...(Ts));
     assert(m_buf);
     constexpr bool is_trivial = IsTriviallyCopyable<element_type<I>>;
     if constexpr (is_trivial)
@@ -696,7 +611,7 @@ template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t I>
 decltype(auto) View<Tuple<Ts...>>::get() const
 {
-    static_assert(I < Layout<Tuple<Ts...>>::size);
+    static_assert(I < sizeof...(Ts));
     assert(m_buf);
     constexpr bool is_trivial = IsTriviallyCopyable<element_type<I>>;
     if constexpr (is_trivial)
@@ -736,15 +651,6 @@ size_t View<Tuple<Ts...>>::size() const
     return Layout<Tuple<Ts...>>::size;
 }
 
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-size_t View<Tuple<Ts...>>::hash() const
-{
-    size_t seed = Layout<Tuple<Ts...>>::size;
-    int64_t hash[2];
-    MurmurHash3_x64_128(m_buf, buffer_size(), seed, hash);
-    return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
-}
-
 // ConstView
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
@@ -759,69 +665,10 @@ ConstView<Tuple<Ts...>>::ConstView(const View<Tuple<Ts...>>& view) : m_buf(view.
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
-template<std::size_t... Is>
-bool ConstView<Tuple<Ts...>>::compare_tuples(std::index_sequence<Is...>, const Builder<Tuple<Ts...>>& other) const
-{
-    return (... && (get<Is>() == other.template get<Is>()));
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-bool ConstView<Tuple<Ts...>>::operator==(const Builder<Tuple<Ts...>> other) const
-{  //
-    return compare_tuples(std::index_sequence_for<Ts...> {}, other);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-bool ConstView<Tuple<Ts...>>::operator==(const View<Tuple<Ts...>>& other) const
-{
-    if (m_buf != other.buffer())
-    {
-        if (buffer_size() != other.buffer_size())
-        {
-            return false;
-        }
-        return std::memcmp(m_buf, other.buffer(), buffer_size()) == 0;
-    }
-    return true;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-bool ConstView<Tuple<Ts...>>::operator==(const ConstView<Tuple<Ts...>> other) const
-{
-    if (m_buf != other.buffer())
-    {
-        if (buffer_size() != other.buffer_size())
-        {
-            return false;
-        }
-        return std::memcmp(m_buf, other.buffer(), buffer_size()) == 0;
-    }
-    return true;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-bool ConstView<Tuple<Ts...>>::operator!=(const Builder<Tuple<Ts...>>& other) const
-{
-    return !(*this == other);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-bool ConstView<Tuple<Ts...>>::operator!=(const View<Tuple<Ts...>>& other) const
-{
-    return !(*this == other);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-bool ConstView<Tuple<Ts...>>::operator!=(const ConstView<Tuple<Ts...>>& other) const
-{
-    return !(*this == other);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t I>
 decltype(auto) ConstView<Tuple<Ts...>>::get() const
 {
-    static_assert(I < Layout<Tuple<Ts...>>::size);
+    static_assert(I < sizeof...(Ts));
     assert(m_buf);
     constexpr bool is_trivial = IsTriviallyCopyable<element_type<I>>;
     if constexpr (is_trivial)
@@ -856,15 +703,6 @@ size_t ConstView<Tuple<Ts...>>::size() const
     return Layout<Tuple<Ts...>>::size;
 }
 
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-size_t ConstView<Tuple<Ts...>>::hash() const
-{
-    size_t seed = Layout<Tuple<Ts...>>::size;
-    int64_t hash[2];
-    MurmurHash3_x64_128(m_buf, buffer_size(), seed, hash);
-    return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
-}
-
 /**
  * Pretty printing
  */
@@ -882,19 +720,39 @@ std::ostream& operator<<(std::ostream& out, ConstView<Tuple<Ts...>> element)
 template<typename... Ts>
 struct std::hash<flatmemory::Builder<flatmemory::Tuple<Ts...>>>
 {
-    size_t operator()(const flatmemory::Builder<flatmemory::Tuple<Ts...>>& tuple) const { return tuple.hash(); }
+    size_t operator()(const flatmemory::Builder<flatmemory::Tuple<Ts...>>& tuple) const
+    {
+        std::size_t seed = flatmemory::Layout<flatmemory::Tuple<Ts...>>::size;
+
+        [&]<std::size_t... Is>(std::index_sequence<Is...>) { (flatmemory::hash_combine(seed, tuple.template get<Is>()), ...); }
+        (std::make_index_sequence<sizeof...(Ts)> {});
+
+        return seed;
+    }
 };
 
 template<typename... Ts>
 struct std::hash<flatmemory::View<flatmemory::Tuple<Ts...>>>
 {
-    size_t operator()(const flatmemory::View<flatmemory::Tuple<Ts...>>& tuple) const { return tuple.hash(); }
+    size_t operator()(const flatmemory::View<flatmemory::Tuple<Ts...>>& tuple) const
+    {
+        size_t seed = flatmemory::Layout<flatmemory::Tuple<Ts...>>::size;
+        int64_t hash[2];
+        flatmemory::MurmurHash3_x64_128(tuple.buffer(), tuple.buffer_size(), seed, hash);
+        return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
+    }
 };
 
 template<typename... Ts>
 struct std::hash<flatmemory::ConstView<flatmemory::Tuple<Ts...>>>
 {
-    size_t operator()(const flatmemory::ConstView<flatmemory::Tuple<Ts...>>& tuple) const { return tuple.hash(); }
+    size_t operator()(const flatmemory::ConstView<flatmemory::Tuple<Ts...>>& tuple) const
+    {
+        size_t seed = flatmemory::Layout<flatmemory::Tuple<Ts...>>::size;
+        int64_t hash[2];
+        flatmemory::MurmurHash3_x64_128(tuple.buffer(), tuple.buffer_size(), seed, hash);
+        return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
+    }
 };
 
 #endif

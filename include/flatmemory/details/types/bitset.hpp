@@ -118,7 +118,7 @@ struct is_bitset_builder_helper : std::false_type
 };
 
 template<typename T>
-struct is_bitset_nonconst_view_helper : std::false_type
+struct is_bitset_view_helper : std::false_type
 {
 };
 
@@ -133,7 +133,7 @@ struct is_bitset_builder_helper<Builder<Bitset<Block, Tag>>> : std::true_type
 };
 
 template<typename Block, typename Tag>
-struct is_bitset_nonconst_view_helper<View<Bitset<Block, Tag>>> : std::true_type
+struct is_bitset_view_helper<View<Bitset<Block, Tag>>> : std::true_type
 {
 };
 
@@ -146,7 +146,7 @@ template<typename T>
 concept IsBitsetBuilder = is_bitset_builder_helper<T>::value;
 
 template<typename T>
-concept IsBitsetView = is_bitset_nonconst_view_helper<T>::value;
+concept IsBitsetView = is_bitset_view_helper<T>::value;
 
 template<typename T>
 concept IsBitsetConstView = is_bitset_const_view_helper<T>::value;
@@ -194,13 +194,6 @@ public:
      */
 
     static int64_t find_last_relevant_block(const std::vector<Block>& blocks, bool default_bit_value);
-
-    /**
-     * Hashing
-     */
-
-    template<IsBitset B>
-    static size_t hash(const B& bitset);
 
     /**
      * Lookup
@@ -263,6 +256,24 @@ public:
 };
 
 /**
+ * Operators
+ */
+
+template<IsBitset B>
+bool operator==(const B& lhs, const B& rhs);
+
+template<IsBitset B1, IsBitset B2>
+requires HaveSameBlockType<B1, B2>
+bool operator==(const B1& lhs, const B2& rhs);
+
+template<IsBitset B>
+bool operator!=(const B& lhs, const B& rhs);
+
+template<IsBitset B1, IsBitset B2>
+requires HaveSameBlockType<B1, B2>
+bool operator!=(const B1& lhs, const B2& rhs);
+
+/**
  * View
  */
 template<IsUnsignedIntegral Block, typename Tag>
@@ -323,12 +334,6 @@ public:
     const_iterator begin() const;
     const_iterator end();
     const_iterator end() const;
-
-    /**
-     * Hashing
-     */
-
-    size_t hash() const;
 
     /**
      * Getters
@@ -410,12 +415,6 @@ public:
     const_iterator begin() const;
     const_iterator end();
     const_iterator end() const;
-
-    /**
-     * Hashing
-     */
-
-    size_t hash() const;
 
     /**
      * Getters
@@ -574,12 +573,6 @@ public:
     const_iterator end() const;
 
     /**
-     * Hashing
-     */
-
-    size_t hash() const;
-
-    /**
      * Getters
      */
 
@@ -589,24 +582,6 @@ public:
     auto& get_blocks();
     const auto& get_blocks() const;
 };
-
-/**
- * Operators
- */
-
-template<IsBitset B>
-bool operator==(const B& lhs, const B& rhs);
-
-template<IsBitset B1, IsBitset B2>
-requires HaveSameBlockType<B1, B2>
-bool operator==(const B1& lhs, const B2& rhs);
-
-template<IsBitset B>
-bool operator!=(const B& lhs, const B& rhs);
-
-template<IsBitset B1, IsBitset B2>
-requires HaveSameBlockType<B1, B2>
-bool operator!=(const B1& lhs, const B2& rhs);
 
 /**
  * Definitions
@@ -783,28 +758,6 @@ int64_t Operator<Bitset<Block, Tag>>::find_last_relevant_block(const std::vector
     {
     }
     return last_relevant_block_index;
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-template<IsBitset B>
-size_t Operator<Bitset<Block, Tag>>::hash(const B& bitset)
-{
-    // Fetch data
-    const bool default_bit_value = bitset.get_default_bit_value();
-    const auto& blocks = bitset.get_blocks();
-
-    const auto default_block = default_bit_value ? block_ones : block_zeroes;
-    const auto seed = static_cast<uint32_t>(default_block);
-
-    // Find the last block that differs from the default block
-    auto last_relevant_index = static_cast<int64_t>(blocks.size()) - 1;
-    for (; (last_relevant_index >= 0) && (blocks[last_relevant_index] == default_block); --last_relevant_index) {}
-    const auto length = static_cast<std::size_t>(last_relevant_index + 1) * sizeof(Block);
-
-    // Compute a hash value up to and including this block
-    int64_t hash[2] = { 0, 0 };
-    MurmurHash3_x64_128(blocks.data(), length, seed, hash);
-    return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
@@ -1040,13 +993,6 @@ View<Bitset<Block, Tag>>::const_iterator View<Bitset<Block, Tag>>::end() const
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-size_t View<Bitset<Block, Tag>>::hash() const
-{
-    assert(m_buf);
-    return BitsetOperator::hash(*this);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
 uint8_t* View<Bitset<Block, Tag>>::buffer()
 {
     return m_buf;
@@ -1163,13 +1109,6 @@ template<IsUnsignedIntegral Block, typename Tag>
 ConstView<Bitset<Block, Tag>>::const_iterator ConstView<Bitset<Block, Tag>>::end() const
 {
     return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), false);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-size_t ConstView<Bitset<Block, Tag>>::hash() const
-{
-    assert(m_buf);
-    return BitsetOperator::hash(*this);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
@@ -1597,12 +1536,6 @@ Builder<Bitset<Block, Tag>>::const_iterator Builder<Bitset<Block, Tag>>::end() c
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-size_t Builder<Bitset<Block, Tag>>::hash() const
-{
-    return BitsetOperator::hash(*this);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
 bool& Builder<Bitset<Block, Tag>>::get_default_bit_value()
 {
     return m_default_bit_value;
@@ -1745,22 +1678,28 @@ std::ostream& operator<<(std::ostream& out, ConstView<Bitset<Block, Tag>> elemen
 }
 }
 
-template<flatmemory::IsUnsignedIntegral Block, typename Tag>
-struct std::hash<flatmemory::Builder<flatmemory::Bitset<Block, Tag>>>
+template<flatmemory::IsBitset B>
+struct std::hash<B>
 {
-    size_t operator()(const flatmemory::Builder<flatmemory::Bitset<Block, Tag>>& bitset) const { return bitset.hash(); }
-};
+    size_t operator()(const B& bitset) const
+    {
+        // Fetch data
+        const bool default_bit_value = bitset.get_default_bit_value();
+        const auto& blocks = bitset.get_blocks();
 
-template<flatmemory::IsUnsignedIntegral Block, typename Tag>
-struct std::hash<flatmemory::View<flatmemory::Bitset<Block, Tag>>>
-{
-    size_t operator()(const flatmemory::View<flatmemory::Bitset<Block, Tag>>& bitset) const { return bitset.hash(); }
-};
+        const auto default_block = default_bit_value ? B::BitsetOperator::block_ones : B::BitsetOperator::block_zeroes;
+        const auto seed = static_cast<uint32_t>(default_block);
 
-template<flatmemory::IsUnsignedIntegral Block, typename Tag>
-struct std::hash<flatmemory::ConstView<flatmemory::Bitset<Block, Tag>>>
-{
-    size_t operator()(const flatmemory::ConstView<flatmemory::Bitset<Block, Tag>>& bitset) const { return bitset.hash(); }
+        // Find the last block that differs from the default block
+        auto last_relevant_index = static_cast<int64_t>(blocks.size()) - 1;
+        for (; (last_relevant_index >= 0) && (blocks[last_relevant_index] == default_block); --last_relevant_index) {}
+        const auto length = static_cast<std::size_t>(last_relevant_index + 1) * sizeof(typename B::BlockType);
+
+        // Compute a hash value up to and including this block
+        int64_t hash[2] = { 0, 0 };
+        flatmemory::MurmurHash3_x64_128(blocks.data(), length, seed, hash);
+        return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
+    }
 };
 
 #endif
