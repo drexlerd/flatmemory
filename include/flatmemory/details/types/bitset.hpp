@@ -164,25 +164,25 @@ template<IsBitset B>
 bool operator==(const B& lhs, const B& rhs);
 
 template<IsBitset B1, IsBitset B2>
-requires HaveSameBlockType<B1, B2>
+requires HaveSameBlockType<B1, B2> && HaveCompatibleTagType<B1, B2>
 bool operator==(const B1& lhs, const B2& rhs);
 
 template<IsBitset B>
 bool operator!=(const B& lhs, const B& rhs);
 
 template<IsBitset B1, IsBitset B2>
-requires HaveSameBlockType<B1, B2>
+requires HaveSameBlockType<B1, B2> && HaveCompatibleTagType<B1, B2>
 bool operator!=(const B1& lhs, const B2& rhs);
 
 template<IsBitset B>
 Builder<Bitset<typename B::BlockType, typename B::TagType>> operator~(const B& element);
 
 template<IsBitset B1, IsBitset B2>
-requires HaveSameBlockType<B1, B2>
+requires HaveSameBlockType<B1, B2> && HaveCompatibleTagType<B1, B2>
 bool is_superseteq(const B1& lhs, const B2& rhs);
 
 template<IsBitset B1, IsBitset B2>
-requires HaveSameBlockType<B1, B2>
+requires HaveSameBlockType<B1, B2> && HaveCompatibleTagType<B1, B2>
 bool are_disjoint(const B1& lhs, const B2& rhs);
 
 /**
@@ -1245,7 +1245,7 @@ ConstView<Vector<Block>> ConstView<Bitset<Block, Tag>>::get_blocks() const
 /* Free function operators */
 
 template<IsBitset B1, IsBitset B2>
-requires HaveSameBlockType<B1, B2>
+requires HaveSameBlockType<B1, B2> && HaveCompatibleTagType<B1, B2>
 bool are_disjoint(const B1& lhs, const B2& rhs)
 {
     // Fetch data
@@ -1335,7 +1335,7 @@ bool operator==(const B& lhs, const B& rhs)
 }
 
 template<IsBitset B1, IsBitset B2>
-requires HaveSameBlockType<B1, B2>
+requires HaveSameBlockType<B1, B2> && HaveCompatibleTagType<B1, B2>
 bool operator==(const B1& lhs, const B2& rhs)
 {
     // Fetch data
@@ -1372,7 +1372,7 @@ bool operator!=(const B& lhs, const B& rhs)
 }
 
 template<IsBitset B1, IsBitset B2>
-requires HaveSameBlockType<B1, B2>
+requires HaveSameBlockType<B1, B2> && HaveCompatibleTagType<B1, B2>
 bool operator!=(const B1& lhs, const B2& rhs) { return !(lhs == rhs); }
 
 template<IsBitset B>
@@ -1384,7 +1384,7 @@ Builder<Bitset<typename B::BlockType, typename B::TagType>> operator~(const B& e
 }
 
 template<IsBitset B1, IsBitset B2>
-requires HaveSameBlockType<B1, B2>
+requires HaveSameBlockType<B1, B2> && HaveCompatibleTagType<B1, B2>
 bool is_superseteq(const B1& lhs, const B2& rhs)
 {
     // Fetch data
