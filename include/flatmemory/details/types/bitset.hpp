@@ -26,6 +26,7 @@
 #include "flatmemory/details/layout.hpp"
 #include "flatmemory/details/layout_utils.hpp"
 #include "flatmemory/details/operator.hpp"
+#include "flatmemory/details/types/declarations.hpp"
 #include "flatmemory/details/types/formatter.hpp"
 #include "flatmemory/details/types/vector.hpp"
 #include "flatmemory/details/view.hpp"

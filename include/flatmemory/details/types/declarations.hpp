@@ -15,37 +15,22 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef FLATMEMORY_TYPES_FORMATTER_HPP_
-#define FLATMEMORY_TYPES_FORMATTER_HPP_
+#ifndef FLATMEMORY_TYPES_DECLARATIONS_HPP_
+#define FLATMEMORY_TYPES_DECLARATIONS_HPP_
 
 #include "flatmemory/details/concepts.hpp"
-#include "flatmemory/details/types/declarations.hpp"
-#include "flatmemory/details/view_const.hpp"
-
-#include <cstddef>
-#include <ostream>
 
 namespace flatmemory
 {
 
-class Formatter
-{
-private:
-    size_t m_indent;
-    size_t m_add_indent;
+template<IsUnsignedIntegral Block, typename Tag = void>
+struct Bitset;
 
-public:
-    Formatter(size_t indent = 0, size_t add_indent = 0) : m_indent(indent), m_add_indent(add_indent) {}
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
+struct Tuple;
 
-    template<IsUnsignedIntegral Block, typename Tag>
-    void write(ConstView<Bitset<Block, Tag>> element, std::ostream& out);
-
-    template<IsTriviallyCopyableOrNonTrivialType... Ts>
-    void write(ConstView<Tuple<Ts...>> element, std::ostream& out);
-
-    template<IsTriviallyCopyableOrNonTrivialType T>
-    void write(ConstView<Vector<T>> element, std::ostream& out);
-};
+template<IsTriviallyCopyableOrNonTrivialType T>
+struct Vector;
 
 }
 
