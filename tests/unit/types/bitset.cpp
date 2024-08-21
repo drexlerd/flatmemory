@@ -154,7 +154,7 @@ TEST(FlatmemoryTests, TypesBitsetAssignmentTest)
  * Operators
  */
 
-TEST(FlatmemoryTests, TypesBitsetEqualTest)
+TEST(FlatmemoryTests, TypesBitsetEqualToAndHashTest)
 {
     using BitsetLayout = Bitset<uint64_t>;
 

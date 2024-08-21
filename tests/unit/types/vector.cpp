@@ -65,155 +65,169 @@ TEST(FlatmemoryTests, TypesVectorDefaultConstructorSizeValueTest)
  * Operators
  */
 
-TEST(FlatmemoryTests, TypesVectorEqualTest)
+TEST(FlatmemoryTests, TypesVectorEqualToAndHashTest)
 {
     // 1D
-    auto builder1d = Builder<Vector<uint64_t>>(2);
-    builder1d[1] = 42;
-    builder1d.finish();
+    using Vector1DLayout = Vector<uint64_t>;
+    auto builder1d_1 = Builder<Vector1DLayout>(2);
+    builder1d_1[1] = 42;
+    builder1d_1.finish();
 
-    auto builder1d_2 = Builder<Vector<uint64_t>>(2);
+    auto builder1d_2 = Builder<Vector1DLayout>(2);
     builder1d_2[0] = 5;
     builder1d_2[1] = 42;
     builder1d_2.finish();
 
-    auto builder1d_3 = Builder<Vector<uint64_t>>(2);
+    auto builder1d_3 = Builder<Vector1DLayout>(2);
     builder1d_3[1] = 42;
     builder1d_3.finish();
 
     // Test Builder
-    EXPECT_NE(builder1d, builder1d_2);
-    EXPECT_EQ(builder1d, builder1d_3);
+    EXPECT_NE(builder1d_1, builder1d_2);
+    EXPECT_EQ(std::hash<Builder<Vector1DLayout>>()(builder1d_1), std::hash<Builder<Vector1DLayout>>()(builder1d_3));
+    EXPECT_EQ(builder1d_1, builder1d_3);
+    EXPECT_NE(std::hash<Builder<Vector1DLayout>>()(builder1d_1), std::hash<Builder<Vector1DLayout>>()(builder1d_2));
 
     // Test View
-    auto view1d = View<Vector<uint64_t>>(builder1d.buffer().data());
-    auto view1d_2 = View<Vector<uint64_t>>(builder1d_2.buffer().data());
-    auto view1d_3 = View<Vector<uint64_t>>(builder1d_3.buffer().data());
-    EXPECT_EQ(view1d, view1d_3);
-    EXPECT_NE(view1d, view1d_2);
+    auto view1d_1 = View<Vector1DLayout>(builder1d_1.buffer().data());
+    auto view1d_2 = View<Vector1DLayout>(builder1d_2.buffer().data());
+    auto view1d_3 = View<Vector1DLayout>(builder1d_3.buffer().data());
+    EXPECT_EQ(view1d_1, view1d_3);
+    EXPECT_EQ(std::hash<View<Vector1DLayout>>()(view1d_1), std::hash<View<Vector1DLayout>>()(view1d_3));
+    EXPECT_NE(view1d_1, view1d_2);
+    EXPECT_NE(std::hash<View<Vector1DLayout>>()(view1d_1), std::hash<View<Vector1DLayout>>()(view1d_2));
 
     // Test ConstView
-    auto const_view1d = ConstView<Vector<uint64_t>>(builder1d.buffer().data());
-    auto const_view1d_2 = ConstView<Vector<uint64_t>>(builder1d_2.buffer().data());
-    auto const_view1d_3 = ConstView<Vector<uint64_t>>(builder1d_3.buffer().data());
-    EXPECT_EQ(const_view1d, const_view1d_3);
-    EXPECT_NE(const_view1d, const_view1d_2);
+    auto const_view1d_1 = ConstView<Vector1DLayout>(builder1d_1.buffer().data());
+    auto const_view1d_2 = ConstView<Vector1DLayout>(builder1d_2.buffer().data());
+    auto const_view1d_3 = ConstView<Vector1DLayout>(builder1d_3.buffer().data());
+    EXPECT_EQ(const_view1d_1, const_view1d_3);
+    EXPECT_EQ(std::hash<ConstView<Vector1DLayout>>()(const_view1d_1), std::hash<ConstView<Vector1DLayout>>()(const_view1d_3));
+    EXPECT_NE(const_view1d_1, const_view1d_2);
+    EXPECT_NE(std::hash<ConstView<Vector1DLayout>>()(const_view1d_1), std::hash<ConstView<Vector1DLayout>>()(const_view1d_2));
 
     // Test Builder and View
-    EXPECT_EQ(builder1d, view1d);
+    EXPECT_EQ(builder1d_1, view1d_1);
     EXPECT_EQ(builder1d_2, view1d_2);
     EXPECT_EQ(builder1d_3, view1d_3);
-    EXPECT_NE(builder1d, view1d_2);
-    EXPECT_EQ(builder1d, view1d_3);
+    EXPECT_NE(builder1d_1, view1d_2);
+    EXPECT_EQ(builder1d_1, view1d_3);
     // Test View and Builder
-    EXPECT_EQ(view1d, builder1d);
+    EXPECT_EQ(view1d_1, builder1d_1);
     EXPECT_EQ(view1d_2, builder1d_2);
     EXPECT_EQ(view1d_3, builder1d_3);
-    EXPECT_NE(view1d, builder1d_2);
-    EXPECT_EQ(view1d, builder1d_3);
+    EXPECT_NE(view1d_1, builder1d_2);
+    EXPECT_EQ(view1d_1, builder1d_3);
 
     // Test Builder and ConstView
-    EXPECT_EQ(builder1d, const_view1d);
+    EXPECT_EQ(builder1d_1, const_view1d_1);
     EXPECT_EQ(builder1d_2, const_view1d_2);
     EXPECT_EQ(builder1d_3, const_view1d_3);
-    EXPECT_NE(builder1d, const_view1d_2);
-    EXPECT_EQ(builder1d, const_view1d_3);
+    EXPECT_NE(builder1d_1, const_view1d_2);
+    EXPECT_EQ(builder1d_1, const_view1d_3);
     // Test ConstView and Builder
-    EXPECT_EQ(const_view1d, builder1d);
+    EXPECT_EQ(const_view1d_1, builder1d_1);
     EXPECT_EQ(const_view1d_2, builder1d_2);
     EXPECT_EQ(const_view1d_3, builder1d_3);
-    EXPECT_NE(const_view1d, builder1d_2);
-    EXPECT_EQ(const_view1d, builder1d_3);
+    EXPECT_NE(const_view1d_1, builder1d_2);
+    EXPECT_EQ(const_view1d_1, builder1d_3);
 
     // Test View and ConstView
-    EXPECT_EQ(view1d, const_view1d);
+    EXPECT_EQ(view1d_1, const_view1d_1);
     EXPECT_EQ(view1d_2, const_view1d_2);
     EXPECT_EQ(view1d_3, const_view1d_3);
-    EXPECT_NE(view1d, const_view1d_2);
-    EXPECT_EQ(view1d, const_view1d_3);
+    EXPECT_NE(view1d_1, const_view1d_2);
+    EXPECT_EQ(view1d_1, const_view1d_3);
     // Test ConstView and View
-    EXPECT_EQ(const_view1d, view1d);
+    EXPECT_EQ(const_view1d_1, view1d_1);
     EXPECT_EQ(const_view1d_2, view1d_2);
     EXPECT_EQ(const_view1d_3, view1d_3);
-    EXPECT_NE(const_view1d, view1d_2);
-    EXPECT_EQ(const_view1d, view1d_3);
+    EXPECT_NE(const_view1d_1, view1d_2);
+    EXPECT_EQ(const_view1d_1, view1d_3);
 
     /* 2D */
-    auto builder2d = Builder<Vector<Vector<uint64_t>>>(2);
-    builder2d[0].resize(2);
-    builder2d[1].resize(3);
-    builder2d[1][2] = 42;
-    builder2d.finish();
+    using Vector2DLayout = Vector<Vector<uint64_t>>;
+    auto builder2d_1 = Builder<Vector2DLayout>(2);
+    builder2d_1[0].resize(2);
+    builder2d_1[1].resize(3);
+    builder2d_1[1][2] = 42;
+    builder2d_1.finish();
 
-    auto builder2d_2 = Builder<Vector<Vector<uint64_t>>>(2);
+    auto builder2d_2 = Builder<Vector2DLayout>(2);
     builder2d_2[0].resize(2);
     builder2d_2[1].resize(3);
     builder2d_2[0][1] = 5;
     builder2d_2[1][2] = 42;
     builder2d_2.finish();
 
-    auto builder2d_3 = Builder<Vector<Vector<uint64_t>>>(2);
+    auto builder2d_3 = Builder<Vector2DLayout>(2);
     builder2d_3[0].resize(2);
     builder2d_3[1].resize(3);
     builder2d_3[1][2] = 42;
     builder2d_3.finish();
 
     // Test Builder
-    EXPECT_NE(builder2d, builder2d_2);
-    EXPECT_EQ(builder2d, builder2d_3);
+    EXPECT_NE(builder2d_1, builder2d_2);
+    EXPECT_EQ(std::hash<Builder<Vector2DLayout>>()(builder2d_1), std::hash<Builder<Vector2DLayout>>()(builder2d_3));
+    EXPECT_EQ(builder2d_1, builder2d_3);
+    EXPECT_NE(std::hash<Builder<Vector2DLayout>>()(builder2d_1), std::hash<Builder<Vector2DLayout>>()(builder2d_2));
 
     // Test View
-    auto view2d = View<Vector<Vector<uint64_t>>>(builder2d.buffer().data());
-    auto view2d_2 = View<Vector<Vector<uint64_t>>>(builder2d_2.buffer().data());
-    auto view2d_3 = View<Vector<Vector<uint64_t>>>(builder2d_3.buffer().data());
-    EXPECT_EQ(view2d, view2d_3);
-    EXPECT_NE(view2d, view2d_2);
+    auto view2d_1 = View<Vector2DLayout>(builder2d_1.buffer().data());
+    auto view2d_2 = View<Vector2DLayout>(builder2d_2.buffer().data());
+    auto view2d_3 = View<Vector2DLayout>(builder2d_3.buffer().data());
+    EXPECT_EQ(view2d_1, view2d_3);
+    EXPECT_EQ(std::hash<View<Vector2DLayout>>()(view2d_1), std::hash<View<Vector2DLayout>>()(view2d_3));
+    EXPECT_NE(view2d_1, view2d_2);
+    EXPECT_NE(std::hash<View<Vector2DLayout>>()(view2d_1), std::hash<View<Vector2DLayout>>()(view2d_2));
 
     // Test ConstView
-    auto const_view2d = ConstView<Vector<Vector<uint64_t>>>(builder2d.buffer().data());
-    auto const_view2d_2 = ConstView<Vector<Vector<uint64_t>>>(builder2d_2.buffer().data());
-    auto const_view2d_3 = ConstView<Vector<Vector<uint64_t>>>(builder2d_3.buffer().data());
-    EXPECT_EQ(const_view2d, const_view2d_3);
-    EXPECT_NE(const_view2d, const_view2d_2);
+    auto const_view2d_1 = ConstView<Vector2DLayout>(builder2d_1.buffer().data());
+    auto const_view2d_2 = ConstView<Vector2DLayout>(builder2d_2.buffer().data());
+    auto const_view2d_3 = ConstView<Vector2DLayout>(builder2d_3.buffer().data());
+    EXPECT_EQ(const_view2d_1, const_view2d_3);
+    EXPECT_EQ(std::hash<ConstView<Vector2DLayout>>()(const_view2d_1), std::hash<ConstView<Vector2DLayout>>()(const_view2d_3));
+    EXPECT_NE(const_view2d_1, const_view2d_2);
+    EXPECT_NE(std::hash<ConstView<Vector2DLayout>>()(const_view2d_1), std::hash<ConstView<Vector2DLayout>>()(const_view2d_2));
 
     // Test Builder and View
-    EXPECT_EQ(builder2d, view2d);
+    EXPECT_EQ(builder2d_1, view2d_1);
     EXPECT_EQ(builder2d_2, view2d_2);
     EXPECT_EQ(builder2d_3, view2d_3);
-    EXPECT_NE(builder2d, view2d_2);
-    EXPECT_EQ(builder2d, view2d_3);
+    EXPECT_NE(builder2d_1, view2d_2);
+    EXPECT_EQ(builder2d_1, view2d_3);
     // Test View and Builder
-    EXPECT_EQ(view2d, builder2d);
+    EXPECT_EQ(view2d_1, builder2d_1);
     EXPECT_EQ(view2d_2, builder2d_2);
     EXPECT_EQ(view2d_3, builder2d_3);
-    EXPECT_NE(view2d, builder2d_2);
-    EXPECT_EQ(view2d, builder2d_3);
+    EXPECT_NE(view2d_1, builder2d_2);
+    EXPECT_EQ(view2d_1, builder2d_3);
 
     // Test Builder and ConstView
-    EXPECT_EQ(builder2d, const_view2d);
+    EXPECT_EQ(builder2d_1, const_view2d_1);
     EXPECT_EQ(builder2d_2, const_view2d_2);
     EXPECT_EQ(builder2d_3, const_view2d_3);
-    EXPECT_NE(builder2d, const_view2d_2);
-    EXPECT_EQ(builder2d, const_view2d_3);
+    EXPECT_NE(builder2d_1, const_view2d_2);
+    EXPECT_EQ(builder2d_1, const_view2d_3);
     // Test ConstView and Builder
-    EXPECT_EQ(const_view2d, builder2d);
+    EXPECT_EQ(const_view2d_1, builder2d_1);
     EXPECT_EQ(const_view2d_2, builder2d_2);
     EXPECT_EQ(const_view2d_3, builder2d_3);
-    EXPECT_NE(const_view2d, builder2d_2);
-    EXPECT_EQ(const_view2d, builder2d_3);
+    EXPECT_NE(const_view2d_1, builder2d_2);
+    EXPECT_EQ(const_view2d_1, builder2d_3);
 
     // Test View and ConstView
-    EXPECT_EQ(view2d, const_view2d);
+    EXPECT_EQ(view2d_1, const_view2d_1);
     EXPECT_EQ(view2d_2, const_view2d_2);
     EXPECT_EQ(view2d_3, const_view2d_3);
-    EXPECT_NE(view2d, const_view2d_2);
-    EXPECT_EQ(view2d, const_view2d_3);
+    EXPECT_NE(view2d_1, const_view2d_2);
+    EXPECT_EQ(view2d_1, const_view2d_3);
     // Test ConstView and View
-    EXPECT_EQ(const_view2d, view2d);
+    EXPECT_EQ(const_view2d_1, view2d_1);
     EXPECT_EQ(const_view2d_2, view2d_2);
     EXPECT_EQ(const_view2d_3, view2d_3);
-    EXPECT_NE(const_view2d, view2d_2);
-    EXPECT_EQ(const_view2d, view2d_3);
+    EXPECT_NE(const_view2d_1, view2d_2);
+    EXPECT_EQ(const_view2d_1, view2d_3);
 }
 
 /**
@@ -308,61 +322,6 @@ TEST(FlatmemoryTests, TypesVectorViewTest)
 
     // 2 additional padding are added from 10 to 12
     EXPECT_EQ(builder.buffer().size(), 32);
-}
-
-TEST(FlatmemoryTests, TypesVectorEqualityTest)
-{
-    using VectorLayout = Vector<uint64_t>;
-
-    auto builder1 = Builder<VectorLayout>();
-    builder1.push_back(5);
-    builder1.push_back(10);
-    builder1.finish();
-
-    auto builder2 = Builder<VectorLayout>();
-    builder2.push_back(5);
-    builder2.push_back(10);
-    builder2.finish();
-
-    auto builder3 = Builder<VectorLayout>();
-    builder3.push_back(5);
-    builder3.push_back(9);
-    builder3.finish();
-
-    EXPECT_TRUE((builder1 == builder2));
-    EXPECT_EQ(std::hash<Builder<VectorLayout>>()(builder1), std::hash<Builder<VectorLayout>>()(builder2));
-
-    EXPECT_FALSE((builder1 == builder3));
-    EXPECT_NE(std::hash<Builder<VectorLayout>>()(builder1), std::hash<Builder<VectorLayout>>()(builder3));
-
-    EXPECT_FALSE((builder2 == builder3));
-    EXPECT_NE(std::hash<Builder<VectorLayout>>()(builder2), std::hash<Builder<VectorLayout>>()(builder3));
-
-    auto view1 = View<VectorLayout>(builder1.buffer().data());
-    auto view2 = View<VectorLayout>(builder2.buffer().data());
-    auto view3 = View<VectorLayout>(builder3.buffer().data());
-
-    EXPECT_TRUE((view1 == view2));
-    EXPECT_EQ(std::hash<View<VectorLayout>>()(view1), std::hash<View<VectorLayout>>()(view2));
-
-    EXPECT_FALSE((view1 == view3));
-    EXPECT_NE(std::hash<View<VectorLayout>>()(view1), std::hash<View<VectorLayout>>()(view3));
-
-    EXPECT_FALSE((view2 == view3));
-    EXPECT_NE(std::hash<View<VectorLayout>>()(view2), std::hash<View<VectorLayout>>()(view3));
-
-    auto const_view1 = ConstView<VectorLayout>(builder1.buffer().data());
-    auto const_view2 = ConstView<VectorLayout>(builder2.buffer().data());
-    auto const_view3 = ConstView<VectorLayout>(builder3.buffer().data());
-
-    EXPECT_TRUE((const_view1 == const_view2));
-    EXPECT_EQ(std::hash<ConstView<VectorLayout>>()(const_view1), std::hash<ConstView<VectorLayout>>()(const_view2));
-
-    EXPECT_FALSE((const_view1 == const_view3));
-    EXPECT_NE(std::hash<ConstView<VectorLayout>>()(const_view1), std::hash<ConstView<VectorLayout>>()(const_view3));
-
-    EXPECT_FALSE((const_view2 == const_view3));
-    EXPECT_NE(std::hash<ConstView<VectorLayout>>()(const_view2), std::hash<ConstView<VectorLayout>>()(const_view3));
 }
 
 }

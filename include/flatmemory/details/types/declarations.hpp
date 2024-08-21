@@ -104,6 +104,9 @@ concept IsBitset = IsBitsetBuilder<T> || IsBitsetView<T> || IsBitsetConstView<T>
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
 struct Tuple;
 
+template<typename T1, typename T2>
+concept HaveSameValueTypes = std::is_same_v<typename T1::ValueTypes, typename T2::ValueTypes>;
+
 template<typename T>
 struct is_tuple_builder_helper : std::false_type
 {
@@ -145,9 +148,6 @@ concept IsTupleConstView = is_tuple_const_view_helper<T>::value;
 
 template<typename T>
 concept IsTuple = IsTupleBuilder<T> || IsTupleView<T> || IsTupleConstView<T>;
-
-template<typename T1, typename T2>
-concept HaveSameValueTypes = std::is_same_v<typename T1::ValueTypes, typename T2::ValueTypes>;
 
 /**
  * Vector

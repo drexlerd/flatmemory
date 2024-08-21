@@ -31,14 +31,14 @@ namespace flatmemory::tests
  * Operators
  */
 
-TEST(FlatmemoryTests, TypesTupleEqualTest)
+TEST(FlatmemoryTests, TypesTupleEqualToAndHashTest)
 {
     using BitsetVec = Vector<Bitset<uint64_t>>;
     using TwoTuple = Tuple<BitsetVec, BitsetVec>;
 
-    auto builder = Builder<TwoTuple>();
-    auto& first = builder.get<0>();
-    auto& second = builder.get<1>();
+    auto builder1 = Builder<TwoTuple>();
+    auto& first = builder1.get<0>();
+    auto& second = builder1.get<1>();
     first.resize(2);
     first[0].set(4);
     first[1].set(64);
@@ -46,7 +46,7 @@ TEST(FlatmemoryTests, TypesTupleEqualTest)
     second[0].set(4);
     second[1].set(100);
     second[2].set(63);
-    builder.finish();
+    builder1.finish();
 
     auto builder2 = Builder<TwoTuple>();
     auto& first_2 = builder2.get<0>();
@@ -73,61 +73,67 @@ TEST(FlatmemoryTests, TypesTupleEqualTest)
     builder3.finish();
 
     // Test builder
-    EXPECT_NE(builder, builder2);
-    EXPECT_EQ(builder, builder3);
+    EXPECT_EQ(builder1, builder3);
+    EXPECT_EQ(std::hash<Builder<TwoTuple>>()(builder1), std::hash<Builder<TwoTuple>>()(builder3));
+    EXPECT_NE(builder1, builder2);
+    EXPECT_NE(std::hash<Builder<TwoTuple>>()(builder1), std::hash<Builder<TwoTuple>>()(builder2));
 
     // Test View
-    auto view = View<TwoTuple>(builder.buffer().data());
+    auto view1 = View<TwoTuple>(builder1.buffer().data());
     auto view2 = View<TwoTuple>(builder2.buffer().data());
     auto view3 = View<TwoTuple>(builder3.buffer().data());
-    EXPECT_EQ(view, view3);
-    EXPECT_NE(view, view2);
+    EXPECT_EQ(view1, view3);
+    EXPECT_EQ(std::hash<View<TwoTuple>>()(view1), std::hash<View<TwoTuple>>()(view3));
+    EXPECT_NE(view1, view2);
+    EXPECT_NE(std::hash<View<TwoTuple>>()(view1), std::hash<View<TwoTuple>>()(view2));
 
     // Test ConstView
-    auto const_view = ConstView<TwoTuple>(builder.buffer().data());
+    auto const_view1 = ConstView<TwoTuple>(builder1.buffer().data());
     auto const_view2 = ConstView<TwoTuple>(builder2.buffer().data());
     auto const_view3 = ConstView<TwoTuple>(builder3.buffer().data());
-    EXPECT_EQ(const_view, const_view3);
-    EXPECT_NE(const_view, const_view2);
+    EXPECT_EQ(const_view1, const_view3);
+    EXPECT_EQ(std::hash<ConstView<TwoTuple>>()(const_view1), std::hash<ConstView<TwoTuple>>()(const_view3));
+    EXPECT_NE(const_view1, const_view2);
+    EXPECT_NE(std::hash<ConstView<TwoTuple>>()(const_view1), std::hash<ConstView<TwoTuple>>()(const_view2));
 
     // Test Builder and View
-    EXPECT_EQ(builder, view);
+    EXPECT_EQ(builder1, view1);
     EXPECT_EQ(builder2, view2);
     EXPECT_EQ(builder3, view3);
-    EXPECT_NE(builder, view2);
-    EXPECT_EQ(builder, view3);
+    EXPECT_NE(builder1, view2);
+    EXPECT_EQ(builder1, view3);
     // Test View and Builder
-    EXPECT_EQ(view, builder);
+    EXPECT_EQ(view1, builder1);
     EXPECT_EQ(view2, builder2);
     EXPECT_EQ(view3, builder3);
-    EXPECT_NE(view, builder2);
-    EXPECT_EQ(view, builder3);
+    EXPECT_NE(view1, builder2);
+    EXPECT_EQ(view1, builder3);
 
     // Test Builder and ConstView
-    EXPECT_EQ(builder, const_view);
+    EXPECT_EQ(builder1, const_view1);
     EXPECT_EQ(builder2, const_view2);
     EXPECT_EQ(builder3, const_view3);
-    EXPECT_NE(builder, const_view2);
-    EXPECT_EQ(builder, const_view3);
+    EXPECT_NE(builder1, const_view2);
+    EXPECT_EQ(builder1, const_view3);
     // Test ConstView and Builder
-    EXPECT_EQ(const_view, builder);
+    EXPECT_EQ(const_view1, builder1);
     EXPECT_EQ(const_view2, builder2);
     EXPECT_EQ(const_view3, builder3);
-    EXPECT_NE(const_view, builder2);
-    EXPECT_EQ(const_view, builder3);
+    EXPECT_NE(const_view1, builder2);
+    EXPECT_EQ(const_view1, builder3);
 
     // Test View and ConstView
-    EXPECT_EQ(view, const_view);
+    EXPECT_EQ(view1, const_view1);
     EXPECT_EQ(view2, const_view2);
     EXPECT_EQ(view3, const_view3);
-    EXPECT_NE(view, const_view2);
-    EXPECT_EQ(view, const_view3);
+    EXPECT_NE(view1, const_view2);
+    EXPECT_EQ(view1, const_view3);
     // Test ConstView and View
-    EXPECT_EQ(const_view, view);
+    EXPECT_EQ(const_view1, view1);
     EXPECT_EQ(const_view2, view2);
     EXPECT_EQ(const_view3, view3);
-    EXPECT_NE(const_view, view2);
-    EXPECT_EQ(const_view, view3);
+    EXPECT_NE(const_view1, view2);
+    EXPECT_EQ(const_view1, view3);
 }
 
 /**
@@ -271,61 +277,6 @@ TEST(FlatmemoryTests, TypesTupleStructTest)
     auto view = View<Tuple<StructTest>>(builder.buffer().data());
     EXPECT_EQ(view.get<0>().x, 5);
     EXPECT_EQ(view.get<0>().y, 10);
-}
-
-TEST(FlatmemoryTests, TypesTupleEqualityTest)
-{
-    using TupleLayout = Tuple<uint64_t, uint32_t>;
-
-    auto builder1 = Builder<TupleLayout>();
-    builder1.get<0>() = 5;
-    builder1.get<1>() = 10;
-    builder1.finish();
-
-    auto builder2 = Builder<TupleLayout>();
-    builder2.get<0>() = 5;
-    builder2.get<1>() = 10;
-    builder2.finish();
-
-    auto builder3 = Builder<TupleLayout>();
-    builder3.get<0>() = 5;
-    builder3.get<1>() = 9;
-    builder3.finish();
-
-    EXPECT_TRUE((builder1 == builder2));
-    EXPECT_EQ(std::hash<Builder<TupleLayout>>()(builder1), std::hash<Builder<TupleLayout>>()(builder2));
-
-    EXPECT_FALSE((builder1 == builder3));
-    EXPECT_NE(std::hash<Builder<TupleLayout>>()(builder1), std::hash<Builder<TupleLayout>>()(builder3));
-
-    EXPECT_FALSE((builder2 == builder3));
-    EXPECT_NE(std::hash<Builder<TupleLayout>>()(builder2), std::hash<Builder<TupleLayout>>()(builder3));
-
-    auto view1 = View<TupleLayout>(builder1.buffer().data());
-    auto view2 = View<TupleLayout>(builder2.buffer().data());
-    auto view3 = View<TupleLayout>(builder3.buffer().data());
-
-    EXPECT_TRUE((view1 == view2));
-    EXPECT_EQ(std::hash<View<TupleLayout>>()(view1), std::hash<View<TupleLayout>>()(view2));
-
-    EXPECT_FALSE((view1 == view3));
-    EXPECT_NE(std::hash<View<TupleLayout>>()(view1), std::hash<View<TupleLayout>>()(view3));
-
-    EXPECT_FALSE((view2 == view3));
-    EXPECT_NE(std::hash<View<TupleLayout>>()(view2), std::hash<View<TupleLayout>>()(view3));
-
-    auto const_view1 = ConstView<TupleLayout>(builder1.buffer().data());
-    auto const_view2 = ConstView<TupleLayout>(builder2.buffer().data());
-    auto const_view3 = ConstView<TupleLayout>(builder3.buffer().data());
-
-    EXPECT_TRUE((const_view1 == const_view2));
-    EXPECT_EQ(std::hash<ConstView<TupleLayout>>()(const_view1), std::hash<ConstView<TupleLayout>>()(const_view2));
-
-    EXPECT_FALSE((const_view1 == const_view3));
-    EXPECT_NE(std::hash<ConstView<TupleLayout>>()(const_view1), std::hash<ConstView<TupleLayout>>()(const_view3));
-
-    EXPECT_FALSE((const_view2 == const_view3));
-    EXPECT_NE(std::hash<ConstView<TupleLayout>>()(const_view2), std::hash<ConstView<TupleLayout>>()(const_view3));
 }
 
 }
