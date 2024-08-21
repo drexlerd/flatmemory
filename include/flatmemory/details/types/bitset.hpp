@@ -1024,7 +1024,9 @@ Builder<Bitset<Block, Tag>>& Builder<Bitset<Block, Tag>>::operator|=(const Other
     assert(other_blocks.size() <= m_blocks.size());
 
     // Since other is potentially smaller, it acts as termination conditions
-    for (auto it = m_blocks.begin(), other_it = other_blocks.begin(); other_it != other_blocks.end(); ++it, ++other_it)
+    auto it = m_blocks.begin();
+    auto other_it = other_blocks.begin();
+    for (; other_it != other_blocks.end(); ++it, ++other_it)
     {
         *it |= *other_it;
     }
@@ -1060,7 +1062,9 @@ Builder<Bitset<Block, Tag>>& Builder<Bitset<Block, Tag>>::operator&=(const Other
     // Other blocks might still be smaller which is fine
     assert(other_blocks.size() <= m_blocks.size());
 
-    for (auto it = m_blocks.begin(), other_it = other_blocks.begin(); other_it != other_blocks.end(); ++it, ++other_it)
+    auto it = m_blocks.begin();
+    auto other_it = other_blocks.begin();
+    for (; other_it != other_blocks.end(); ++it, ++other_it)
     {
         *it &= *other_it;
     }
@@ -1098,7 +1102,9 @@ Builder<Bitset<Block, Tag>>& Builder<Bitset<Block, Tag>>::operator-=(const Other
     // Other blocks might still be smaller which is fine
     assert(other_blocks.size() <= m_blocks.size());
 
-    for (auto it = m_blocks.begin(), other_it = other_blocks.begin(); other_it != other_blocks.end(); ++it, ++other_it)
+    auto it = m_blocks.begin();
+    auto other_it = other_blocks.begin();
+    for (; other_it != other_blocks.end(); ++it, ++other_it)
     {
         *it &= ~(*other_it);
     }
