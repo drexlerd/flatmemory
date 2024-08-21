@@ -308,7 +308,11 @@ static bool compare_tuples(std::index_sequence<Is...>, const T1& lhs, const T2& 
 template<IsTuple T>
 bool operator==(const T& lhs, const T& rhs)
 {
-    return compare_tuples(std::make_index_sequence<std::tuple_size_v<typename T::ValueTypes>> {}, lhs, rhs);
+    if (&lhs != &rhs)
+    {
+        return compare_tuples(std::make_index_sequence<std::tuple_size_v<typename T::ValueTypes>> {}, lhs, rhs);
+    }
+    return true;
 }
 
 template<IsTuple T1, IsTuple T2>

@@ -292,10 +292,16 @@ public:
     ConstView(const uint8_t* buf);
 
     /**
-     * Conversion constructor
+     * Conversion constructors
      */
 
     ConstView(const View<Vector<T>>& view);
+
+    /**
+     * Conversion assigments
+     */
+
+    ConstView& operator=(const View<Vector<T>>& view);
 
     /**
      * Element access
@@ -354,7 +360,7 @@ public:
  * Definitions
  */
 
-// Layout
+/* Layout */
 
 template<IsTriviallyCopyableOrNonTrivialType T>
 constexpr void Layout<Vector<T>>::print() const
@@ -369,7 +375,57 @@ constexpr void Layout<Vector<T>>::print() const
               << "final_alignment: " << final_alignment << std::endl;
 }
 
-// Builder
+/* Operators */
+
+template<IsVector V>
+bool operator==(const V& lhs, const V& rhs)
+{
+    if (&lhs != &rhs)
+    {
+        if (lhs.size() != rhs.size())
+        {
+            return false;
+        }
+        for (size_t i = 0; i < lhs.size(); ++i)
+        {
+            if (lhs[i] != rhs[i])
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+template<IsVector V1, IsVector V2>
+requires HaveSameValueType<V1, V2>
+bool operator==(const V1& lhs, const V2& rhs)
+{
+    if (lhs.size() != rhs.size())
+    {
+        return false;
+    }
+    for (size_t i = 0; i < lhs.size(); ++i)
+    {
+        if (lhs[i] != rhs[i])
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+template<IsVector V>
+bool operator!=(const V& lhs, const V& rhs)
+{
+    return !(lhs == rhs);
+}
+
+template<IsVector V1, IsVector V2>
+requires HaveSameValueType<V1, V2>
+bool operator!=(const V1& lhs, const V2& rhs) { return !(lhs == rhs); }
+
+/* Builder */
 
 template<IsTriviallyCopyableOrNonTrivialType T>
 void Builder<Vector<T>>::finish_impl()
@@ -557,7 +613,7 @@ void Builder<Vector<T>>::clear()
     m_data.clear();
 }
 
-// View
+/* View */
 
 template<IsTriviallyCopyableOrNonTrivialType T>
 View<Vector<T>>::View(uint8_t* buf) : m_buf(buf)
@@ -834,7 +890,7 @@ size_t View<Vector<T>>::size() const
     return read_value<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_position);
 }
 
-// ConstView
+/* ConstView */
 
 template<IsTriviallyCopyableOrNonTrivialType T>
 ConstView<Vector<T>>::ConstView(const uint8_t* buf) : m_buf(buf)
@@ -845,6 +901,13 @@ ConstView<Vector<T>>::ConstView(const uint8_t* buf) : m_buf(buf)
 template<IsTriviallyCopyableOrNonTrivialType T>
 ConstView<Vector<T>>::ConstView(const View<Vector<T>>& view) : m_buf(view.buffer())
 {
+}
+
+template<IsTriviallyCopyableOrNonTrivialType T>
+ConstView<Vector<T>>& ConstView<Vector<T>>::operator=(const View<Vector<T>>& view)
+{
+    m_buf = view.buffer();
+    return *this;
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
@@ -997,58 +1060,6 @@ size_t ConstView<Vector<T>>::size() const
     assert(test_correct_alignment<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_position));
     return read_value<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_position);
 }
-
-/**
- * Operators
- */
-
-template<IsVector V>
-bool operator==(const V& lhs, const V& rhs)
-{
-    if (&lhs != &rhs)
-    {
-        if (lhs.size() != rhs.size())
-        {
-            return false;
-        }
-        for (size_t i = 0; i < lhs.size(); ++i)
-        {
-            if (lhs[i] != rhs[i])
-            {
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
-template<IsVector V1, IsVector V2>
-requires HaveSameValueType<V1, V2>
-bool operator==(const V1& lhs, const V2& rhs)
-{
-    if (lhs.size() != rhs.size())
-    {
-        return false;
-    }
-    for (size_t i = 0; i < lhs.size(); ++i)
-    {
-        if (lhs[i] != rhs[i])
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-template<IsVector V>
-bool operator!=(const V& lhs, const V& rhs)
-{
-    return !(lhs == rhs);
-}
-
-template<IsVector V1, IsVector V2>
-requires HaveSameValueType<V1, V2>
-bool operator!=(const V1& lhs, const V2& rhs) { return !(lhs == rhs); }
 
 /**
  * Static assertions

@@ -20,7 +20,6 @@
 
 #include "flatmemory/details/builder.hpp"
 #include "flatmemory/details/concepts.hpp"
-#include "flatmemory/details/operator.hpp"
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
 

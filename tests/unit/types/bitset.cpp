@@ -243,11 +243,11 @@ TEST(FlatmemoryTests, TypesBitsetAreDisjointTest)
     auto bitset_2 = Builder<Bitset<uint64_t>>();
     bitset_2.set(2);
 
-    EXPECT_TRUE(are_disjoint(bitset_1, bitset_2));
+    EXPECT_TRUE(bitset_1.are_disjoint(bitset_2));
 
     bitset_2.set(1);
 
-    EXPECT_FALSE(are_disjoint(bitset_1, bitset_2));
+    EXPECT_FALSE(bitset_1.are_disjoint(bitset_2));
 }
 
 TEST(FlatmemoryTests, TypesBitsetIsSupersetTest)
@@ -258,11 +258,11 @@ TEST(FlatmemoryTests, TypesBitsetIsSupersetTest)
     auto bitset_2 = Builder<Bitset<uint64_t>>();
     bitset_2.set(2);
 
-    EXPECT_FALSE(is_superseteq(bitset_2, bitset_1));
+    EXPECT_FALSE(bitset_2.is_superseteq(bitset_1));
 
     bitset_2.set(1);
 
-    EXPECT_TRUE(is_superseteq(bitset_2, bitset_1));
+    EXPECT_TRUE(bitset_2.is_superseteq(bitset_1));
 }
 
 /**
