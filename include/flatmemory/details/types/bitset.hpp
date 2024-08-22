@@ -290,11 +290,11 @@ public:
 
     template<IsBitset B>
         requires HasBlockType<B, Block> && HasCompatibleTagType<B, Tag>
-    bool is_superseteq(const B& other);
+    bool is_superseteq(const B& other) const;
 
     template<IsBitset B>
         requires HasBlockType<B, Block> && HasCompatibleTagType<B, Tag>
-    bool are_disjoint(const B& other);
+    bool are_disjoint(const B& other) const;
 
     /**
      * Lookup
@@ -391,11 +391,11 @@ public:
 
     template<IsBitset B>
         requires HasBlockType<B, Block> && HasCompatibleTagType<B, Tag>
-    bool is_superseteq(const B& other);
+    bool is_superseteq(const B& other) const;
 
     template<IsBitset B>
         requires HasBlockType<B, Block> && HasCompatibleTagType<B, Tag>
-    bool are_disjoint(const B& other);
+    bool are_disjoint(const B& other) const;
 
     /**
      * Lookup
@@ -472,11 +472,11 @@ public:
 
     template<IsBitset B>
         requires HasBlockType<B, Block> && HasCompatibleTagType<B, Tag>
-    bool is_superseteq(const B& other);
+    bool is_superseteq(const B& other) const;
 
     template<IsBitset B>
         requires HasBlockType<B, Block> && HasCompatibleTagType<B, Tag>
-    bool are_disjoint(const B& other);
+    bool are_disjoint(const B& other) const;
 
     /**
      * Lookup
@@ -1122,7 +1122,7 @@ Builder<Bitset<Block, Tag>>& Builder<Bitset<Block, Tag>>::operator-=(const Other
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset B>
     requires HasBlockType<B, Block> && HasCompatibleTagType<B, Tag>
-bool Builder<Bitset<Block, Tag>>::is_superseteq(const B& other)
+bool Builder<Bitset<Block, Tag>>::is_superseteq(const B& other) const
 {
     return BitsetUtils::is_superseteq(*this, other);
 }
@@ -1130,7 +1130,7 @@ bool Builder<Bitset<Block, Tag>>::is_superseteq(const B& other)
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset B>
     requires HasBlockType<B, Block> && HasCompatibleTagType<B, Tag>
-bool Builder<Bitset<Block, Tag>>::are_disjoint(const B& other)
+bool Builder<Bitset<Block, Tag>>::are_disjoint(const B& other) const
 {
     return BitsetUtils::are_disjoint(*this, other);
 }
@@ -1229,7 +1229,7 @@ View<Bitset<Block, Tag>>::View(uint8_t* buf) : m_buf(buf)
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset B>
     requires HasBlockType<B, Block> && HasCompatibleTagType<B, Tag>
-bool View<Bitset<Block, Tag>>::is_superseteq(const B& other)
+bool View<Bitset<Block, Tag>>::is_superseteq(const B& other) const
 {
     return BitsetUtils::is_superseteq(*this, other);
 }
@@ -1237,7 +1237,7 @@ bool View<Bitset<Block, Tag>>::is_superseteq(const B& other)
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset B>
     requires HasBlockType<B, Block> && HasCompatibleTagType<B, Tag>
-bool View<Bitset<Block, Tag>>::are_disjoint(const B& other)
+bool View<Bitset<Block, Tag>>::are_disjoint(const B& other) const
 {
     return BitsetUtils::are_disjoint(*this, other);
 }
@@ -1346,7 +1346,7 @@ ConstView<Bitset<Block, Tag>>::ConstView(const BitsetView& view) : m_buf(view.bu
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset B>
     requires HasBlockType<B, Block> && HasCompatibleTagType<B, Tag>
-bool ConstView<Bitset<Block, Tag>>::is_superseteq(const B& other)
+bool ConstView<Bitset<Block, Tag>>::is_superseteq(const B& other) const
 {
     return BitsetUtils::is_superseteq(*this, other);
 }
@@ -1354,7 +1354,7 @@ bool ConstView<Bitset<Block, Tag>>::is_superseteq(const B& other)
 template<IsUnsignedIntegral Block, typename Tag>
 template<IsBitset B>
     requires HasBlockType<B, Block> && HasCompatibleTagType<B, Tag>
-bool ConstView<Bitset<Block, Tag>>::are_disjoint(const B& other)
+bool ConstView<Bitset<Block, Tag>>::are_disjoint(const B& other) const
 {
     return BitsetUtils::are_disjoint(*this, other);
 }
@@ -1370,7 +1370,7 @@ template<IsUnsignedIntegral Block, typename Tag>
 size_t ConstView<Bitset<Block, Tag>>::count() const
 {
     assert(m_buf);
-    return BitsetUtils::count<Block>(*this);
+    return BitsetUtils::count(*this);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
