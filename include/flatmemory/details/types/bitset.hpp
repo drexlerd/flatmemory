@@ -1363,7 +1363,7 @@ template<IsUnsignedIntegral Block, typename Tag>
 bool ConstView<Bitset<Block, Tag>>::get(std::size_t position) const
 {
     assert(m_buf);
-    return BitsetUtils::get<Block>(*this, position);
+    return BitsetUtils::get(*this, position);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
