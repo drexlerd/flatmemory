@@ -56,14 +56,14 @@ template<IsTuple T>
 bool operator==(const T& lhs, const T& rhs);
 
 template<IsTuple T1, IsTuple T2>
-requires HaveSameValueTypes<T1, T2>
+    requires HaveSameValueTypes<T1, T2>
 bool operator==(const T1& lhs, const T2& rhs);
 
 template<IsTuple T>
 bool operator!=(const T& lhs, const T& rhs);
 
 template<IsTuple T1, IsTuple T2>
-requires HaveSameValueTypes<T1, T2>
+    requires HaveSameValueTypes<T1, T2>
 bool operator!=(const T1& lhs, const T2& rhs);
 
 /**
@@ -118,7 +118,7 @@ private:
 public:
     static constexpr size_t size = sizeof...(Ts);
 
-    static constexpr size_t final_alignment = calculate_final_alignment<buffer_size_type, offset_type, Ts...>();
+    static constexpr size_t final_alignment = calculate_final_alignment<BufferSizeType, OffsetType, Ts...>();
 
     static constexpr LayoutData layout_data = calculate_layout_data(std::make_index_sequence<sizeof...(Ts)> {});
 
@@ -132,16 +132,37 @@ template<IsTriviallyCopyableOrNonTrivialType... Ts>
 class Builder<Tuple<Ts...>> : public IBuilder<Builder<Tuple<Ts...>>>
 {
 public:
+    /**
+     * Type declarations
+     */
+
     using ValueTypes = std::tuple<Ts...>;
     template<size_t I>
     using element_type = std::tuple_element_t<I, std::tuple<Ts...>>;
     template<size_t I>
     using element_builder_type = typename maybe_builder<element_type<I>>::type;
 
-private:
-    std::tuple<typename maybe_builder<Ts>::type...> m_data;
-    ByteBuffer m_buffer;
+    /**
+     * Constructors
+     */
 
+    Builder(Ts&&... args);
+
+    /// @brief Default constructor enabled only if all Ts are default-constructible.
+    Builder()
+        requires(std::default_initializable<typename maybe_builder<Ts>::type> && ...);
+
+    /**
+     * Lookup
+     */
+
+    template<std::size_t I>
+    auto& get();
+
+    template<std::size_t I>
+    const auto& get() const;
+
+private:
     /* Implement IBuilder interface. */
     template<typename>
     friend class IBuilder;
@@ -155,25 +176,9 @@ private:
     auto& get_buffer_impl();
     const auto& get_buffer_impl() const;
 
-public:
-    /**
-     * Constructors
-     */
-
-    Builder(Ts&&... args);
-
-    /// @brief Default constructor enabled only if all Ts are default-constructible
-    Builder() requires(std::default_initializable<typename maybe_builder<Ts>::type>&&...);
-
-    /**
-     * Lookup
-     */
-
-    template<std::size_t I>
-    auto& get();
-
-    template<std::size_t I>
-    const auto& get() const;
+private:
+    std::tuple<typename maybe_builder<Ts>::type...> m_data;
+    ByteBuffer m_buffer;
 };
 
 /**
@@ -183,6 +188,10 @@ template<IsTriviallyCopyableOrNonTrivialType... Ts>
 class View<Tuple<Ts...>>
 {
 public:
+    /**
+     * Type declarations
+     */
+
     using ValueTypes = std::tuple<Ts...>;
     template<size_t I>
     using element_type = std::tuple_element_t<I, std::tuple<Ts...>>;
@@ -191,21 +200,12 @@ public:
     template<size_t I>
     using const_element_view_type = ConstView<std::tuple_element_t<I, std::tuple<Ts...>>>;
 
-private:
-    uint8_t* m_buf;
-
     /**
-     * Default constructor to make view a trivial data type and serializable
+     * Constructors
      */
-    View() = default;
 
-    template<typename>
-    friend class Builder;
-
-public:
-    /**
-     * Constructor to interpret raw data created by its corresponding builder
-     */
+    /// @brief Constructor to interpret raw data created by its corresponding builder.
+    /// @param data
     View(uint8_t* data);
 
     /**
@@ -224,12 +224,15 @@ public:
     uint8_t* buffer();
     const uint8_t* buffer() const;
 
-    buffer_size_type buffer_size() const;
+    BufferSizeType buffer_size() const;
 
     /**
      * Capacity
      */
     size_t size() const;
+
+private:
+    uint8_t* m_buf;
 };
 
 /**
@@ -240,28 +243,22 @@ template<IsTriviallyCopyableOrNonTrivialType... Ts>
 class ConstView<Tuple<Ts...>>
 {
 public:
+    /**
+     * Type declarations
+     */
+
     using ValueTypes = std::tuple<Ts...>;
     template<size_t I>
     using element_type = std::tuple_element_t<I, std::tuple<Ts...>>;
     template<size_t I>
     using const_element_view_type = ConstView<std::tuple_element_t<I, std::tuple<Ts...>>>;
 
-private:
-    const uint8_t* m_buf;
-
     /**
-     * Default constructor to make view a trivial data type and serializable
-     */
-    ConstView() = default;
-
-    template<typename>
-    friend class Builder;
-
-public:
-    /**
-     * Constructor to interpret raw data created by its corresponding builder
+     * Constructors
      */
 
+    /// @brief Constructor to interpret raw data created by its corresponding builder.
+    /// @param data
     ConstView(const uint8_t* data);
 
     /**
@@ -280,7 +277,7 @@ public:
     template<std::size_t I>
     decltype(auto) get() const;
 
-    buffer_size_type buffer_size() const;
+    BufferSizeType buffer_size() const;
 
     const uint8_t* buffer() const;
 
@@ -289,6 +286,9 @@ public:
      */
 
     size_t size() const;
+
+private:
+    const uint8_t* m_buf;
 };
 
 /**
@@ -316,8 +316,11 @@ bool operator==(const T& lhs, const T& rhs)
 }
 
 template<IsTuple T1, IsTuple T2>
-requires HaveSameValueTypes<T1, T2>
-bool operator==(const T1& lhs, const T2& rhs) { return compare_tuples(std::make_index_sequence<std::tuple_size_v<typename T1::ValueTypes>> {}, lhs, rhs); }
+    requires HaveSameValueTypes<T1, T2>
+bool operator==(const T1& lhs, const T2& rhs)
+{
+    return compare_tuples(std::make_index_sequence<std::tuple_size_v<typename T1::ValueTypes>> {}, lhs, rhs);
+}
 
 template<IsTuple T>
 bool operator!=(const T& lhs, const T& rhs)
@@ -326,8 +329,11 @@ bool operator!=(const T& lhs, const T& rhs)
 }
 
 template<IsTuple T1, IsTuple T2>
-requires HaveSameValueTypes<T1, T2>
-bool operator!=(const T1& lhs, const T2& rhs) { return !(lhs == rhs); }
+    requires HaveSameValueTypes<T1, T2>
+bool operator!=(const T1& lhs, const T2& rhs)
+{
+    return !(lhs == rhs);
+}
 
 /**
  * Layout
@@ -376,7 +382,7 @@ consteval size_t Layout<Tuple<Ts...>>::calculate_header_offset_type_size()
     }
     else
     {
-        return sizeof(offset_type);
+        return sizeof(OffsetType);
     }
 }
 
@@ -407,7 +413,7 @@ consteval Layout<Tuple<Ts...>>::LayoutData Layout<Tuple<Ts...>>::calculate_layou
     [[maybe_unused]] std::array<size_t, sizeof...(Ts) + 1> data_alignments = calculate_data_alignments(index_sequence);
 
     size_t buffer_size_position = 0;
-    size_t buffer_size_end = buffer_size_position + sizeof(buffer_size_type);
+    size_t buffer_size_end = buffer_size_position + sizeof(BufferSizeType);
     size_t buffer_size_padding = calculate_amount_padding(buffer_size_end, header_alignments[0]);
 
     size_t current_position = buffer_size_end + buffer_size_padding;
@@ -462,7 +468,7 @@ size_t Builder<Tuple<Ts...>>::finish_iterative_impl(std::index_sequence<Is...>, 
             else
             {
                 /* Write the distance between written data pos and offset pos at the offset pos. */
-                out.write(pos + element_data.position, static_cast<offset_type>(data_pos - element_data.position));
+                out.write(pos + element_data.position, static_cast<OffsetType>(data_pos - element_data.position));
                 out.write_padding(pos + element_data.end, element_data.padding);
 
                 /* Write the data at offset */
@@ -476,7 +482,7 @@ size_t Builder<Tuple<Ts...>>::finish_iterative_impl(std::index_sequence<Is...>, 
     // There is no need to write padding here because if size=0 then no padding is needed and otherwise, if size>0 then the loop adds final padding.
 
     /* Write size of the buffer to the beginning. */
-    out.write(pos + Layout<Tuple<Ts...>>::layout_data.buffer_size_position, static_cast<buffer_size_type>(data_pos));
+    out.write(pos + Layout<Tuple<Ts...>>::layout_data.buffer_size_position, static_cast<BufferSizeType>(data_pos));
     out.set_size(data_pos);
 
     return data_pos;
@@ -512,7 +518,9 @@ Builder<Tuple<Ts...>>::Builder(Ts&&... args) : m_data(std::forward<Ts>(args)...)
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
-Builder<Tuple<Ts...>>::Builder() requires(std::default_initializable<typename maybe_builder<Ts>::type>&&...) : m_data(), m_buffer()
+Builder<Tuple<Ts...>>::Builder()
+    requires(std::default_initializable<typename maybe_builder<Ts>::type> && ...)
+    : m_data(), m_buffer()
 {
 }
 
@@ -555,7 +563,7 @@ decltype(auto) View<Tuple<Ts...>>::get()
     else
     {
         const auto offset_pos = m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position;
-        return element_view_type<I>(offset_pos + read_value<offset_type>(offset_pos));
+        return element_view_type<I>(offset_pos + read_value<OffsetType>(offset_pos));
     }
 }
 
@@ -574,7 +582,7 @@ decltype(auto) View<Tuple<Ts...>>::get() const
     else
     {
         const auto offset_pos = m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position;
-        return const_element_view_type<I>(offset_pos + read_value<offset_type>(offset_pos));
+        return const_element_view_type<I>(offset_pos + read_value<OffsetType>(offset_pos));
     }
 }
 
@@ -590,11 +598,11 @@ const uint8_t* View<Tuple<Ts...>>::buffer() const
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
-buffer_size_type View<Tuple<Ts...>>::buffer_size() const
+BufferSizeType View<Tuple<Ts...>>::buffer_size() const
 {
     assert(m_buf);
-    assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position));
-    return read_value<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position);
+    assert(test_correct_alignment<BufferSizeType>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position));
+    return read_value<BufferSizeType>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
@@ -631,16 +639,16 @@ decltype(auto) ConstView<Tuple<Ts...>>::get() const
     else
     {
         const auto offset_pos = m_buf + Layout<Tuple<Ts...>>::layout_data.element_datas[I].position;
-        return const_element_view_type<I>(offset_pos + read_value<offset_type>(offset_pos));
+        return const_element_view_type<I>(offset_pos + read_value<OffsetType>(offset_pos));
     }
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
-buffer_size_type ConstView<Tuple<Ts...>>::buffer_size() const
+BufferSizeType ConstView<Tuple<Ts...>>::buffer_size() const
 {
     assert(m_buf);
-    assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position));
-    return read_value<buffer_size_type>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position);
+    assert(test_correct_alignment<BufferSizeType>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position));
+    return read_value<BufferSizeType>(m_buf + Layout<Tuple<Ts...>>::layout_data.buffer_size_position);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
@@ -676,8 +684,8 @@ struct std::hash<flatmemory::Builder<flatmemory::Tuple<Ts...>>>
     {
         std::size_t seed = flatmemory::Layout<flatmemory::Tuple<Ts...>>::size;
 
-        [&]<std::size_t... Is>(std::index_sequence<Is...>) { (flatmemory::hash_combine(seed, tuple.template get<Is>()), ...); }
-        (std::make_index_sequence<sizeof...(Ts)> {});
+        [&]<std::size_t... Is>(std::index_sequence<Is...>)
+        { (flatmemory::hash_combine(seed, tuple.template get<Is>()), ...); }(std::make_index_sequence<sizeof...(Ts)> {});
 
         return seed;
     }

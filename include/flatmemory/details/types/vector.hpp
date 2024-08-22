@@ -50,7 +50,7 @@ struct Vector : public NonTrivialType
 /**
  * Data types
  */
-using vector_size_type = uint32_t;
+using VectorSizeType = uint32_t;
 
 /**
  * Layout
@@ -59,13 +59,13 @@ template<IsTriviallyCopyableOrNonTrivialType T>
 class Layout<Vector<T>>
 {
 public:
-    static constexpr size_t final_alignment = calculate_final_alignment<buffer_size_type, offset_type, vector_size_type, T>();
+    static constexpr size_t final_alignment = calculate_final_alignment<BufferSizeType, OffsetType, VectorSizeType, T>();
 
     static constexpr size_t buffer_size_position = 0;
-    static constexpr size_t buffer_size_end = buffer_size_position + sizeof(buffer_size_type);
-    static constexpr size_t buffer_size_padding = calculate_amount_padding(buffer_size_end, calculate_header_alignment<vector_size_type>());
+    static constexpr size_t buffer_size_end = buffer_size_position + sizeof(BufferSizeType);
+    static constexpr size_t buffer_size_padding = calculate_amount_padding(buffer_size_end, calculate_header_alignment<VectorSizeType>());
     static constexpr size_t vector_size_position = buffer_size_end + buffer_size_padding;
-    static constexpr size_t vector_size_end = vector_size_position + sizeof(vector_size_type);
+    static constexpr size_t vector_size_end = vector_size_position + sizeof(VectorSizeType);
     static constexpr size_t vector_size_padding = calculate_amount_padding(vector_size_end, calculate_data_alignment<T>());
     static constexpr size_t vector_data_position = vector_size_end + vector_size_padding;
 
@@ -73,21 +73,21 @@ public:
 };
 
 /**
- * Operators
+ * Free function operators
  */
 
 template<IsVector V>
 bool operator==(const V& lhs, const V& rhs);
 
 template<IsVector V1, IsVector V2>
-requires HaveSameValueType<V1, V2>
+    requires HaveSameValueType<V1, V2>
 bool operator==(const V1& lhs, const V2& rhs);
 
 template<IsVector V>
 bool operator!=(const V& lhs, const V& rhs);
 
 template<IsVector V1, IsVector V2>
-requires HaveSameValueType<V1, V2>
+    requires HaveSameValueType<V1, V2>
 bool operator!=(const V1& lhs, const V2& rhs);
 
 /**
@@ -98,31 +98,21 @@ template<IsTriviallyCopyableOrNonTrivialType T>
 class Builder<Vector<T>> : public IBuilder<Builder<Vector<T>>>
 {
 public:
+    /**
+     * Type declarations
+     */
+
     using ValueType = T;
     using T_ = typename maybe_builder<T>::type;
 
-    using iterator = typename std::vector<T_>::iterator;
-    using const_iterator = typename std::vector<T_>::const_iterator;
+    using Iterator = typename std::vector<T_>::iterator;
+    using ConstIterator = typename std::vector<T_>::const_iterator;
 
-private:
-    std::vector<T_> m_data;
-    ByteBuffer m_buffer;
-
-    /* Implement IBuilder interface. */
-    template<typename>
-    friend class IBuilder;
-
-    void finish_impl();
-    size_t finish_impl(size_t pos, ByteBuffer& out);
-
-    auto& get_buffer_impl();
-    const auto& get_buffer_impl() const;
-
-public:
     /**
      * Constructors
      */
 
+    /// @brief Default constructor only enabled if T is default constructible
     Builder();
     explicit Builder(size_t count);
     explicit Builder(size_t count, const T_& value);
@@ -142,10 +132,10 @@ public:
      * Iterators
      */
 
-    iterator begin();
-    const_iterator begin() const;
-    iterator end();
-    const_iterator end() const;
+    Iterator begin();
+    ConstIterator begin() const;
+    Iterator end();
+    ConstIterator end() const;
 
     /**
      * Capacity
@@ -160,9 +150,27 @@ public:
     void push_back(T_&& element);
     void push_back(const T_& element);
 
-    void resize(size_t count);
+    /// @brief Resize without default value argument enabled only if T_ is default constructible.
+    /// @param count
+    void resize(size_t count)
+        requires(std::default_initializable<T_>);
     void resize(size_t count, const T_& value);
     void clear();
+
+private:
+    /* Implement IBuilder interface. */
+    template<typename>
+    friend class IBuilder;
+
+    void finish_impl();
+    size_t finish_impl(size_t pos, ByteBuffer& out);
+
+    auto& get_buffer_impl();
+    const auto& get_buffer_impl() const;
+
+private:
+    std::vector<T_> m_data;
+    ByteBuffer m_buffer;
 };
 
 /**
@@ -172,21 +180,17 @@ template<IsTriviallyCopyableOrNonTrivialType T>
 class View<Vector<T>>
 {
 public:
+    /**
+     * Type declarations
+     */
+
     using ValueType = T;
     using T_ = typename maybe_builder<T>::type;
 
-private:
-    uint8_t* m_buf;
+    /**
+     * Constructors
+     */
 
-    /// @brief Default constructor to make view a trivial data type and serializable
-    View() = default;
-
-    template<typename>
-    friend class Builder;
-
-    void range_check(size_t pos) const;
-
-public:
     /// @brief Constructor to interpret raw data created by its corresponding builder.
     View(uint8_t* buf);
 
@@ -207,7 +211,7 @@ public:
      * Iterators
      */
 
-    class iterator
+    class Iterator
     {
     private:
         uint8_t* m_buf;
@@ -219,20 +223,20 @@ public:
         using reference = value_type&;
         using iterator_category = std::forward_iterator_tag;
 
-        iterator();
-        iterator(uint8_t* buf);
+        Iterator();
+        Iterator(uint8_t* buf);
 
         decltype(auto) operator*() const;
-        iterator& operator++();
-        iterator operator++(int);
-        bool operator==(const iterator& other) const;
-        bool operator!=(const iterator& other) const;
+        Iterator& operator++();
+        Iterator operator++(int);
+        bool operator==(const Iterator& other) const;
+        bool operator!=(const Iterator& other) const;
     };
 
-    iterator begin();
-    iterator end();
+    Iterator begin();
+    Iterator end();
 
-    class const_iterator
+    class ConstIterator
     {
     private:
         const uint8_t* m_buf;
@@ -244,26 +248,32 @@ public:
         using reference = const value_type&;
         using iterator_category = std::forward_iterator_tag;
 
-        const_iterator();
-        const_iterator(const uint8_t* buf);
+        ConstIterator();
+        ConstIterator(const uint8_t* buf);
 
         decltype(auto) operator*() const;
-        const_iterator& operator++();
-        const_iterator operator++(int);
-        bool operator==(const const_iterator& other) const;
-        bool operator!=(const const_iterator& other) const;
+        ConstIterator& operator++();
+        ConstIterator operator++(int);
+        bool operator==(const ConstIterator& other) const;
+        bool operator!=(const ConstIterator& other) const;
     };
 
-    const_iterator begin() const;
-    const_iterator end() const;
+    ConstIterator begin() const;
+    ConstIterator end() const;
 
     /**
      * Capacity
      */
 
     bool empty() const;
-    buffer_size_type buffer_size() const;
+    BufferSizeType buffer_size() const;
     size_t size() const;
+
+private:
+    void range_check(size_t pos) const;
+
+private:
+    uint8_t* m_buf;
 };
 
 /**
@@ -273,21 +283,17 @@ template<IsTriviallyCopyableOrNonTrivialType T>
 class ConstView<Vector<T>>
 {
 public:
+    /**
+     * Type declarations
+     */
+
     using ValueType = T;
     using T_ = typename maybe_builder<T>::type;
 
-private:
-    const uint8_t* m_buf;
+    /**
+     * Constructors
+     */
 
-    /// @brief Default constructor to make view a trivial data type and serializable
-    ConstView() = default;
-
-    template<typename>
-    friend class Builder;
-
-    void range_check(size_t pos) const;
-
-public:
     /// @brief Constructor to interpret raw data created by its corresponding builder
     ConstView(const uint8_t* buf);
 
@@ -316,7 +322,7 @@ public:
      * Iterators
      */
 
-    class const_iterator
+    class ConstIterator
     {
     private:
         const uint8_t* m_buf;
@@ -328,25 +334,25 @@ public:
         using reference = typename maybe_const_view<T>::type&;
         using iterator_category = std::forward_iterator_tag;
 
-        const_iterator();
-        const_iterator(const uint8_t* buf);
+        ConstIterator();
+        ConstIterator(const uint8_t* buf);
 
         decltype(auto) operator*() const;
-        const_iterator& operator++();
-        const_iterator operator++(int);
-        bool operator==(const const_iterator& other) const;
-        bool operator!=(const const_iterator& other) const;
+        ConstIterator& operator++();
+        ConstIterator operator++(int);
+        bool operator==(const ConstIterator& other) const;
+        bool operator!=(const ConstIterator& other) const;
     };
 
-    const_iterator begin() const;
-    const_iterator end() const;
+    ConstIterator begin() const;
+    ConstIterator end() const;
 
     /**
      * Capacity
      */
 
     bool empty() const;
-    buffer_size_type buffer_size() const;
+    BufferSizeType buffer_size() const;
     size_t size() const;
 
     /**
@@ -354,6 +360,12 @@ public:
      *
      * Views cannot be modified!
      */
+
+private:
+    void range_check(size_t pos) const;
+
+private:
+    const uint8_t* m_buf;
 };
 
 /**
@@ -398,7 +410,7 @@ bool operator==(const V& lhs, const V& rhs)
 }
 
 template<IsVector V1, IsVector V2>
-requires HaveSameValueType<V1, V2>
+    requires HaveSameValueType<V1, V2>
 bool operator==(const V1& lhs, const V2& rhs)
 {
     if (lhs.size() != rhs.size())
@@ -422,8 +434,11 @@ bool operator!=(const V& lhs, const V& rhs)
 }
 
 template<IsVector V1, IsVector V2>
-requires HaveSameValueType<V1, V2>
-bool operator!=(const V1& lhs, const V2& rhs) { return !(lhs == rhs); }
+    requires HaveSameValueType<V1, V2>
+bool operator!=(const V1& lhs, const V2& rhs)
+{
+    return !(lhs == rhs);
+}
 
 /* Builder */
 
@@ -454,7 +469,7 @@ size_t Builder<Vector<T>>::finish_impl(size_t pos, ByteBuffer& out)
         /* Write the offset inline and data at offset. */
         size_t offset_pos = Layout<Vector<T>>::vector_data_position;
         /* Write sufficiently much padding before the data. */
-        size_t offset_end = offset_pos + m_data.size() * sizeof(offset_type);
+        size_t offset_end = offset_pos + m_data.size() * sizeof(OffsetType);
         size_t offset_padding = calculate_amount_padding(offset_end, Layout<T>::final_alignment);
         out.write_padding(pos + offset_end, offset_padding);
 
@@ -465,7 +480,7 @@ size_t Builder<Vector<T>>::finish_impl(size_t pos, ByteBuffer& out)
             /* Write the distance between written data pos and offset pos at the offset pos.
                This allows for more efficient iterator logic.
             */
-            offset_pos += out.write(pos + offset_pos, static_cast<offset_type>(data_pos - offset_pos));
+            offset_pos += out.write(pos + offset_pos, static_cast<OffsetType>(data_pos - offset_pos));
 
             /* Write the data at offset. */
             data_pos += m_data[i].finish(pos + data_pos, out);
@@ -476,7 +491,7 @@ size_t Builder<Vector<T>>::finish_impl(size_t pos, ByteBuffer& out)
     data_pos += out.write_padding(pos + data_pos, calculate_amount_padding(data_pos, Layout<Vector<T>>::final_alignment));
 
     /* Write the size of the buffer to the beginning. */
-    out.write(pos + Layout<Vector<T>>::buffer_size_position, static_cast<buffer_size_type>(data_pos));
+    out.write(pos + Layout<Vector<T>>::buffer_size_position, static_cast<BufferSizeType>(data_pos));
     out.set_size(data_pos);
 
     return data_pos;
@@ -548,25 +563,25 @@ const Builder<Vector<T>>::T_* Builder<Vector<T>>::data() const
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Vector<T>>::iterator Builder<Vector<T>>::begin()
+Builder<Vector<T>>::Iterator Builder<Vector<T>>::begin()
 {
     return m_data.begin();
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Vector<T>>::const_iterator Builder<Vector<T>>::begin() const
+Builder<Vector<T>>::ConstIterator Builder<Vector<T>>::begin() const
 {
     return m_data.begin();
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Vector<T>>::iterator Builder<Vector<T>>::end()
+Builder<Vector<T>>::Iterator Builder<Vector<T>>::end()
 {
     return m_data.end();
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Vector<T>>::const_iterator Builder<Vector<T>>::end() const
+Builder<Vector<T>>::ConstIterator Builder<Vector<T>>::end() const
 {
     return m_data.end();
 }
@@ -597,6 +612,7 @@ void Builder<Vector<T>>::push_back(const T_& element)
 
 template<IsTriviallyCopyableOrNonTrivialType T>
 void Builder<Vector<T>>::resize(size_t count)
+    requires(std::default_initializable<typename maybe_builder<T>::type>)
 {
     m_data.resize(count, T_());
 }
@@ -644,8 +660,8 @@ decltype(auto) View<Vector<T>>::operator[](size_t pos)
     }
     else
     {
-        const auto offset_pos = m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(offset_type);
-        return View<T>(offset_pos + read_value<offset_type>(offset_pos));
+        const auto offset_pos = m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(OffsetType);
+        return View<T>(offset_pos + read_value<OffsetType>(offset_pos));
     }
 }
 
@@ -662,8 +678,8 @@ decltype(auto) View<Vector<T>>::operator[](size_t pos) const
     }
     else
     {
-        const auto offset_pos = m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(offset_type);
-        return ConstView<T>(offset_pos + read_value<offset_type>(offset_pos));
+        const auto offset_pos = m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(OffsetType);
+        return ConstView<T>(offset_pos + read_value<OffsetType>(offset_pos));
     }
 }
 
@@ -706,16 +722,16 @@ const uint8_t* View<Vector<T>>::buffer() const
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-View<Vector<T>>::iterator::iterator() : m_buf(nullptr)
+View<Vector<T>>::Iterator::Iterator() : m_buf(nullptr)
 {
 }
 template<IsTriviallyCopyableOrNonTrivialType T>
-View<Vector<T>>::iterator::iterator(uint8_t* buf) : m_buf(buf)
+View<Vector<T>>::Iterator::Iterator(uint8_t* buf) : m_buf(buf)
 {
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-decltype(auto) View<Vector<T>>::iterator::operator*() const
+decltype(auto) View<Vector<T>>::Iterator::operator*() const
 {
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
     if constexpr (is_trivial)
@@ -725,12 +741,12 @@ decltype(auto) View<Vector<T>>::iterator::operator*() const
     }
     else
     {
-        return View<T>(m_buf + read_value<offset_type>(m_buf));
+        return View<T>(m_buf + read_value<OffsetType>(m_buf));
     }
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-View<Vector<T>>::iterator& View<Vector<T>>::iterator::operator++()
+View<Vector<T>>::Iterator& View<Vector<T>>::Iterator::operator++()
 {
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
     if constexpr (is_trivial)
@@ -739,65 +755,65 @@ View<Vector<T>>::iterator& View<Vector<T>>::iterator::operator++()
     }
     else
     {
-        m_buf += sizeof(offset_type);
+        m_buf += sizeof(OffsetType);
     }
     return *this;
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-View<Vector<T>>::iterator View<Vector<T>>::iterator::operator++(int)
+View<Vector<T>>::Iterator View<Vector<T>>::Iterator::operator++(int)
 {
-    iterator tmp = *this;
+    Iterator tmp = *this;
     ++(*this);
     return tmp;
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-bool View<Vector<T>>::iterator::operator==(const View<Vector<T>>::iterator& other) const
+bool View<Vector<T>>::Iterator::operator==(const View<Vector<T>>::Iterator& other) const
 {
     return m_buf == other.m_buf;
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-bool View<Vector<T>>::iterator::operator!=(const View<Vector<T>>::iterator& other) const
+bool View<Vector<T>>::Iterator::operator!=(const View<Vector<T>>::Iterator& other) const
 {
     return !(*this == other);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-View<Vector<T>>::iterator View<Vector<T>>::begin()
+View<Vector<T>>::Iterator View<Vector<T>>::begin()
 {
     assert(m_buf);
-    return View<Vector<T>>::iterator(m_buf + Layout<Vector<T>>::vector_data_position);
+    return View<Vector<T>>::Iterator(m_buf + Layout<Vector<T>>::vector_data_position);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-View<Vector<T>>::iterator View<Vector<T>>::end()
+View<Vector<T>>::Iterator View<Vector<T>>::end()
 {
     assert(m_buf);
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
     if constexpr (is_trivial)
     {
-        return View<Vector<T>>::iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(T) * size());
+        return View<Vector<T>>::Iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(T) * size());
     }
     else
     {
-        return View<Vector<T>>::iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(offset_type) * size());
+        return View<Vector<T>>::Iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(OffsetType) * size());
     }
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-View<Vector<T>>::const_iterator::const_iterator() : m_buf(nullptr)
+View<Vector<T>>::ConstIterator::ConstIterator() : m_buf(nullptr)
 {
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-View<Vector<T>>::const_iterator::const_iterator(const uint8_t* buf) : m_buf(buf)
+View<Vector<T>>::ConstIterator::ConstIterator(const uint8_t* buf) : m_buf(buf)
 {
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-decltype(auto) View<Vector<T>>::const_iterator::operator*() const
+decltype(auto) View<Vector<T>>::ConstIterator::operator*() const
 {
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
     if constexpr (is_trivial)
@@ -807,12 +823,12 @@ decltype(auto) View<Vector<T>>::const_iterator::operator*() const
     }
     else
     {
-        return ConstView<T>(m_buf + read_value<offset_type>(m_buf));
+        return ConstView<T>(m_buf + read_value<OffsetType>(m_buf));
     }
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-View<Vector<T>>::const_iterator& View<Vector<T>>::const_iterator::operator++()
+View<Vector<T>>::ConstIterator& View<Vector<T>>::ConstIterator::operator++()
 {
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
     if constexpr (is_trivial)
@@ -821,50 +837,50 @@ View<Vector<T>>::const_iterator& View<Vector<T>>::const_iterator::operator++()
     }
     else
     {
-        m_buf += sizeof(offset_type);
+        m_buf += sizeof(OffsetType);
     }
     return *this;
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-View<Vector<T>>::const_iterator View<Vector<T>>::const_iterator::operator++(int)
+View<Vector<T>>::ConstIterator View<Vector<T>>::ConstIterator::operator++(int)
 {
-    const_iterator tmp = *this;
+    ConstIterator tmp = *this;
     ++(*this);
     return tmp;
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-bool View<Vector<T>>::const_iterator::operator==(const View<Vector<T>>::const_iterator& other) const
+bool View<Vector<T>>::ConstIterator::operator==(const View<Vector<T>>::ConstIterator& other) const
 {
     return m_buf == other.m_buf;
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-bool View<Vector<T>>::const_iterator::operator!=(const View<Vector<T>>::const_iterator& other) const
+bool View<Vector<T>>::ConstIterator::operator!=(const View<Vector<T>>::ConstIterator& other) const
 {
     return !(*this == other);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-View<Vector<T>>::const_iterator View<Vector<T>>::begin() const
+View<Vector<T>>::ConstIterator View<Vector<T>>::begin() const
 {
     assert(m_buf);
-    return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position);
+    return ConstIterator(m_buf + Layout<Vector<T>>::vector_data_position);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-View<Vector<T>>::const_iterator View<Vector<T>>::end() const
+View<Vector<T>>::ConstIterator View<Vector<T>>::end() const
 {
     assert(m_buf);
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
     if constexpr (is_trivial)
     {
-        return View<Vector<T>>::const_iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(T) * size());
+        return View<Vector<T>>::ConstIterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(T) * size());
     }
     else
     {
-        return View<Vector<T>>::const_iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(offset_type) * size());
+        return View<Vector<T>>::ConstIterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(OffsetType) * size());
     }
 }
 
@@ -875,19 +891,19 @@ bool View<Vector<T>>::empty() const
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-buffer_size_type View<Vector<T>>::buffer_size() const
+BufferSizeType View<Vector<T>>::buffer_size() const
 {
     assert(m_buf);
-    assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_position));
-    return read_value<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_position);
+    assert(test_correct_alignment<BufferSizeType>(m_buf + Layout<Vector<T>>::buffer_size_position));
+    return read_value<BufferSizeType>(m_buf + Layout<Vector<T>>::buffer_size_position);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
 size_t View<Vector<T>>::size() const
 {
     assert(m_buf);
-    assert(test_correct_alignment<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_position));
-    return read_value<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_position);
+    assert(test_correct_alignment<VectorSizeType>(m_buf + Layout<Vector<T>>::vector_size_position));
+    return read_value<VectorSizeType>(m_buf + Layout<Vector<T>>::vector_size_position);
 }
 
 /* ConstView */
@@ -933,8 +949,8 @@ decltype(auto) ConstView<Vector<T>>::operator[](size_t pos) const
     }
     else
     {
-        const auto offset_pos = m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(offset_type);
-        return ConstView<T>(offset_pos + read_value<offset_type>(offset_pos));
+        const auto offset_pos = m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(OffsetType);
+        return ConstView<T>(offset_pos + read_value<OffsetType>(offset_pos));
     }
 }
 
@@ -958,17 +974,17 @@ const uint8_t* ConstView<Vector<T>>::buffer() const
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-ConstView<Vector<T>>::const_iterator::const_iterator() : m_buf(nullptr)
+ConstView<Vector<T>>::ConstIterator::ConstIterator() : m_buf(nullptr)
 {
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-ConstView<Vector<T>>::const_iterator::const_iterator(const uint8_t* buf) : m_buf(buf)
+ConstView<Vector<T>>::ConstIterator::ConstIterator(const uint8_t* buf) : m_buf(buf)
 {
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-decltype(auto) ConstView<Vector<T>>::const_iterator::operator*() const
+decltype(auto) ConstView<Vector<T>>::ConstIterator::operator*() const
 {
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
     if constexpr (is_trivial)
@@ -978,12 +994,12 @@ decltype(auto) ConstView<Vector<T>>::const_iterator::operator*() const
     }
     else
     {
-        return ConstView<T>(m_buf + read_value<offset_type>(m_buf));
+        return ConstView<T>(m_buf + read_value<OffsetType>(m_buf));
     }
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-ConstView<Vector<T>>::const_iterator& ConstView<Vector<T>>::const_iterator::operator++()
+ConstView<Vector<T>>::ConstIterator& ConstView<Vector<T>>::ConstIterator::operator++()
 {
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
     if constexpr (is_trivial)
@@ -992,50 +1008,50 @@ ConstView<Vector<T>>::const_iterator& ConstView<Vector<T>>::const_iterator::oper
     }
     else
     {
-        m_buf += sizeof(offset_type);
+        m_buf += sizeof(OffsetType);
     }
     return *this;
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-ConstView<Vector<T>>::const_iterator ConstView<Vector<T>>::const_iterator::operator++(int)
+ConstView<Vector<T>>::ConstIterator ConstView<Vector<T>>::ConstIterator::operator++(int)
 {
-    const_iterator tmp = *this;
+    ConstIterator tmp = *this;
     ++(*this);
     return tmp;
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-bool ConstView<Vector<T>>::const_iterator::operator==(const ConstView<Vector<T>>::const_iterator& other) const
+bool ConstView<Vector<T>>::ConstIterator::operator==(const ConstView<Vector<T>>::ConstIterator& other) const
 {
     return m_buf == other.m_buf;
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-bool ConstView<Vector<T>>::const_iterator::operator!=(const ConstView<Vector<T>>::const_iterator& other) const
+bool ConstView<Vector<T>>::ConstIterator::operator!=(const ConstView<Vector<T>>::ConstIterator& other) const
 {
     return !(*this == other);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-ConstView<Vector<T>>::const_iterator ConstView<Vector<T>>::begin() const
+ConstView<Vector<T>>::ConstIterator ConstView<Vector<T>>::begin() const
 {
     assert(m_buf);
-    return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position);
+    return ConstIterator(m_buf + Layout<Vector<T>>::vector_data_position);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-ConstView<Vector<T>>::const_iterator ConstView<Vector<T>>::end() const
+ConstView<Vector<T>>::ConstIterator ConstView<Vector<T>>::end() const
 {
     assert(m_buf);
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
     if constexpr (is_trivial)
     {
-        return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(T) * size());
+        return ConstIterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(T) * size());
     }
     else
     {
-        return const_iterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(offset_type) * size());
+        return ConstIterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(OffsetType) * size());
     }
 }
 
@@ -1046,19 +1062,19 @@ bool ConstView<Vector<T>>::empty() const
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-buffer_size_type ConstView<Vector<T>>::buffer_size() const
+BufferSizeType ConstView<Vector<T>>::buffer_size() const
 {
     assert(m_buf);
-    assert(test_correct_alignment<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_position));
-    return read_value<buffer_size_type>(m_buf + Layout<Vector<T>>::buffer_size_position);
+    assert(test_correct_alignment<BufferSizeType>(m_buf + Layout<Vector<T>>::buffer_size_position));
+    return read_value<BufferSizeType>(m_buf + Layout<Vector<T>>::buffer_size_position);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
 size_t ConstView<Vector<T>>::size() const
 {
     assert(m_buf);
-    assert(test_correct_alignment<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_position));
-    return read_value<vector_size_type>(m_buf + Layout<Vector<T>>::vector_size_position);
+    assert(test_correct_alignment<VectorSizeType>(m_buf + Layout<Vector<T>>::vector_size_position));
+    return read_value<VectorSizeType>(m_buf + Layout<Vector<T>>::vector_size_position);
 }
 
 /**

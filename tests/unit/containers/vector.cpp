@@ -26,7 +26,7 @@ TEST(FlatmemoryTests, ContainersVariableSizedTypeVectorTest)
 {
     VariableSizedTypeVector<Bitset<uint64_t>> views;
     auto builder = Builder<Bitset<uint64_t>>();
-    builder.get_blocks().resize(5);
+    builder.set(100);
     builder.finish();
     for (size_t i = 0; i < 5; ++i)
     {

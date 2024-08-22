@@ -33,10 +33,10 @@ namespace flatmemory::tests
 
 TEST(FlatmemoryTests, TypesTupleEqualToAndHashTest)
 {
-    using BitsetVec = Vector<Bitset<uint64_t>>;
-    using TwoTuple = Tuple<BitsetVec, BitsetVec>;
+    using BitsetVectorLayout = Vector<Bitset<uint64_t>>;
+    using BitsetTupleLayout = Tuple<BitsetVectorLayout, BitsetVectorLayout>;
 
-    auto builder1 = Builder<TwoTuple>();
+    auto builder1 = Builder<BitsetTupleLayout>();
     auto& first = builder1.get<0>();
     auto& second = builder1.get<1>();
     first.resize(2);
@@ -48,7 +48,7 @@ TEST(FlatmemoryTests, TypesTupleEqualToAndHashTest)
     second[2].set(63);
     builder1.finish();
 
-    auto builder2 = Builder<TwoTuple>();
+    auto builder2 = Builder<BitsetTupleLayout>();
     auto& first_2 = builder2.get<0>();
     auto& second_2 = builder2.get<1>();
     first_2.resize(2);
@@ -60,7 +60,7 @@ TEST(FlatmemoryTests, TypesTupleEqualToAndHashTest)
     second_2[2].set(63);
     builder2.finish();
 
-    auto builder3 = Builder<TwoTuple>();
+    auto builder3 = Builder<BitsetTupleLayout>();
     auto& first_3 = builder3.get<0>();
     auto& second_3 = builder3.get<1>();
     first_3.resize(2);
@@ -74,27 +74,27 @@ TEST(FlatmemoryTests, TypesTupleEqualToAndHashTest)
 
     // Test builder
     EXPECT_EQ(builder1, builder3);
-    EXPECT_EQ(std::hash<Builder<TwoTuple>>()(builder1), std::hash<Builder<TwoTuple>>()(builder3));
+    EXPECT_EQ(std::hash<Builder<BitsetTupleLayout>>()(builder1), std::hash<Builder<BitsetTupleLayout>>()(builder3));
     EXPECT_NE(builder1, builder2);
-    EXPECT_NE(std::hash<Builder<TwoTuple>>()(builder1), std::hash<Builder<TwoTuple>>()(builder2));
+    EXPECT_NE(std::hash<Builder<BitsetTupleLayout>>()(builder1), std::hash<Builder<BitsetTupleLayout>>()(builder2));
 
     // Test View
-    auto view1 = View<TwoTuple>(builder1.buffer().data());
-    auto view2 = View<TwoTuple>(builder2.buffer().data());
-    auto view3 = View<TwoTuple>(builder3.buffer().data());
+    auto view1 = View<BitsetTupleLayout>(builder1.buffer().data());
+    auto view2 = View<BitsetTupleLayout>(builder2.buffer().data());
+    auto view3 = View<BitsetTupleLayout>(builder3.buffer().data());
     EXPECT_EQ(view1, view3);
-    EXPECT_EQ(std::hash<View<TwoTuple>>()(view1), std::hash<View<TwoTuple>>()(view3));
+    EXPECT_EQ(std::hash<View<BitsetTupleLayout>>()(view1), std::hash<View<BitsetTupleLayout>>()(view3));
     EXPECT_NE(view1, view2);
-    EXPECT_NE(std::hash<View<TwoTuple>>()(view1), std::hash<View<TwoTuple>>()(view2));
+    EXPECT_NE(std::hash<View<BitsetTupleLayout>>()(view1), std::hash<View<BitsetTupleLayout>>()(view2));
 
     // Test ConstView
-    auto const_view1 = ConstView<TwoTuple>(builder1.buffer().data());
-    auto const_view2 = ConstView<TwoTuple>(builder2.buffer().data());
-    auto const_view3 = ConstView<TwoTuple>(builder3.buffer().data());
+    auto const_view1 = ConstView<BitsetTupleLayout>(builder1.buffer().data());
+    auto const_view2 = ConstView<BitsetTupleLayout>(builder2.buffer().data());
+    auto const_view3 = ConstView<BitsetTupleLayout>(builder3.buffer().data());
     EXPECT_EQ(const_view1, const_view3);
-    EXPECT_EQ(std::hash<ConstView<TwoTuple>>()(const_view1), std::hash<ConstView<TwoTuple>>()(const_view3));
+    EXPECT_EQ(std::hash<ConstView<BitsetTupleLayout>>()(const_view1), std::hash<ConstView<BitsetTupleLayout>>()(const_view3));
     EXPECT_NE(const_view1, const_view2);
-    EXPECT_NE(std::hash<ConstView<TwoTuple>>()(const_view1), std::hash<ConstView<TwoTuple>>()(const_view2));
+    EXPECT_NE(std::hash<ConstView<BitsetTupleLayout>>()(const_view1), std::hash<ConstView<BitsetTupleLayout>>()(const_view2));
 
     // Test Builder and View
     EXPECT_EQ(builder1, view1);
@@ -134,6 +134,24 @@ TEST(FlatmemoryTests, TypesTupleEqualToAndHashTest)
     EXPECT_EQ(const_view3, view3);
     EXPECT_NE(const_view1, view2);
     EXPECT_EQ(const_view1, view3);
+}
+
+TEST(FlatmemoryTests, TypesTupleSerializeViewsTest)
+{
+    using BitsetVectorLayout = Vector<Bitset<uint64_t>>;
+
+    auto builder1 = Builder<BitsetVectorLayout>();
+    builder1.resize(2);
+    builder1[0].set(4);
+    builder1[1].set(64);
+    builder1.finish();
+
+    using BitsetTupleLayout = Tuple<View<BitsetVectorLayout>, ConstView<BitsetVectorLayout>>;
+
+    auto builder2 = Builder<BitsetTupleLayout>(View<BitsetVectorLayout>(builder1.buffer().data()), ConstView<BitsetVectorLayout>(builder1.buffer().data()));
+    builder2.finish();
+
+    EXPECT_EQ(builder2.get<0>(), builder2.get<1>());
 }
 
 /**

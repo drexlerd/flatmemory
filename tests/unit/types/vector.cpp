@@ -316,12 +316,15 @@ TEST(FlatmemoryTests, TypesVectorViewTest)
 {
     EXPECT_EQ((Layout<Vector<View<Vector<uint16_t>>>>::final_alignment), 8);
 
-    auto builder = Builder<Vector<View<Vector<uint16_t>>>>();
-    builder.resize(3);
-    builder.finish();
+    auto builder1 = Builder<Vector<uint16_t>>();
+    builder1.finish();
+
+    auto builder2 = Builder<Vector<View<Vector<uint16_t>>>>();
+    builder2.resize(3, View<Vector<uint16_t>>(builder1.buffer().data()));
+    builder2.finish();
 
     // 2 additional padding are added from 10 to 12
-    EXPECT_EQ(builder.buffer().size(), 32);
+    EXPECT_EQ(builder2.buffer().size(), 32);
 }
 
 }

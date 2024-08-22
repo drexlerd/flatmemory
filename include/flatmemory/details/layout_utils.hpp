@@ -32,12 +32,12 @@ namespace flatmemory
  * Common data types
  */
 
-using offset_type = uint32_t;
+using OffsetType = uint32_t;
 
-using buffer_size_type = uint32_t;
+using BufferSizeType = uint32_t;
 
 // It does not make sense the other way around, since potentially many offsets are stored within a single buffer.
-static_assert(sizeof(buffer_size_type) >= sizeof(offset_type));
+static_assert(sizeof(BufferSizeType) >= sizeof(OffsetType));
 
 /**
  * Compute padding needed to store an object with given alignment factor from the given position.
@@ -57,7 +57,7 @@ inline consteval size_t calculate_header_alignment()
     }
     else
     {
-        return alignof(offset_type);
+        return alignof(OffsetType);
     }
 }
 
@@ -91,7 +91,7 @@ inline consteval size_t calculate_final_alignment_helper()
     }
     else
     {
-        return std::max(Layout<T>::final_alignment, alignof(offset_type));
+        return std::max(Layout<T>::final_alignment, alignof(OffsetType));
     }
 }
 template<typename... Ts>

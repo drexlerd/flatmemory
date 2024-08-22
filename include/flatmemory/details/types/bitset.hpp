@@ -57,10 +57,10 @@ template<IsUnsignedIntegral Block, typename Tag>
 class Layout<Bitset<Block, Tag>>
 {
 public:
-    static constexpr size_t final_alignment = calculate_final_alignment<buffer_size_type, bool, Vector<Block>>();
+    static constexpr size_t final_alignment = calculate_final_alignment<BufferSizeType, bool, Vector<Block>>();
 
     static constexpr size_t buffer_size_position = 0;
-    static constexpr size_t buffer_size_end = buffer_size_position + sizeof(buffer_size_type);
+    static constexpr size_t buffer_size_end = buffer_size_position + sizeof(BufferSizeType);
     static constexpr size_t buffer_size_padding = calculate_amount_padding(buffer_size_end, calculate_header_alignment<bool>());
     static constexpr size_t default_bit_value_position = buffer_size_end + buffer_size_padding;
     static constexpr size_t default_bit_value_end = default_bit_value_position + sizeof(bool);
@@ -125,7 +125,7 @@ public:
      */
 
     template<IsUnsignedIntegral Block>
-    class const_iterator
+    class ConstIterator
     {
     private:
         // Underlying data
@@ -150,13 +150,13 @@ public:
         using reference = size_t&;
         using iterator_category = std::forward_iterator_tag;
 
-        const_iterator();
-        const_iterator(bool default_bit_value, const Block* blocks, size_t num_blocks, bool begin);
+        ConstIterator();
+        ConstIterator(bool default_bit_value, const Block* blocks, size_t num_blocks, bool begin);
         size_t operator*() const;
-        const_iterator& operator++();
-        const_iterator operator++(int);
-        bool operator==(const const_iterator& other) const;
-        bool operator!=(const const_iterator& other) const;
+        ConstIterator& operator++();
+        ConstIterator operator++(int);
+        bool operator==(const ConstIterator& other) const;
+        bool operator!=(const ConstIterator& other) const;
     };
 
     /**
@@ -202,39 +202,18 @@ template<IsUnsignedIntegral Block, typename Tag>
 class Builder<Bitset<Block, Tag>> : public IBuilder<Builder<Bitset<Block, Tag>>>
 {
 public:
+    /**
+     * Type declarations
+     */
+
     using BlockType = Block;
     using TagType = Tag;
 
     using BitsetLayout = Layout<Bitset<Block, Tag>>;
     using BitsetView = View<Bitset<Block, Tag>>;
     using BitsetConstView = ConstView<Bitset<Block, Tag>>;
-    using const_iterator = typename BitsetUtils::const_iterator<Block>;
+    using ConstIterator = typename BitsetUtils::ConstIterator<Block>;
 
-private:
-    bool m_default_bit_value;
-    Builder<Vector<Block>> m_blocks;
-
-    ByteBuffer m_buffer;
-
-    /* Implement IBuilder interface. */
-    template<typename>
-    friend class IBuilder;
-
-    void finish_impl();
-    size_t finish_impl(size_t pos, ByteBuffer& out);
-
-    auto& get_buffer_impl();
-    const auto& get_buffer_impl() const;
-
-    template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    void resize_to_fit(const Other& other);
-
-    template<IsBitset Other>
-        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
-    void init_from_view(const Other& other);
-
-public:
     /**
      * Constructors
      */
@@ -339,8 +318,8 @@ public:
      * Iterators
      */
 
-    const_iterator begin() const;
-    const_iterator end() const;
+    ConstIterator begin() const;
+    ConstIterator end() const;
 
     /**
      * Getters
@@ -351,6 +330,31 @@ public:
 
     auto& get_blocks();
     const auto& get_blocks() const;
+
+private:
+    /* Implement IBuilder interface. */
+    template<typename>
+    friend class IBuilder;
+
+    void finish_impl();
+    size_t finish_impl(size_t pos, ByteBuffer& out);
+
+    auto& get_buffer_impl();
+    const auto& get_buffer_impl() const;
+
+    template<IsBitset Other>
+        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    void resize_to_fit(const Other& other);
+
+    template<IsBitset Other>
+        requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
+    void init_from_view(const Other& other);
+
+private:
+    bool m_default_bit_value;
+    Builder<Vector<Block>> m_blocks;
+
+    ByteBuffer m_buffer;
 };
 
 /**
@@ -361,24 +365,22 @@ template<IsUnsignedIntegral Block, typename Tag>
 class View<Bitset<Block, Tag>>
 {
 public:
+    /**
+     * Type declarations
+     */
+
     using BlockType = Block;
     using TagType = Tag;
 
     using BitsetLayout = Layout<Bitset<Block, Tag>>;
     using BitsetView = View<Bitset<Block, Tag>>;
     using BitsetConstView = ConstView<Bitset<Block, Tag>>;
-    using const_iterator = typename BitsetUtils::const_iterator<Block>;
+    using ConstIterator = typename BitsetUtils::ConstIterator<Block>;
 
-private:
-    uint8_t* m_buf;
+    /**
+     * Constructors
+     */
 
-    /// @brief Default constructor to make view a trivial data type and serializable
-    View() = default;
-
-    template<typename>
-    friend class Builder;
-
-public:
     /// @brief Constructor to interpret raw data created by its corresponding builder
     /// @param buf
     explicit View(uint8_t* buf);
@@ -407,10 +409,10 @@ public:
      * Iterators
      */
 
-    const_iterator begin();
-    const_iterator begin() const;
-    const_iterator end();
-    const_iterator end() const;
+    ConstIterator begin();
+    ConstIterator begin() const;
+    ConstIterator end();
+    ConstIterator end() const;
 
     /**
      * Getters
@@ -418,13 +420,16 @@ public:
 
     uint8_t* buffer();
     const uint8_t* buffer() const;
-    buffer_size_type buffer_size() const;
+    BufferSizeType buffer_size() const;
 
     bool& get_default_bit_value();
     bool get_default_bit_value() const;
 
     View<Vector<Block>> get_blocks();
     ConstView<Vector<Block>> get_blocks() const;
+
+private:
+    uint8_t* m_buf;
 };
 
 /**
@@ -435,24 +440,22 @@ template<IsUnsignedIntegral Block, typename Tag>
 class ConstView<Bitset<Block, Tag>>
 {
 public:
+    /**
+     * Type declarations
+     */
+
     using BlockType = Block;
     using TagType = Tag;
 
     using BitsetLayout = Layout<Bitset<Block, Tag>>;
     using BitsetView = View<Bitset<Block, Tag>>;
     using BitsetConstView = ConstView<Bitset<Block, Tag>>;
-    using const_iterator = typename BitsetUtils::const_iterator<Block>;
+    using ConstIterator = typename BitsetUtils::ConstIterator<Block>;
 
-private:
-    const uint8_t* m_buf;
+    /**
+     * Constructors
+     */
 
-    /// @brief Default constructor to make view a trivial data type and serializable
-    ConstView() = default;
-
-    template<typename>
-    friend class Builder;
-
-public:
     /// @brief Constructor to interpret raw data created by its corresponding builder
     /// @param data
     ConstView(const uint8_t* data);
@@ -487,10 +490,10 @@ public:
      * Iterators
      */
 
-    const_iterator begin();
-    const_iterator begin() const;
-    const_iterator end();
-    const_iterator end() const;
+    ConstIterator begin();
+    ConstIterator begin() const;
+    ConstIterator end();
+    ConstIterator end() const;
 
     /**
      * Getters
@@ -498,7 +501,7 @@ public:
 
     const uint8_t* buffer() const;
 
-    buffer_size_type buffer_size() const;
+    BufferSizeType buffer_size() const;
 
     bool get_default_bit_value();
 
@@ -507,6 +510,9 @@ public:
     ConstView<Vector<Block>> get_blocks();
 
     ConstView<Vector<Block>> get_blocks() const;
+
+private:
+    const uint8_t* m_buf;
 };
 
 /**
@@ -678,7 +684,7 @@ size_t BitsetUtils::count(const B& bitset)
 }
 
 template<IsUnsignedIntegral Block>
-void BitsetUtils::const_iterator<Block>::next_set_bit()
+void BitsetUtils::ConstIterator<Block>::next_set_bit()
 {
     assert(m_pos != m_end_pos);
     do
@@ -722,12 +728,12 @@ void BitsetUtils::const_iterator<Block>::next_set_bit()
 }
 
 template<IsUnsignedIntegral Block>
-BitsetUtils::const_iterator<Block>::const_iterator() : m_blocks(nullptr), m_num_blocks(0), m_block_index(0), m_bit_index(-1)
+BitsetUtils::ConstIterator<Block>::ConstIterator() : m_blocks(nullptr), m_num_blocks(0), m_block_index(0), m_bit_index(-1)
 {
 }
 
 template<IsUnsignedIntegral Block>
-BitsetUtils::const_iterator<Block>::const_iterator(bool default_bit_value, const Block* blocks, size_t num_blocks, bool begin) :
+BitsetUtils::ConstIterator<Block>::ConstIterator(bool default_bit_value, const Block* blocks, size_t num_blocks, bool begin) :
     m_blocks(blocks),
     m_num_blocks(num_blocks),
     m_block_index(0),
@@ -759,7 +765,7 @@ BitsetUtils::const_iterator<Block>::const_iterator(bool default_bit_value, const
 }
 
 template<IsUnsignedIntegral Block>
-size_t BitsetUtils::const_iterator<Block>::const_iterator::operator*() const
+size_t BitsetUtils::ConstIterator<Block>::ConstIterator::operator*() const
 {
     // Do not allow interpreting end as position.
     assert(m_pos < m_end_pos);
@@ -767,28 +773,28 @@ size_t BitsetUtils::const_iterator<Block>::const_iterator::operator*() const
 }
 
 template<IsUnsignedIntegral Block>
-BitsetUtils::const_iterator<Block>& BitsetUtils::const_iterator<Block>::operator++()
+BitsetUtils::ConstIterator<Block>& BitsetUtils::ConstIterator<Block>::operator++()
 {
     next_set_bit();
     return *this;
 }
 
 template<IsUnsignedIntegral Block>
-BitsetUtils::const_iterator<Block> BitsetUtils::const_iterator<Block>::operator++(int)
+BitsetUtils::ConstIterator<Block> BitsetUtils::ConstIterator<Block>::operator++(int)
 {
-    const_iterator tmp = *this;
+    ConstIterator tmp = *this;
     ++(*this);
     return tmp;
 }
 
 template<IsUnsignedIntegral Block>
-bool BitsetUtils::const_iterator<Block>::const_iterator::operator==(const const_iterator& other) const
+bool BitsetUtils::ConstIterator<Block>::ConstIterator::operator==(const ConstIterator& other) const
 {
     return m_pos == other.m_pos;
 }
 
 template<IsUnsignedIntegral Block>
-bool BitsetUtils::const_iterator<Block>::const_iterator::operator!=(const const_iterator& other) const
+bool BitsetUtils::ConstIterator<Block>::ConstIterator::operator!=(const ConstIterator& other) const
 {
     return !(*this == other);
 }
@@ -837,7 +843,7 @@ size_t Builder<Bitset<Block, Tag>>::finish_impl(size_t pos, ByteBuffer& out)
     data_pos += m_buffer.write_padding(pos + data_pos, calculate_amount_padding(data_pos, BitsetLayout::final_alignment));
 
     /* Write the size of the buffer to the beginning. */
-    out.write(pos + BitsetLayout::buffer_size_position, static_cast<buffer_size_type>(data_pos));
+    out.write(pos + BitsetLayout::buffer_size_position, static_cast<BufferSizeType>(data_pos));
     out.set_size(data_pos);
 
     return data_pos;
@@ -1177,15 +1183,15 @@ std::size_t Builder<Bitset<Block, Tag>>::next_set_bit(std::size_t position) cons
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-Builder<Bitset<Block, Tag>>::const_iterator Builder<Bitset<Block, Tag>>::begin() const
+Builder<Bitset<Block, Tag>>::ConstIterator Builder<Bitset<Block, Tag>>::begin() const
 {
-    return const_iterator(m_default_bit_value, m_blocks.data(), m_blocks.size(), true);
+    return ConstIterator(m_default_bit_value, m_blocks.data(), m_blocks.size(), true);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-Builder<Bitset<Block, Tag>>::const_iterator Builder<Bitset<Block, Tag>>::end() const
+Builder<Bitset<Block, Tag>>::ConstIterator Builder<Bitset<Block, Tag>>::end() const
 {
-    return const_iterator(m_default_bit_value, m_blocks.data(), m_blocks.size(), false);
+    return ConstIterator(m_default_bit_value, m_blocks.data(), m_blocks.size(), false);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
@@ -1251,27 +1257,27 @@ size_t View<Bitset<Block, Tag>>::count() const
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-View<Bitset<Block, Tag>>::const_iterator View<Bitset<Block, Tag>>::begin()
+View<Bitset<Block, Tag>>::ConstIterator View<Bitset<Block, Tag>>::begin()
 {
-    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true);
+    return ConstIterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-View<Bitset<Block, Tag>>::const_iterator View<Bitset<Block, Tag>>::begin() const
+View<Bitset<Block, Tag>>::ConstIterator View<Bitset<Block, Tag>>::begin() const
 {
-    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true);
+    return ConstIterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-View<Bitset<Block, Tag>>::const_iterator View<Bitset<Block, Tag>>::end()
+View<Bitset<Block, Tag>>::ConstIterator View<Bitset<Block, Tag>>::end()
 {
-    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), false);
+    return ConstIterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), false);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-View<Bitset<Block, Tag>>::const_iterator View<Bitset<Block, Tag>>::end() const
+View<Bitset<Block, Tag>>::ConstIterator View<Bitset<Block, Tag>>::end() const
 {
-    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), false);
+    return ConstIterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), false);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
@@ -1287,11 +1293,11 @@ const uint8_t* View<Bitset<Block, Tag>>::buffer() const
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-buffer_size_type View<Bitset<Block, Tag>>::buffer_size() const
+BufferSizeType View<Bitset<Block, Tag>>::buffer_size() const
 {
     assert(m_buf);
-    assert(test_correct_alignment<buffer_size_type>(m_buf + BitsetLayout::buffer_size_position));
-    return read_value<buffer_size_type>(m_buf + BitsetLayout::buffer_size_position);
+    assert(test_correct_alignment<BufferSizeType>(m_buf + BitsetLayout::buffer_size_position));
+    return read_value<BufferSizeType>(m_buf + BitsetLayout::buffer_size_position);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
@@ -1368,27 +1374,27 @@ size_t ConstView<Bitset<Block, Tag>>::count() const
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-ConstView<Bitset<Block, Tag>>::const_iterator ConstView<Bitset<Block, Tag>>::begin()
+ConstView<Bitset<Block, Tag>>::ConstIterator ConstView<Bitset<Block, Tag>>::begin()
 {
-    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true);
+    return ConstIterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-ConstView<Bitset<Block, Tag>>::const_iterator ConstView<Bitset<Block, Tag>>::begin() const
+ConstView<Bitset<Block, Tag>>::ConstIterator ConstView<Bitset<Block, Tag>>::begin() const
 {
-    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true);
+    return ConstIterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), true);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-ConstView<Bitset<Block, Tag>>::const_iterator ConstView<Bitset<Block, Tag>>::end()
+ConstView<Bitset<Block, Tag>>::ConstIterator ConstView<Bitset<Block, Tag>>::end()
 {
-    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), false);
+    return ConstIterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), false);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-ConstView<Bitset<Block, Tag>>::const_iterator ConstView<Bitset<Block, Tag>>::end() const
+ConstView<Bitset<Block, Tag>>::ConstIterator ConstView<Bitset<Block, Tag>>::end() const
 {
-    return const_iterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), false);
+    return ConstIterator(get_default_bit_value(), get_blocks().data(), get_blocks().size(), false);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
@@ -1398,11 +1404,11 @@ const uint8_t* ConstView<Bitset<Block, Tag>>::buffer() const
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-buffer_size_type ConstView<Bitset<Block, Tag>>::buffer_size() const
+BufferSizeType ConstView<Bitset<Block, Tag>>::buffer_size() const
 {
     assert(m_buf);
-    assert(test_correct_alignment<buffer_size_type>(m_buf + BitsetLayout::buffer_size_position));
-    return read_value<buffer_size_type>(m_buf + BitsetLayout::buffer_size_position);
+    assert(test_correct_alignment<BufferSizeType>(m_buf + BitsetLayout::buffer_size_position));
+    return read_value<BufferSizeType>(m_buf + BitsetLayout::buffer_size_position);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>

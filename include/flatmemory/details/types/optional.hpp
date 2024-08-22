@@ -44,7 +44,7 @@ namespace flatmemory
  * ID class for non-trivial Optional type.
  *
  * The idea is to encode in the prefix size whether the optional holds a value of type T as follows:
- * If the size prefix = sizeof(buffer_size_type), then the optional does not hold a value.
+ * If the size prefix = sizeof(BufferSizeType), then the optional does not hold a value.
  * This works because hashing or equality will be correct
  */
 
@@ -63,10 +63,10 @@ template<IsTriviallyCopyableOrNonTrivialType T>
 class Layout<Optional<T>>
 {
 public:
-    static constexpr size_t final_alignment = calculate_final_alignment<buffer_size_type, T>();
+    static constexpr size_t final_alignment = calculate_final_alignment<BufferSizeType, T>();
 
     static constexpr size_t buffer_size_position = 0;
-    static constexpr size_t buffer_size_end = buffer_size_position + sizeof(buffer_size_type);
+    static constexpr size_t buffer_size_end = buffer_size_position + sizeof(BufferSizeType);
     static constexpr size_t buffer_size_padding = calculate_amount_padding(buffer_size_end, calculate_data_alignment<T>());
     static constexpr size_t data_position = buffer_size_end + buffer_size_padding;
 
@@ -101,7 +101,8 @@ public:
      * Constructors and assignments
      */
 
-    Builder() requires(std::default_initializable<typename maybe_builder<T>::type>);
+    Builder()
+        requires(std::default_initializable<typename maybe_builder<T>::type>);
     Builder(std::nullopt_t);
     Builder(const Builder& other);
     Builder(Builder&& other);
@@ -283,7 +284,7 @@ size_t Builder<Optional<T>>::finish_impl(size_t pos, ByteBuffer& out)
     }
 
     /* Write the size of the buffer to the beginning. */
-    out.write(pos + Layout<Vector<T>>::buffer_size_position, static_cast<buffer_size_type>(data_pos));
+    out.write(pos + Layout<Vector<T>>::buffer_size_position, static_cast<BufferSizeType>(data_pos));
     out.set_size(data_pos);
 
     return data_pos;
@@ -306,7 +307,9 @@ const auto& Builder<Optional<T>>::get_buffer_impl() const
  */
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Optional<T>>::Builder() requires(std::default_initializable<typename Builder<Optional<T>>::T_>) : m_data(Builder<Optional<T>>::T_()), m_buffer()
+Builder<Optional<T>>::Builder()
+    requires(std::default_initializable<typename Builder<Optional<T>>::T_>)
+    : m_data(Builder<Optional<T>>::T_()), m_buffer()
 {
 }
 
