@@ -7,6 +7,13 @@ file(GLOB_RECURSE FLATMEMORY_PUBLIC_HEADER_FILES
 
 add_library(flatmemory STATIC ${FLATMEMORY_SRC_FILES} ${FLATMEMORY_PRIVATE_HEADER_FILES} ${FLATMEMORY_PUBLIC_HEADER_FILES})
 
+find_package(flatbuffers REQUIRED COMPONENTS flatbuffers PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+if(flatbuffers_FOUND)
+  include_directories(${flatbuffers_INCLUDE_DIRS})
+  message(STATUS "Found flatbuffers: ${flatbuffers_DIR} (found version ${flatbuffers_VERSION})")
+endif()
+target_link_libraries(flatmemory flatbuffers::flatbuffers)
+
 # Create an alias for simpler reference
 add_library(flatmemory::flatmemory ALIAS flatmemory)
 
