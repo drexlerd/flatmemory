@@ -30,18 +30,18 @@ TEST(FlatmemoryTests, TypesTypedVectorDefaultConstructorTest)
 {
     {
         // 1D
-        auto builder = Builder<TypedVector<int16_t>>();
+        auto builder = Builder<Vector2<int16_t>>();
         builder.finish();
         EXPECT_EQ(builder.size(), 0);
-        EXPECT_EQ(builder.GetBuffer().size(), 4);
+        EXPECT_EQ(builder.get_buffer().size(), 4);
     }
 
     {
         // 2D
-        auto builder = Builder<TypedVector<TypedVector<int16_t>>>();
+        auto builder = Builder<Vector2<Vector2<int16_t>>>();
         builder.finish();
         EXPECT_EQ(builder.size(), 0);
-        EXPECT_EQ(builder.GetBuffer().size(), 4);
+        EXPECT_EQ(builder.get_buffer().size(), 4);
     }
 }
 
@@ -49,18 +49,18 @@ TEST(FlatmemoryTests, TypesTypedVectorConstructorTest)
 {
     {
         // 1D
-        auto builder = Builder<TypedVector<int16_t>>(3);
+        auto builder = Builder<Vector2<int16_t>>(3);
         builder.finish();
         EXPECT_EQ(builder.size(), 3);
-        EXPECT_EQ(builder.GetBuffer().size(), 10);
+        EXPECT_EQ(builder.get_buffer().size(), 10);
     }
 
     {
         // 2D
-        auto builder = Builder<TypedVector<TypedVector<int16_t>>>(3);
+        auto builder = Builder<Vector2<Vector2<int16_t>>>(3);
         builder.finish();
         EXPECT_EQ(builder.size(), 3);
-        EXPECT_EQ(builder.GetBuffer().size(), 13);
+        EXPECT_EQ(builder.get_buffer().size(), 13);
     }
 }
 }

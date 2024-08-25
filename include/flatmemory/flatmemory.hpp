@@ -27,8 +27,9 @@
 #include "flatmemory/details/types/formatter_impl.hpp"
 #include "flatmemory/details/types/optional.hpp"
 #include "flatmemory/details/types/tuple.hpp"
-#include "flatmemory/details/types/typed_vector.hpp"
+#include "flatmemory/details/types/tuple2.hpp"
 #include "flatmemory/details/types/vector.hpp"
+#include "flatmemory/details/types/vector2.hpp"
 
 /**
  * Containers

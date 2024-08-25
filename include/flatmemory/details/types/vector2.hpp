@@ -41,15 +41,15 @@ namespace flatmemory
  * ID class for non-trivial Vector type.
  */
 template<IsTrivialFlexbufferOrNonTrivialType T>
-struct TypedVector : public NonTrivialType
+struct Vector2 : public NonTrivialType
 {
     /// @brief Non-trivial copy-constructor
     /// @param other
-    TypedVector(const TypedVector& other) {}
+    Vector2(const Vector2& other) {}
 };
 
 template<IsTrivialFlexbufferType T>
-class Builder<TypedVector<T>> : public IBuilder<Builder<TypedVector<T>>>
+class Builder<Vector2<T>> : public IBuilder<Builder<Vector2<T>>>
 {
 public:
     using ValueType = T;
@@ -80,7 +80,7 @@ public:
             });
     }
 
-    const std::vector<uint8_t>& GetBuffer() const { return m_fbb.GetBuffer(); }
+    const std::vector<uint8_t>& get_buffer() const { return m_fbb.GetBuffer(); }
 
     /**
      * Element access
@@ -126,7 +126,7 @@ private:
 };
 
 template<IsNonTrivialType T>
-class Builder<TypedVector<T>> : public IBuilder<Builder<TypedVector<T>>>
+class Builder<Vector2<T>> : public IBuilder<Builder<Vector2<T>>>
 {
 public:
     using ValueType = T;
@@ -156,7 +156,7 @@ public:
             });
     }
 
-    const std::vector<uint8_t>& GetBuffer() const { return m_fbb.GetBuffer(); }
+    const std::vector<uint8_t>& get_buffer() const { return m_fbb.GetBuffer(); }
 
     /**
      * Element access
@@ -206,10 +206,10 @@ private:
  */
 
 template<IsTrivialFlexbufferType T>
-class View<TypedVector<T>>
+class View<Vector2<T>>
 {
 private:
-    flexbuffers::TypedVector m_data;
+    flexbuffers::Vector m_data;
 
 public:
     /**
@@ -238,7 +238,7 @@ public:
 
         if (!success)
         {
-            throw std::logic_error("View<TypedVector<T>>::mutate_scalar_value: error mutating data.");
+            throw std::logic_error("View<Vector<T>>::mutate_scalar_value: error mutating data.");
         }
     }
 
@@ -246,10 +246,10 @@ public:
 };
 
 template<IsNonTrivialType T>
-class View<TypedVector<T>>
+class View<Vector2<T>>
 {
 private:
-    flexbuffers::TypedVector m_data;
+    flexbuffers::Vector m_data;
 
 public:
     /**
@@ -279,10 +279,10 @@ public:
  * ConstView
  */
 template<IsTrivialFlexbufferType T>
-class ConstView<TypedVector<T>>
+class ConstView<Vector2<T>>
 {
 private:
-    flexbuffers::TypedVector m_data;
+    flexbuffers::Vector m_data;
 
 public:
     /**
@@ -309,10 +309,10 @@ public:
 };
 
 template<IsNonTrivialType T>
-class ConstView<TypedVector<T>>
+class ConstView<Vector2<T>>
 {
 private:
-    flexbuffers::TypedVector m_data;
+    flexbuffers::Vector m_data;
 
 public:
     /**
