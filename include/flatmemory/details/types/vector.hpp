@@ -115,7 +115,7 @@ public:
     /// @brief Default constructor only enabled if T is default constructible
     Builder();
     explicit Builder(size_t count);
-    explicit Builder(size_t count, const T_& value);
+    Builder(size_t count, const T_& value);
 
     /**
      * Element access

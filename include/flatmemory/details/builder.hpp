@@ -83,6 +83,18 @@ struct maybe_builder<T, false>
 {
     using type = Builder<T>;
 };
+
+template<IsTrivialFlexbufferOrNonTrivialType T, bool = IsTriviallyCopyable<T>>
+struct maybe_builder2
+{
+    using type = T;
+};
+
+template<IsTrivialFlexbufferOrNonTrivialType T>
+struct maybe_builder2<T, false>
+{
+    using type = Builder<T>;
+};
 }
 
 #endif

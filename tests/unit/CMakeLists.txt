@@ -13,6 +13,7 @@ add_executable(${TEST_NAME}
     "types/optional.cpp"
     "types/tuple.cpp"
     "types/vector.cpp"
+    "types/typed_vector.cpp"
 )
 
 target_link_libraries(${TEST_NAME}

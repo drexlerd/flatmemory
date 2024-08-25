@@ -19,6 +19,7 @@
 #define FLATMEMORY_CONCEPTS_HPP_
 
 #include <concepts>
+#include <string>
 #include <type_traits>
 
 namespace flatmemory
@@ -39,13 +40,18 @@ concept IsTriviallyCopyable = std::is_trivially_copyable_v<T>;
 template<typename T>
 concept IsTriviallyCopyableOrNonTrivialType = (IsTriviallyCopyable<T> || IsNonTrivialType<T>);
 
-// Concept to check whether T is integral
-template<typename T>
-concept IsIntegral = std::is_integral_v<T>;
-
 // Concept to check whether T is an unsigned integral
 template<typename T>
-concept IsUnsignedIntegral = IsIntegral<T> && std::is_unsigned_v<T>;
+concept IsUnsignedIntegral = std::is_integral_v<T> && std::is_unsigned_v<T>;
+
+template<typename T>
+concept IsTrivialFlexbufferType =
+    std::same_as<int8_t, T> || std::same_as<int16_t, T> || std::same_as<int32_t, T> || std::same_as<int64_t, T> || std::same_as<uint8_t, T>
+    || std::same_as<uint16_t, T> || std::same_as<uint32_t, T> || std::same_as<uint64_t, T> || std::same_as<float, T> || std::same_as<double, T>
+    || std::same_as<bool, T> || std::same_as<std::string, T> || std::same_as<std::nullptr_t, T>;
+
+template<typename T>
+concept IsTrivialFlexbufferOrNonTrivialType = (IsTrivialFlexbufferType<T> || IsNonTrivialType<T>);
 }
 
 #endif
