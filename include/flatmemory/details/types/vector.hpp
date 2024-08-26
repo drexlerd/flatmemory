@@ -23,7 +23,7 @@
 #include "flatmemory/details/byte_buffer.hpp"
 #include "flatmemory/details/byte_buffer_utils.hpp"
 #include "flatmemory/details/layout.hpp"
-#include "flatmemory/details/layout_utils.hpp"
+#include "flatmemory/details/types.hpp"
 #include "flatmemory/details/types/declarations.hpp"
 #include "flatmemory/details/types/formatter.hpp"
 
@@ -59,15 +59,9 @@ template<IsTriviallyCopyableOrNonTrivialType T>
 class Layout<Vector<T>>
 {
 public:
-    static constexpr size_t final_alignment = calculate_final_alignment<BufferSizeType, OffsetType, VectorSizeType, T>();
-
     static constexpr size_t buffer_size_position = 0;
-    static constexpr size_t buffer_size_end = buffer_size_position + sizeof(BufferSizeType);
-    static constexpr size_t buffer_size_padding = calculate_amount_padding(buffer_size_end, calculate_header_alignment<VectorSizeType>());
-    static constexpr size_t vector_size_position = buffer_size_end + buffer_size_padding;
-    static constexpr size_t vector_size_end = vector_size_position + sizeof(VectorSizeType);
-    static constexpr size_t vector_size_padding = calculate_amount_padding(vector_size_end, calculate_data_alignment<T>());
-    static constexpr size_t vector_data_position = vector_size_end + vector_size_padding;
+    static constexpr size_t vector_size_position = buffer_size_position + sizeof(BufferSizeType);
+    static constexpr size_t vector_data_position = vector_size_position + sizeof(VectorSizeType);
 
     constexpr void print() const;
 };
@@ -378,13 +372,8 @@ template<IsTriviallyCopyableOrNonTrivialType T>
 constexpr void Layout<Vector<T>>::print() const
 {
     std::cout << "buffer_size_position: " << buffer_size_position << "\n"
-              << "buffer_size_end: " << buffer_size_end << "\n"
-              << "buffer_size_padding: " << buffer_size_padding << "\n"
               << "vector_size_position: " << vector_size_position << "\n"
-              << "vector_size_end: " << vector_size_end << "\n"
-              << "vector_data_position: " << vector_data_position << "\n"
-              << "vector_size_padding: " << vector_size_padding << "\n"
-              << "final_alignment: " << final_alignment << std::endl;
+              << "vector_data_position: " << vector_data_position << std::endl;
 }
 
 /* Operators */
@@ -445,7 +434,7 @@ bool operator!=(const V1& lhs, const V2& rhs)
 template<IsTriviallyCopyableOrNonTrivialType T>
 void Builder<Vector<T>>::finish_impl()
 {
-    this->finish(0, m_buffer);
+    m_buffer.set_size(this->finish(0, m_buffer));
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
@@ -453,7 +442,6 @@ size_t Builder<Vector<T>>::finish_impl(size_t pos, ByteBuffer& out)
 {
     /* Write the vector size */
     out.write(pos + Layout<Vector<T>>::vector_size_position, m_data.size());
-    out.write_padding(pos + Layout<Vector<T>>::vector_size_end, Layout<Vector<T>>::vector_size_padding);
 
     size_t data_pos = Layout<Vector<T>>::vector_data_position;
 
@@ -467,14 +455,11 @@ size_t Builder<Vector<T>>::finish_impl(size_t pos, ByteBuffer& out)
     else
     {
         /* Write the offset inline and data at offset. */
-        size_t offset_pos = Layout<Vector<T>>::vector_data_position;
+        size_t offset_pos = data_pos;
         /* Write sufficiently much padding before the data. */
-        size_t offset_end = offset_pos + m_data.size() * sizeof(OffsetType);
-        size_t offset_padding = calculate_amount_padding(offset_end, Layout<T>::final_alignment);
-        out.write_padding(pos + offset_end, offset_padding);
+        data_pos = offset_pos + m_data.size() * sizeof(OffsetType);
 
         /* Set data pos after the offset locations. */
-        data_pos = offset_end + offset_padding;
         for (size_t i = 0; i < m_data.size(); ++i)
         {
             /* Write the distance between written data pos and offset pos at the offset pos.
@@ -484,15 +469,11 @@ size_t Builder<Vector<T>>::finish_impl(size_t pos, ByteBuffer& out)
 
             /* Write the data at offset. */
             data_pos += m_data[i].finish(pos + data_pos, out);
-            data_pos += out.write_padding(pos + data_pos, calculate_amount_padding(data_pos, Layout<Vector<T>>::final_alignment));
         }
     }
-    /* Write the final padding. */
-    data_pos += out.write_padding(pos + data_pos, calculate_amount_padding(data_pos, Layout<Vector<T>>::final_alignment));
 
     /* Write the size of the buffer to the beginning. */
     out.write(pos + Layout<Vector<T>>::buffer_size_position, static_cast<BufferSizeType>(data_pos));
-    out.set_size(data_pos);
 
     return data_pos;
 }
@@ -655,7 +636,6 @@ decltype(auto) View<Vector<T>>::operator[](size_t pos)
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
     if constexpr (is_trivial)
     {
-        assert(test_correct_alignment<T>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(T)));
         return read_value<T>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(T));
     }
     else
@@ -673,7 +653,6 @@ decltype(auto) View<Vector<T>>::operator[](size_t pos) const
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
     if constexpr (is_trivial)
     {
-        assert(test_correct_alignment<T>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(T)));
         return read_value<T>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(T));
     }
     else
@@ -736,7 +715,6 @@ decltype(auto) View<Vector<T>>::Iterator::operator*() const
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
     if constexpr (is_trivial)
     {
-        assert(test_correct_alignment<T>(m_buf));
         return read_value<T>(m_buf);
     }
     else
@@ -818,7 +796,6 @@ decltype(auto) View<Vector<T>>::ConstIterator::operator*() const
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
     if constexpr (is_trivial)
     {
-        assert(test_correct_alignment<T>(m_buf));
         return read_value<T>(m_buf);
     }
     else
@@ -894,7 +871,6 @@ template<IsTriviallyCopyableOrNonTrivialType T>
 BufferSizeType View<Vector<T>>::buffer_size() const
 {
     assert(m_buf);
-    assert(test_correct_alignment<BufferSizeType>(m_buf + Layout<Vector<T>>::buffer_size_position));
     return read_value<BufferSizeType>(m_buf + Layout<Vector<T>>::buffer_size_position);
 }
 
@@ -902,7 +878,6 @@ template<IsTriviallyCopyableOrNonTrivialType T>
 size_t View<Vector<T>>::size() const
 {
     assert(m_buf);
-    assert(test_correct_alignment<VectorSizeType>(m_buf + Layout<Vector<T>>::vector_size_position));
     return read_value<VectorSizeType>(m_buf + Layout<Vector<T>>::vector_size_position);
 }
 
@@ -944,7 +919,6 @@ decltype(auto) ConstView<Vector<T>>::operator[](size_t pos) const
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
     if constexpr (is_trivial)
     {
-        assert(test_correct_alignment<T>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(T)));
         return read_value<T>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(T));
     }
     else
@@ -989,7 +963,6 @@ decltype(auto) ConstView<Vector<T>>::ConstIterator::operator*() const
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
     if constexpr (is_trivial)
     {
-        assert(test_correct_alignment<T>(m_buf));
         return read_value<T>(m_buf);
     }
     else
@@ -1065,7 +1038,6 @@ template<IsTriviallyCopyableOrNonTrivialType T>
 BufferSizeType ConstView<Vector<T>>::buffer_size() const
 {
     assert(m_buf);
-    assert(test_correct_alignment<BufferSizeType>(m_buf + Layout<Vector<T>>::buffer_size_position));
     return read_value<BufferSizeType>(m_buf + Layout<Vector<T>>::buffer_size_position);
 }
 
@@ -1073,7 +1045,6 @@ template<IsTriviallyCopyableOrNonTrivialType T>
 size_t ConstView<Vector<T>>::size() const
 {
     assert(m_buf);
-    assert(test_correct_alignment<VectorSizeType>(m_buf + Layout<Vector<T>>::vector_size_position));
     return read_value<VectorSizeType>(m_buf + Layout<Vector<T>>::vector_size_position);
 }
 

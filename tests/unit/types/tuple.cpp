@@ -160,7 +160,6 @@ TEST(FlatmemoryTests, TypesTupleSerializeViewsTest)
 TEST(FlatmemoryTests, TypesTupleEmptyTest)
 {
     // Test empty tuple
-    EXPECT_EQ((Layout<Tuple<>>::final_alignment), 4);
     EXPECT_EQ(IsTriviallyCopyable<View<Tuple<>>>, true);
     EXPECT_EQ(IsTriviallyCopyable<Tuple<>>, false);
 
@@ -178,7 +177,6 @@ TEST(FlatmemoryTests, TypesTupleTest)
     // ||  |  ||  |  ||  |  ||
     // ||  5  ||  6  ||  7  ||
     // ||__|__||__|__||__|__||
-    EXPECT_EQ((Layout<Tuple<uint16_t, uint16_t, uint16_t>>::final_alignment), 4);
     EXPECT_EQ((IsTriviallyCopyable<View<Tuple<uint16_t, uint16_t, uint16_t>>>), true);
     EXPECT_EQ((IsTriviallyCopyable<Tuple<uint16_t, uint16_t, uint16_t>>), false);
 
@@ -188,7 +186,7 @@ TEST(FlatmemoryTests, TypesTupleTest)
     builder.get<2>() = 7;
     builder.finish();
     EXPECT_NE(builder.buffer().data(), nullptr);
-    EXPECT_EQ(builder.buffer().size(), 12);
+    EXPECT_EQ(builder.buffer().size(), 10);
 
     auto view = View<Tuple<int16_t, uint16_t, uint16_t>>(builder.buffer().data());
     EXPECT_EQ(view.get<0>(), 5);
@@ -203,7 +201,6 @@ TEST(FlatmemoryTests, TypesTuplePaddingTest)
     // ||  |  ||  |  ||  |  |  |  ||  |  ||  |  ||
     // ||  5  ||  P  ||     6     ||  7  ||  P  ||
     // ||__|__||__|__||__|__|__|__||__|__||__|__||
-    EXPECT_EQ((Layout<Tuple<int16_t, int32_t, uint16_t>>::final_alignment), 4);
     EXPECT_EQ((IsTriviallyCopyable<View<Tuple<int16_t, int32_t, uint16_t>>>), true);
     EXPECT_EQ((IsTriviallyCopyable<Tuple<int16_t, int32_t, uint16_t>>), false);
 
@@ -213,7 +210,7 @@ TEST(FlatmemoryTests, TypesTuplePaddingTest)
     builder.get<2>() = 7;
     builder.finish();
     EXPECT_NE(builder.buffer().data(), nullptr);
-    EXPECT_EQ(builder.buffer().size(), 16);
+    EXPECT_EQ(builder.buffer().size(), 12);
 
     auto view = View<Tuple<int16_t, int32_t, uint16_t>>(builder.buffer().data());
     EXPECT_EQ(view.get<0>(), 5);
@@ -223,7 +220,6 @@ TEST(FlatmemoryTests, TypesTuplePaddingTest)
 
 TEST(FlatmemoryTests, TypesTupleVectorTest)
 {
-    EXPECT_EQ((Layout<Tuple<Vector<uint64_t>>>::final_alignment), 8);
     EXPECT_EQ((IsTriviallyCopyable<View<Tuple<Vector<uint64_t>>>>), true);
     EXPECT_EQ((IsTriviallyCopyable<Tuple<Vector<uint64_t>>>), false);
 
@@ -239,7 +235,6 @@ TEST(FlatmemoryTests, TypesTupleVectorTest)
 
 TEST(FlatmemoryTests, TypesTupleVector2Test)
 {
-    EXPECT_EQ((Layout<Tuple<Vector<uint64_t>, Vector<uint16_t>>>::final_alignment), 8);
     EXPECT_EQ((IsTriviallyCopyable<View<Tuple<Vector<uint64_t>, Vector<uint16_t>>>>), true);
     EXPECT_EQ((IsTriviallyCopyable<Tuple<Vector<uint64_t>, Vector<uint16_t>>>), false);
 
@@ -248,7 +243,7 @@ TEST(FlatmemoryTests, TypesTupleVector2Test)
     builder.get<1>().resize(4);
     builder.finish();
     EXPECT_NE(builder.buffer().data(), nullptr);
-    EXPECT_EQ(builder.buffer().size(), 64);
+    EXPECT_EQ(builder.buffer().size(), 60);
 
     auto view = View<Tuple<Vector<uint64_t>, Vector<uint16_t>>>(builder.buffer().data());
     EXPECT_EQ(view.get<0>().size(), 3);
@@ -257,7 +252,6 @@ TEST(FlatmemoryTests, TypesTupleVector2Test)
 
 TEST(FlatmemoryTests, TypesTupleVectorVectorTest)
 {
-    EXPECT_EQ((Layout<Tuple<Vector<Vector<uint8_t>>>>::final_alignment), 4);
     EXPECT_EQ((IsTriviallyCopyable<View<Tuple<Vector<Vector<uint8_t>>>>>), true);
     EXPECT_EQ((IsTriviallyCopyable<Tuple<Vector<Vector<uint8_t>>>>), false);
 
@@ -283,7 +277,6 @@ struct StructTest
 
 TEST(FlatmemoryTests, TypesTupleStructTest)
 {
-    EXPECT_EQ((Layout<Tuple<StructTest>>::final_alignment), 8);
     EXPECT_EQ((IsTriviallyCopyable<View<Tuple<StructTest>>>), true);
     EXPECT_EQ((IsTriviallyCopyable<Tuple<StructTest>>), false);
 

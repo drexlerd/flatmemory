@@ -30,7 +30,7 @@ TEST(FlatmemoryTests, TypesBitsetDefaultConstructorTest)
     auto builder = Builder<Bitset<uint64_t>>();
     builder.finish();
     EXPECT_FALSE(builder.get_default_bit_value());
-    EXPECT_EQ(builder.get_blocks().size(), 1);
+    EXPECT_EQ(builder.get_blocks().size(), 0);
 }
 
 TEST(FlatmemoryTests, TypesBitsetConstructorSizeTest)
@@ -288,7 +288,7 @@ TEST(FlatmemoryTests, TypesBitsetUnsetAllTest)
 
     builder.unset_all();
     EXPECT_FALSE(builder.get(42));
-    EXPECT_EQ(builder.get_blocks().size(), 1);
+    EXPECT_EQ(builder.get_blocks().size(), 0);
 }
 
 TEST(FlatmemoryTests, TypesBitsetSetTest)

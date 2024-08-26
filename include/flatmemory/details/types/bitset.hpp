@@ -23,7 +23,7 @@
 #include "flatmemory/details/byte_buffer_utils.hpp"
 #include "flatmemory/details/concepts.hpp"
 #include "flatmemory/details/layout.hpp"
-#include "flatmemory/details/layout_utils.hpp"
+#include "flatmemory/details/types.hpp"
 #include "flatmemory/details/types/declarations.hpp"
 #include "flatmemory/details/types/formatter.hpp"
 #include "flatmemory/details/types/vector.hpp"
@@ -57,15 +57,9 @@ template<IsUnsignedIntegral Block, typename Tag>
 class Layout<Bitset<Block, Tag>>
 {
 public:
-    static constexpr size_t final_alignment = calculate_final_alignment<BufferSizeType, bool, Vector<Block>>();
-
     static constexpr size_t buffer_size_position = 0;
-    static constexpr size_t buffer_size_end = buffer_size_position + sizeof(BufferSizeType);
-    static constexpr size_t buffer_size_padding = calculate_amount_padding(buffer_size_end, calculate_header_alignment<bool>());
-    static constexpr size_t default_bit_value_position = buffer_size_end + buffer_size_padding;
-    static constexpr size_t default_bit_value_end = default_bit_value_position + sizeof(bool);
-    static constexpr size_t default_bit_value_padding = calculate_amount_padding(default_bit_value_end, calculate_data_alignment<Vector<Block>>());
-    static constexpr size_t blocks_position = default_bit_value_end + default_bit_value_padding;
+    static constexpr size_t default_bit_value_position = buffer_size_position + sizeof(BufferSizeType);
+    static constexpr size_t blocks_position = default_bit_value_position + sizeof(bool);
 
     constexpr void print() const;
 };
@@ -422,7 +416,6 @@ public:
     const uint8_t* buffer() const;
     BufferSizeType buffer_size() const;
 
-    bool& get_default_bit_value();
     bool get_default_bit_value() const;
 
     View<Vector<Block>> get_blocks();
@@ -503,11 +496,7 @@ public:
 
     BufferSizeType buffer_size() const;
 
-    bool get_default_bit_value();
-
     bool get_default_bit_value() const;
-
-    ConstView<Vector<Block>> get_blocks();
 
     ConstView<Vector<Block>> get_blocks() const;
 
@@ -525,13 +514,8 @@ template<IsUnsignedIntegral Block, typename Tag>
 constexpr void Layout<Bitset<Block, Tag>>::print() const
 {
     std::cout << "buffer_size_position: " << buffer_size_position << "\n"
-              << "buffer_size_end: " << buffer_size_end << "\n"
-              << "buffer_size_padding: " << buffer_size_padding << "\n"
               << "default_bit_value_position: " << default_bit_value_position << "\n"
-              << "default_bit_value_end: " << default_bit_value_end << "\n"
-              << "default_bit_value_padding: " << default_bit_value_padding << "\n"
-              << "blocks_position: " << blocks_position << "\n"
-              << "final_alignment: " << final_alignment << std::endl;
+              << "blocks_position: " << blocks_position << std::endl;
 }
 
 /* Operator */
@@ -739,7 +723,7 @@ BitsetUtils::ConstIterator<Block>::ConstIterator(bool default_bit_value, const B
     m_block_index(0),
     m_bit_index(-1),
     m_cur_block(num_blocks > 0 ? m_blocks[m_block_index] : block_zeroes<Block>),
-    m_end_pos((m_num_blocks + 1) * block_size<Block> - 1),
+    m_end_pos((num_blocks + 1) * block_size<Block> - 1),
     m_pos(begin ? -1 : m_end_pos)
 {
     if (default_bit_value)
@@ -753,6 +737,10 @@ BitsetUtils::ConstIterator<Block>::ConstIterator(bool default_bit_value, const B
         {
             // The first bit is not set, so we need to find it
             next_set_bit();
+        }
+        else if (num_blocks == 0)
+        {
+            m_pos = m_end_pos;
         }
         else
         {
@@ -824,7 +812,7 @@ size_t BitsetUtils::get_offset(size_t position) noexcept
 template<IsUnsignedIntegral Block, typename Tag>
 void Builder<Bitset<Block, Tag>>::finish_impl()
 {
-    this->finish(0, m_buffer);
+    m_buffer.set_size(this->finish(0, m_buffer));
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
@@ -832,19 +820,14 @@ size_t Builder<Bitset<Block, Tag>>::finish_impl(size_t pos, ByteBuffer& out)
 {
     /* Write the default_bit_value. */
     out.write(pos + BitsetLayout::default_bit_value_position, m_default_bit_value);
-    out.write_padding(pos + BitsetLayout::default_bit_value_end, BitsetLayout::default_bit_value_padding);
 
     size_t data_pos = BitsetLayout::blocks_position;
 
     /* Write the blocks inline because there is no other data. */
     data_pos += m_blocks.finish(pos + data_pos, out);
 
-    /* Write the final padding. */
-    data_pos += m_buffer.write_padding(pos + data_pos, calculate_amount_padding(data_pos, BitsetLayout::final_alignment));
-
     /* Write the size of the buffer to the beginning. */
     out.write(pos + BitsetLayout::buffer_size_position, static_cast<BufferSizeType>(data_pos));
-    out.set_size(data_pos);
 
     return data_pos;
 }
@@ -895,14 +878,15 @@ Builder<Bitset<Block, Tag>>::Builder() : Builder(0)
 template<IsUnsignedIntegral Block, typename Tag>
 Builder<Bitset<Block, Tag>>::Builder(std::size_t size) :
     m_default_bit_value(false),
-    m_blocks((size / BitsetUtils::block_size<Block>) +1, BitsetUtils::block_zeroes<Block>)
+    m_blocks((size + BitsetUtils::block_size<Block> - 1) / (BitsetUtils::block_size<Block>), BitsetUtils::block_zeroes<Block>)
 {
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
 Builder<Bitset<Block, Tag>>::Builder(std::size_t size, bool default_bit_value) :
     m_default_bit_value(default_bit_value),
-    m_blocks((size / BitsetUtils::block_size<Block>) +1, default_bit_value ? BitsetUtils::block_ones<Block> : BitsetUtils::block_zeroes<Block>)
+    m_blocks((size + BitsetUtils::block_size<Block> - 1) / (BitsetUtils::block_size<Block>),
+             default_bit_value ? BitsetUtils::block_ones<Block> : BitsetUtils::block_zeroes<Block>)
 {
 }
 
@@ -981,11 +965,7 @@ void Builder<Bitset<Block, Tag>>::unset(std::size_t position)
 template<IsUnsignedIntegral Block, typename Tag>
 void Builder<Bitset<Block, Tag>>::unset_all()
 {
-    assert(m_blocks.size() > 0);
-
-    m_blocks[0] = (m_default_bit_value) ? BitsetUtils::block_ones<Block> : BitsetUtils::block_zeroes<Block>;
-
-    m_blocks.resize(1);
+    m_blocks.clear();
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
@@ -1301,18 +1281,9 @@ BufferSizeType View<Bitset<Block, Tag>>::buffer_size() const
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-bool& View<Bitset<Block, Tag>>::get_default_bit_value()
-{
-    assert(m_buf);
-    assert(test_correct_alignment<bool>(m_buf + BitsetLayout::default_bit_value_position));
-    return read_value<bool>(m_buf + BitsetLayout::default_bit_value_position);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
 bool View<Bitset<Block, Tag>>::get_default_bit_value() const
 {
     assert(m_buf);
-    assert(test_correct_alignment<bool>(m_buf + BitsetLayout::default_bit_value_position));
     return read_value<bool>(m_buf + BitsetLayout::default_bit_value_position);
 }
 
@@ -1412,26 +1383,10 @@ BufferSizeType ConstView<Bitset<Block, Tag>>::buffer_size() const
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-bool ConstView<Bitset<Block, Tag>>::get_default_bit_value()
-{
-    assert(m_buf);
-    assert(test_correct_alignment<bool>(m_buf + BitsetLayout::default_bit_value_position));
-    return read_value<bool>(m_buf + BitsetLayout::default_bit_value_position);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
 bool ConstView<Bitset<Block, Tag>>::get_default_bit_value() const
 {
     assert(m_buf);
-    assert(test_correct_alignment<bool>(m_buf + BitsetLayout::default_bit_value_position));
     return read_value<bool>(m_buf + BitsetLayout::default_bit_value_position);
-}
-
-template<IsUnsignedIntegral Block, typename Tag>
-ConstView<Vector<Block>> ConstView<Bitset<Block, Tag>>::get_blocks()
-{
-    assert(m_buf);
-    return ConstView<Vector<Block>>(m_buf + BitsetLayout::blocks_position);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>

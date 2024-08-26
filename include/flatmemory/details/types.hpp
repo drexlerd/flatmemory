@@ -25,6 +25,13 @@ namespace flatmemory
 {
 
 using NumBytes = size_t;
+
+using OffsetType = uint32_t;
+
+using BufferSizeType = uint32_t;
+
+// It does not make sense the other way around, since potentially many offsets are stored within a single buffer.
+static_assert(sizeof(BufferSizeType) >= sizeof(OffsetType));
 }
 
 #endif

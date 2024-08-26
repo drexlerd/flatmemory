@@ -25,7 +25,7 @@
 #include "flatmemory/details/byte_buffer_utils.hpp"
 #include "flatmemory/details/concepts.hpp"
 #include "flatmemory/details/layout.hpp"
-#include "flatmemory/details/layout_utils.hpp"
+#include "flatmemory/details/types.hpp"
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
 
@@ -63,12 +63,8 @@ template<IsTriviallyCopyableOrNonTrivialType T>
 class Layout<Optional<T>>
 {
 public:
-    static constexpr size_t final_alignment = calculate_final_alignment<BufferSizeType, T>();
-
     static constexpr size_t buffer_size_position = 0;
-    static constexpr size_t buffer_size_end = buffer_size_position + sizeof(BufferSizeType);
-    static constexpr size_t buffer_size_padding = calculate_amount_padding(buffer_size_end, calculate_data_alignment<T>());
-    static constexpr size_t data_position = buffer_size_end + buffer_size_padding;
+    static constexpr size_t data_position = buffer_size_position + sizeof(BufferSizeType);
 
     constexpr void print() const;
 };

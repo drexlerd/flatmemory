@@ -236,8 +236,6 @@ TEST(FlatmemoryTests, TypesVectorEqualToAndHashTest)
 
 TEST(FlatmemoryTests, TypesVectorTest)
 {
-    EXPECT_EQ((Layout<Vector<uint16_t>>::final_alignment), 4);
-
     auto builder = Builder<Vector<uint16_t>>();
     builder.resize(2);
     builder[0] = 5;
@@ -254,20 +252,15 @@ TEST(FlatmemoryTests, TypesVectorTest)
 
 TEST(FlatmemoryTests, TypesVector2Test)
 {
-    EXPECT_EQ((Layout<Vector<uint16_t>>::final_alignment), 4);
-
     auto builder = Builder<Vector<uint16_t>>();
     builder.resize(3);
     builder.finish();
 
-    // 2 additional padding are added from 14 to 16
-    EXPECT_EQ(builder.buffer().size(), 16);
+    EXPECT_EQ(builder.buffer().size(), 14);
 }
 
 TEST(FlatmemoryTests, TypesVectorVectorTest)
 {
-    EXPECT_EQ((Layout<Vector<Vector<uint16_t>>>::final_alignment), 4);
-
     auto builder = Builder<Vector<Vector<uint16_t>>>();
     builder.resize(2);
     builder[0].push_back(5);
@@ -275,10 +268,10 @@ TEST(FlatmemoryTests, TypesVectorVectorTest)
     builder[1].push_back(7);
     builder.finish();
 
-    EXPECT_EQ(builder.buffer().size(), 40);
+    EXPECT_EQ(builder.buffer().size(), 38);
 
     auto view = View<Vector<Vector<uint16_t>>>(builder.buffer().data());
-    EXPECT_EQ(view.buffer_size(), 40);
+    EXPECT_EQ(view.buffer_size(), 38);
     EXPECT_EQ(view.size(), 2);
     EXPECT_EQ(view[0][0], 5);
     EXPECT_EQ(view[1][0], 6);
@@ -314,8 +307,6 @@ TEST(FlatmemoryTests, TypesVectorViewIteratorTest)
 
 TEST(FlatmemoryTests, TypesVectorViewTest)
 {
-    EXPECT_EQ((Layout<Vector<View<Vector<uint16_t>>>>::final_alignment), 8);
-
     auto builder1 = Builder<Vector<uint16_t>>();
     builder1.finish();
 

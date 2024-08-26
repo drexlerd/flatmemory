@@ -63,17 +63,6 @@ public:
         return sizeof(value);
     }
 
-    size_t write_padding(size_t pos, size_t amount)
-    {
-        if (amount > 0)
-        {
-            // Write num_byte many zeros 0's
-            resize_to_fit(pos, amount);
-            std::memset(&m_data[pos], 0, amount);
-        }
-        return amount;
-    }
-
     /// @brief Set the final size of the buffer.
     /// @param count
     void set_size(size_t count) { m_size = count; }

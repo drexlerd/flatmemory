@@ -40,8 +40,7 @@ TEST(FlatmemoryTests, TypesOptionalDefaultConstructorTest)
 
         EXPECT_TRUE(builder.has_value());
         EXPECT_EQ(builder.value(), 0);
-        // The final alignment is 8 bytes. We need this to store optionals in a vector.
-        EXPECT_EQ(builder.buffer().size(), 8);
+        EXPECT_EQ(builder.buffer().size(), 4);
     }
 }
 
