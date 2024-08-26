@@ -154,6 +154,21 @@ TEST(FlatmemoryTests, TypesTupleSerializeViewsTest)
     EXPECT_EQ(builder2.get<0>(), builder2.get<1>());
 }
 
+TEST(FlatmemoryTests, TypesTupleViewMutateTest)
+{
+    auto builder = Builder<Tuple<uint16_t, int32_t>>();
+    builder.finish();
+
+    auto view = View<Tuple<uint16_t, int32_t>>(builder.buffer().data());
+    EXPECT_EQ(view.get<0>(), 0);
+    EXPECT_EQ(view.get<1>(), 0);
+
+    view.mutate<0>(4);
+    view.mutate<1>(-7);
+    EXPECT_EQ(view.get<0>(), 4);
+    EXPECT_EQ(view.get<1>(), -7);
+}
+
 /**
  * TODO: Others
  */

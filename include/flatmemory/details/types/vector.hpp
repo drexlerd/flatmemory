@@ -192,14 +192,21 @@ public:
      * Element access.
      */
 
-    decltype(auto) operator[](size_t pos);
-    decltype(auto) operator[](size_t pos) const;
-    decltype(auto) at(size_t pos);
-    decltype(auto) at(size_t pos) const;
+    auto operator[](size_t pos);
+    auto operator[](size_t pos) const;
+    auto at(size_t pos);
+    auto at(size_t pos) const;
     T_* data();
     const T_* data() const;
     uint8_t* buffer();
     const uint8_t* buffer() const;
+
+    /**
+     * Mutate
+     */
+
+    void mutate(size_t pos, ValueType value)
+        requires(IsTriviallyCopyable<ValueType>);
 
     /**
      * Iterators
@@ -220,7 +227,7 @@ public:
         Iterator();
         Iterator(uint8_t* buf);
 
-        decltype(auto) operator*() const;
+        auto operator*() const;
         Iterator& operator++();
         Iterator operator++(int);
         bool operator==(const Iterator& other) const;
@@ -245,7 +252,7 @@ public:
         ConstIterator();
         ConstIterator(const uint8_t* buf);
 
-        decltype(auto) operator*() const;
+        auto operator*() const;
         ConstIterator& operator++();
         ConstIterator operator++(int);
         bool operator==(const ConstIterator& other) const;
@@ -307,8 +314,8 @@ public:
      * Element access
      */
 
-    decltype(auto) operator[](size_t pos) const;
-    decltype(auto) at(size_t pos) const;
+    auto operator[](size_t pos) const;
+    auto at(size_t pos) const;
     const T_* data() const;
     const uint8_t* buffer() const;
 
@@ -331,7 +338,7 @@ public:
         ConstIterator();
         ConstIterator(const uint8_t* buf);
 
-        decltype(auto) operator*() const;
+        auto operator*() const;
         ConstIterator& operator++();
         ConstIterator operator++(int);
         bool operator==(const ConstIterator& other) const;
@@ -629,7 +636,7 @@ void View<Vector<T>>::range_check(size_t pos) const
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-decltype(auto) View<Vector<T>>::operator[](size_t pos)
+auto View<Vector<T>>::operator[](size_t pos)
 {
     assert(m_buf);
     assert(pos < size());
@@ -646,7 +653,7 @@ decltype(auto) View<Vector<T>>::operator[](size_t pos)
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-decltype(auto) View<Vector<T>>::operator[](size_t pos) const
+auto View<Vector<T>>::operator[](size_t pos) const
 {
     assert(m_buf);
     assert(pos < size());
@@ -663,14 +670,14 @@ decltype(auto) View<Vector<T>>::operator[](size_t pos) const
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-decltype(auto) View<Vector<T>>::at(size_t pos)
+auto View<Vector<T>>::at(size_t pos)
 {
     range_check(pos);
     return (*this)[pos];
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-decltype(auto) View<Vector<T>>::at(size_t pos) const
+auto View<Vector<T>>::at(size_t pos) const
 {
     range_check(pos);
     return (*this)[pos];
@@ -701,6 +708,13 @@ const uint8_t* View<Vector<T>>::buffer() const
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
+void View<Vector<T>>::mutate(size_t pos, View<Vector<T>>::ValueType value)
+    requires(IsTriviallyCopyable<View<Vector<T>>::ValueType>)
+{
+    write_value<View<Vector<T>>::ValueType>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(T), value);
+}
+
+template<IsTriviallyCopyableOrNonTrivialType T>
 View<Vector<T>>::Iterator::Iterator() : m_buf(nullptr)
 {
 }
@@ -710,7 +724,7 @@ View<Vector<T>>::Iterator::Iterator(uint8_t* buf) : m_buf(buf)
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-decltype(auto) View<Vector<T>>::Iterator::operator*() const
+auto View<Vector<T>>::Iterator::operator*() const
 {
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
     if constexpr (is_trivial)
@@ -791,7 +805,7 @@ View<Vector<T>>::ConstIterator::ConstIterator(const uint8_t* buf) : m_buf(buf)
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-decltype(auto) View<Vector<T>>::ConstIterator::operator*() const
+auto View<Vector<T>>::ConstIterator::operator*() const
 {
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
     if constexpr (is_trivial)
@@ -912,7 +926,7 @@ void ConstView<Vector<T>>::range_check(size_t pos) const
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-decltype(auto) ConstView<Vector<T>>::operator[](size_t pos) const
+auto ConstView<Vector<T>>::operator[](size_t pos) const
 {
     assert(m_buf);
     assert(pos < size());
@@ -929,7 +943,7 @@ decltype(auto) ConstView<Vector<T>>::operator[](size_t pos) const
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-decltype(auto) ConstView<Vector<T>>::at(size_t pos) const
+auto ConstView<Vector<T>>::at(size_t pos) const
 {
     range_check(pos);
     return (*this)[pos];
@@ -958,7 +972,7 @@ ConstView<Vector<T>>::ConstIterator::ConstIterator(const uint8_t* buf) : m_buf(b
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-decltype(auto) ConstView<Vector<T>>::ConstIterator::operator*() const
+auto ConstView<Vector<T>>::ConstIterator::operator*() const
 {
     constexpr bool is_trivial = IsTriviallyCopyable<T>;
     if constexpr (is_trivial)

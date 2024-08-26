@@ -259,6 +259,17 @@ TEST(FlatmemoryTests, TypesVector2Test)
     EXPECT_EQ(builder.buffer().size(), 14);
 }
 
+TEST(FlatmemoryTests, TypesVectorViewMutateTest)
+{
+    auto builder = Builder<Vector<uint16_t>>();
+    builder.resize(3);
+    builder.finish();
+
+    auto view = View<Vector<uint16_t>>(builder.buffer().data());
+    view.mutate(0, 4);
+    EXPECT_EQ(view[0], 4);
+}
+
 TEST(FlatmemoryTests, TypesVectorVectorTest)
 {
     auto builder = Builder<Vector<Vector<uint16_t>>>();

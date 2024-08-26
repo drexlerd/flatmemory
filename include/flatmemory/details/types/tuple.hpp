@@ -177,10 +177,14 @@ public:
     ///
     /// If the I-th type is dynamic we must add the offset to the actual data first.
     template<std::size_t I>
-    decltype(auto) get();
+    auto get();
 
     template<std::size_t I>
-    decltype(auto) get() const;
+    auto get() const;
+
+    template<std::size_t I>
+    void mutate(element_type<I> value)
+        requires(IsTriviallyCopyable<element_type<I>>);
 
     uint8_t* buffer();
     const uint8_t* buffer() const;
@@ -236,7 +240,7 @@ public:
     ///
     /// If the I-th type is dynamic we must add the offset to the actual data first.
     template<std::size_t I>
-    decltype(auto) get() const;
+    auto get() const;
 
     BufferSizeType buffer_size() const;
 
@@ -439,7 +443,7 @@ View<Tuple<Ts...>>::View(uint8_t* data) : m_buf(data)
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t I>
-decltype(auto) View<Tuple<Ts...>>::get()
+auto View<Tuple<Ts...>>::get()
 {
     static_assert(I < sizeof...(Ts));
     assert(m_buf);
@@ -457,7 +461,15 @@ decltype(auto) View<Tuple<Ts...>>::get()
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t I>
-decltype(auto) View<Tuple<Ts...>>::get() const
+void View<Tuple<Ts...>>::mutate(View<Tuple<Ts...>>::element_type<I> value)
+    requires(IsTriviallyCopyable<View<Tuple<Ts...>>::element_type<I>>)
+{
+    return write_value<View<Tuple<Ts...>>::element_type<I>>(m_buf + Layout<Tuple<Ts...>>::data_positions[I], value);
+}
+
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
+template<std::size_t I>
+auto View<Tuple<Ts...>>::get() const
 {
     static_assert(I < sizeof...(Ts));
     assert(m_buf);
@@ -512,7 +524,7 @@ ConstView<Tuple<Ts...>>::ConstView(const View<Tuple<Ts...>>& view) : m_buf(view.
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t I>
-decltype(auto) ConstView<Tuple<Ts...>>::get() const
+auto ConstView<Tuple<Ts...>>::get() const
 {
     static_assert(I < sizeof...(Ts));
     assert(m_buf);
