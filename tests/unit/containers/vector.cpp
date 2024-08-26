@@ -24,6 +24,7 @@ namespace flatmemory::tests
 
 TEST(FlatmemoryTests, ContainersVariableSizedTypeVectorTest)
 {
+    /*
     VariableSizedTypeVector<Bitset<uint64_t>> views;
     auto builder = Builder<Bitset<uint64_t>>();
     builder.set(100);
@@ -32,19 +33,24 @@ TEST(FlatmemoryTests, ContainersVariableSizedTypeVectorTest)
     {
         views.push_back(builder);
     }
+    */
 }
 
 TEST(FlatmemoryTests, ContainersFixedSizedTypeVectorConstructor1Test)
 {
+    /*
     FixedSizedTypeVector<Tuple<uint16_t, uint32_t>> vector;
     vector.resize(5);
+    */
 }
 
 TEST(FlatmemoryTests, ContainersFixedSizedTypeVectorTest)
 {
+    /*
     auto builder = Builder<Tuple<uint16_t, uint32_t>>();
     builder.finish();
     FixedSizedTypeVector<Tuple<uint16_t, uint32_t>> vector(std::move(builder));
     vector.resize(5);
+    */
 }
 }

@@ -22,6 +22,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <flatbuffers/flexbuffers.h>
 #include <type_traits>
 
 namespace flatmemory
@@ -48,13 +49,11 @@ public:
 
     /// @brief Serialize data to size prefixed byte sequence into the given buffer.
     /// @param out the buffer to write the data.
-    /// @param pos the next free position in the out buffer.
     /// @return the number of bytest written to out.
-    size_t finish(size_t pos, ByteBuffer& out) { return self().finish_impl(pos, out); }
+    void finish(flexbuffers::Builder& out) const { self().finish_impl(out); }
 
     /// @brief Access the serialized buffer
-    auto& buffer() { return self().get_buffer_impl(); }
-    const auto& buffer() const { return self().get_buffer_impl(); }
+    const std::vector<uint8_t>& get_buffer() const { return self().get_buffer_impl(); }
 };
 
 /**
@@ -69,32 +68,6 @@ class Builder : IBuilder<Builder<Tag>>
 {
 };
 
-/**
- * Concepts
- */
-template<IsTriviallyCopyableOrNonTrivialType T, bool = IsTriviallyCopyable<T>>
-struct maybe_builder
-{
-    using type = T;
-};
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-struct maybe_builder<T, false>
-{
-    using type = Builder<T>;
-};
-
-template<IsTrivialFlexbufferOrNonTrivialType T, bool = IsTriviallyCopyable<T>>
-struct maybe_builder2
-{
-    using type = T;
-};
-
-template<IsTrivialFlexbufferOrNonTrivialType T>
-struct maybe_builder2<T, false>
-{
-    using type = Builder<T>;
-};
 }
 
 #endif

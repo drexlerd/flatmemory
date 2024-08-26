@@ -24,7 +24,7 @@ namespace flatmemory
 /// @tparam T
 /// @tparam Hash
 /// @tparam Equal
-template<IsTriviallyCopyableOrNonTrivialType T, typename Hash = std::hash<ConstView<T>>, typename Equal = std::equal_to<ConstView<T>>>
+template<IsTrivialFlexbufferOrNonTrivialType T, typename Hash = std::hash<ConstView<T>>, typename Equal = std::equal_to<ConstView<T>>>
 class UnorderedSet
 {
 private:
@@ -38,7 +38,7 @@ private:
     using const_iterator = typename std::unordered_set<ConstView<T>, Hash, Equal>::const_iterator;
 
 public:
-    explicit UnorderedSet(NumBytes initial_num_bytes_per_segment = 1024, NumBytes maximum_num_bytes_per_segment = 1024 * 1024);
+    explicit UnorderedSet(size_t initial_num_bytes_per_segment = 1024, size_t maximum_num_bytes_per_segment = 1024 * 1024);
     // Move only to avoid invalidating views.
     UnorderedSet(const UnorderedSet& other) = delete;
     UnorderedSet& operator=(const UnorderedSet& other) = delete;
@@ -87,56 +87,56 @@ public:
  * Definitions
  */
 
-template<IsTriviallyCopyableOrNonTrivialType T, typename Hash, typename Equal>
-UnorderedSet<T, Hash, Equal>::UnorderedSet(NumBytes initial_num_bytes_per_segment, NumBytes maximum_num_bytes_per_segment) :
+template<IsTrivialFlexbufferOrNonTrivialType T, typename Hash, typename Equal>
+UnorderedSet<T, Hash, Equal>::UnorderedSet(size_t initial_num_bytes_per_segment, size_t maximum_num_bytes_per_segment) :
     m_storage(ByteBufferSegmented(initial_num_bytes_per_segment, maximum_num_bytes_per_segment))
 {
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T, typename Hash, typename Equal>
+template<IsTrivialFlexbufferOrNonTrivialType T, typename Hash, typename Equal>
 UnorderedSet<T, Hash, Equal>::iterator UnorderedSet<T, Hash, Equal>::begin()
 {
     return m_data.begin();
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T, typename Hash, typename Equal>
+template<IsTrivialFlexbufferOrNonTrivialType T, typename Hash, typename Equal>
 UnorderedSet<T, Hash, Equal>::const_iterator UnorderedSet<T, Hash, Equal>::begin() const
 {
     return m_data.begin();
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T, typename Hash, typename Equal>
+template<IsTrivialFlexbufferOrNonTrivialType T, typename Hash, typename Equal>
 UnorderedSet<T, Hash, Equal>::iterator UnorderedSet<T, Hash, Equal>::end()
 {
     return m_data.end();
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T, typename Hash, typename Equal>
+template<IsTrivialFlexbufferOrNonTrivialType T, typename Hash, typename Equal>
 UnorderedSet<T, Hash, Equal>::const_iterator UnorderedSet<T, Hash, Equal>::end() const
 {
     return m_data.end();
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T, typename Hash, typename Equal>
+template<IsTrivialFlexbufferOrNonTrivialType T, typename Hash, typename Equal>
 bool UnorderedSet<T, Hash, Equal>::empty() const
 {
     return m_data.empty();
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T, typename Hash, typename Equal>
+template<IsTrivialFlexbufferOrNonTrivialType T, typename Hash, typename Equal>
 size_t UnorderedSet<T, Hash, Equal>::size() const
 {
     return m_data.size();
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T, typename Hash, typename Equal>
+template<IsTrivialFlexbufferOrNonTrivialType T, typename Hash, typename Equal>
 void UnorderedSet<T, Hash, Equal>::clear()
 {
     m_storage.clear();
     m_data.clear();
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T, typename Hash, typename Equal>
+template<IsTrivialFlexbufferOrNonTrivialType T, typename Hash, typename Equal>
 std::pair<typename UnorderedSet<T, Hash, Equal>::const_iterator, bool> UnorderedSet<T, Hash, Equal>::insert(const Builder<T>& builder)
 {
     const uint8_t* data = builder.buffer().data();
@@ -154,7 +154,7 @@ std::pair<typename UnorderedSet<T, Hash, Equal>::const_iterator, bool> Unordered
     return std::make_pair(result.first, true);
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T, typename Hash, typename Equal>
+template<IsTrivialFlexbufferOrNonTrivialType T, typename Hash, typename Equal>
 std::pair<typename UnorderedSet<T, Hash, Equal>::const_iterator, bool> UnorderedSet<T, Hash, Equal>::insert(ConstView<T>& view)
 {
     const uint8_t* data = view.buffer();
@@ -173,7 +173,7 @@ std::pair<typename UnorderedSet<T, Hash, Equal>::const_iterator, bool> Unordered
     return std::make_pair(result.first, true);
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T, typename Hash, typename Equal>
+template<IsTrivialFlexbufferOrNonTrivialType T, typename Hash, typename Equal>
 std::pair<typename UnorderedSet<T, Hash, Equal>::const_iterator, bool> UnorderedSet<T, Hash, Equal>::insert(View<T>& view)
 {
     const uint8_t* data = view.buffer();
@@ -191,31 +191,31 @@ std::pair<typename UnorderedSet<T, Hash, Equal>::const_iterator, bool> Unordered
     return std::make_pair(result.first, true);
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T, typename Hash, typename Equal>
+template<IsTrivialFlexbufferOrNonTrivialType T, typename Hash, typename Equal>
 size_t UnorderedSet<T, Hash, Equal>::count(ConstView<T> key) const
 {
     return m_data.count(key);
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T, typename Hash, typename Equal>
+template<IsTrivialFlexbufferOrNonTrivialType T, typename Hash, typename Equal>
 UnorderedSet<T, Hash, Equal>::iterator UnorderedSet<T, Hash, Equal>::find(ConstView<T> key)
 {
     return m_data.find(key);
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T, typename Hash, typename Equal>
+template<IsTrivialFlexbufferOrNonTrivialType T, typename Hash, typename Equal>
 UnorderedSet<T, Hash, Equal>::const_iterator UnorderedSet<T, Hash, Equal>::find(ConstView<T> key) const
 {
     return m_data.find(key);
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T, typename Hash, typename Equal>
+template<IsTrivialFlexbufferOrNonTrivialType T, typename Hash, typename Equal>
 bool UnorderedSet<T, Hash, Equal>::contains(ConstView<T> key) const
 {
     return m_data.contains(key);
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T, typename Hash, typename Equal>
+template<IsTrivialFlexbufferOrNonTrivialType T, typename Hash, typename Equal>
 const ByteBufferSegmented& UnorderedSet<T, Hash, Equal>::get_storage() const
 {
     return m_storage;

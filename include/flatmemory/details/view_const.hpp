@@ -32,20 +32,6 @@ class ConstView
 {
 };
 
-/**
- * Concepts
- */
-template<IsTriviallyCopyableOrNonTrivialType T, bool = IsTriviallyCopyable<T>>
-struct maybe_const_view
-{
-    using type = T;
-};
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-struct maybe_const_view<T, false>
-{
-    using type = ConstView<T>;
-};
 }
 
 #endif

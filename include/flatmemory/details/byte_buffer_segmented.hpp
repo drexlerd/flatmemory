@@ -19,7 +19,6 @@
 #define FLATMEMORY_BYTE_BUFFER_SEGMENTED_HPP_
 
 #include "flatmemory/details/concepts.hpp"
-#include "flatmemory/details/types.hpp"
 
 #include <cassert>
 #include <cstddef>
@@ -33,8 +32,8 @@ namespace flatmemory
 class ByteBufferSegmented
 {
 private:
-    NumBytes m_num_bytes_per_segment;
-    NumBytes m_maximum_num_bytes_per_segment;
+    size_t m_num_bytes_per_segment;
+    size_t m_maximum_num_bytes_per_segment;
     std::vector<std::vector<uint8_t>> m_segments;
 
     size_t m_cur_segment_id;
@@ -66,7 +65,7 @@ private:
     }
 
 public:
-    explicit ByteBufferSegmented(NumBytes initial_num_bytes_per_segment = 1024, NumBytes maximum_num_bytes_per_segment = 1024 * 1024) :
+    explicit ByteBufferSegmented(size_t initial_num_bytes_per_segment = 1024, size_t maximum_num_bytes_per_segment = 1024 * 1024) :
         m_num_bytes_per_segment(initial_num_bytes_per_segment),
         m_maximum_num_bytes_per_segment(maximum_num_bytes_per_segment),
         m_segments(),

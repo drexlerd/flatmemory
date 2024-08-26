@@ -23,14 +23,10 @@
  */
 
 #include "flatmemory/details/types/bitset.hpp"
-#include "flatmemory/details/types/bitset2.hpp"
 #include "flatmemory/details/types/formatter.hpp"
 #include "flatmemory/details/types/formatter_impl.hpp"
-#include "flatmemory/details/types/optional.hpp"
 #include "flatmemory/details/types/tuple.hpp"
-#include "flatmemory/details/types/tuple2.hpp"
 #include "flatmemory/details/types/vector.hpp"
-#include "flatmemory/details/types/vector2.hpp"
 
 /**
  * Containers

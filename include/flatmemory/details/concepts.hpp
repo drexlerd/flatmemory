@@ -34,12 +34,6 @@ struct NonTrivialType
 template<typename T>
 concept IsNonTrivialType = std::derived_from<T, NonTrivialType>;
 
-template<typename T>
-concept IsTriviallyCopyable = std::is_trivially_copyable_v<T>;
-
-template<typename T>
-concept IsTriviallyCopyableOrNonTrivialType = (IsTriviallyCopyable<T> || IsNonTrivialType<T>);
-
 // Concept to check whether T is an unsigned integral
 template<typename T>
 concept IsUnsignedIntegral = std::is_integral_v<T> && std::is_unsigned_v<T>;

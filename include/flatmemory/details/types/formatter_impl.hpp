@@ -28,12 +28,12 @@ void Formatter::write(ConstView<Bitset<Block, Tag>> element, std::ostream& out)
 {
 }
 
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
+template<IsTrivialFlexbufferOrNonTrivialType... Ts>
 void Formatter::write(ConstView<Tuple<Ts...>> element, std::ostream& out)
 {
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTrivialFlexbufferOrNonTrivialType T>
 void Formatter::write(ConstView<Vector<T>> element, std::ostream& out)
 {
 }

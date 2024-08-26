@@ -40,10 +40,10 @@ public:
     template<IsUnsignedIntegral Block, typename Tag>
     void write(ConstView<Bitset<Block, Tag>> element, std::ostream& out);
 
-    template<IsTriviallyCopyableOrNonTrivialType... Ts>
+    template<IsTrivialFlexbufferOrNonTrivialType... Ts>
     void write(ConstView<Tuple<Ts...>> element, std::ostream& out);
 
-    template<IsTriviallyCopyableOrNonTrivialType T>
+    template<IsTrivialFlexbufferOrNonTrivialType T>
     void write(ConstView<Vector<T>> element, std::ostream& out);
 };
 

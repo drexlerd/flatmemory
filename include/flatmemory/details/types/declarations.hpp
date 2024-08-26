@@ -101,7 +101,7 @@ concept IsBitset = IsBitsetBuilder<T> || IsBitsetView<T> || IsBitsetConstView<T>
  * Tuple
  */
 
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
+template<IsTrivialFlexbufferOrNonTrivialType... Ts>
 struct Tuple;
 
 template<typename T1, typename T2>
@@ -122,17 +122,17 @@ struct is_tuple_const_view_helper : std::false_type
 {
 };
 
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
+template<IsTrivialFlexbufferOrNonTrivialType... Ts>
 struct is_tuple_builder_helper<Builder<Tuple<Ts...>>> : std::true_type
 {
 };
 
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
+template<IsTrivialFlexbufferOrNonTrivialType... Ts>
 struct is_tuple_view_helper<View<Tuple<Ts...>>> : std::true_type
 {
 };
 
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
+template<IsTrivialFlexbufferOrNonTrivialType... Ts>
 struct is_tuple_const_view_helper<ConstView<Tuple<Ts...>>> : std::true_type
 {
 };
@@ -153,7 +153,7 @@ concept IsTuple = IsTupleBuilder<T> || IsTupleView<T> || IsTupleConstView<T>;
  * Vector
  */
 
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTrivialFlexbufferOrNonTrivialType T, bool FixedBitwidth = false>
 struct Vector;
 
 template<typename T1, typename T2>
@@ -174,17 +174,17 @@ struct is_vector_const_view_helper : std::false_type
 {
 };
 
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTrivialFlexbufferOrNonTrivialType T>
 struct is_vector_builder_helper<Builder<Vector<T>>> : std::true_type
 {
 };
 
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTrivialFlexbufferOrNonTrivialType T>
 struct is_vector_view_helper<View<Vector<T>>> : std::true_type
 {
 };
 
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTrivialFlexbufferOrNonTrivialType T>
 struct is_vector_const_view_helper<ConstView<Vector<T>>> : std::true_type
 {
 };

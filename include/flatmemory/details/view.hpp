@@ -34,20 +34,6 @@ class View
 {
 };
 
-/**
- * Concepts
- */
-template<IsTriviallyCopyableOrNonTrivialType T, bool = IsTriviallyCopyable<T>>
-struct maybe_view
-{
-    using type = T;
-};
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-struct maybe_view<T, false>
-{
-    using type = View<T>;
-};
 }
 
 #endif
