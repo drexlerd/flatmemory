@@ -78,7 +78,7 @@ public:
             {
                 serialize_scalar_value(m_default_bit_value, out);
 
-                m_blocks.template finish<true>(out);
+                m_blocks.finish(out);
             });
     }
 
@@ -87,7 +87,7 @@ public:
 private:
     // nested elements
     bool m_default_bit_value;
-    Builder<Vector2<Block>> m_blocks;
+    Builder<Vector2<Block, true>> m_blocks;
 
     // buffer
     flexbuffers::Builder m_fbb;

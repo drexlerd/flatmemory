@@ -56,10 +56,27 @@ TEST(FlatmemoryTests, TypesVector2ConstructorTest)
     }
 
     {
+        // 1D
+        auto builder = Builder<Vector2<int16_t, true>>(3);
+        builder.finish();
+        EXPECT_EQ(builder.size(), 3);
+        EXPECT_EQ(builder.get_buffer().size(), 11);
+    }
+
+    {
         // 2D
         auto builder = Builder<Vector2<Vector2<int16_t>>>(3);
         builder.finish();
         EXPECT_EQ(builder.size(), 3);
+        EXPECT_EQ(builder.get_buffer().size(), 13);
+    }
+
+    {
+        // 2D
+        auto builder = Builder<Vector2<Vector2<int16_t>, true>>(3);
+        builder.finish();
+        EXPECT_EQ(builder.size(), 3);
+        // Inner vector is empty and hence, FixedBitwidth=true has no effect.
         EXPECT_EQ(builder.get_buffer().size(), 13);
     }
 }

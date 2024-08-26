@@ -62,11 +62,7 @@ private:
     class TupleEntry<T>
     {
     public:
-        template<bool FixedSize = false>
-        void finish(flexbuffers::Builder& out) const
-        {
-            serialize_scalar_value(m_value, out);
-        }
+        void finish(flexbuffers::Builder& out) const { serialize_scalar_value(m_value, out); }
 
         T& get() { return m_value; }
         const T& get() const { return m_value; }
@@ -79,11 +75,7 @@ private:
     class TupleEntry<T>
     {
     public:
-        template<bool FixedSize = false>
-        void finish(flexbuffers::Builder& out) const
-        {
-            m_builder.template finish<FixedSize>(out);
-        }
+        void finish(flexbuffers::Builder& out) const { m_builder.finish(out); }
 
         Builder<T>& get() { return m_builder; }
         const Builder<T>& get() const { return m_builder; }
@@ -106,18 +98,20 @@ public:
     Builder(Ts&&... args) : m_data(std::make_tuple(std::forward<Ts>(args)...)), m_fbb() {}
     Builder() : m_data(), m_fbb() {}
 
-    template<bool FixedSize = false>
     void finish()
     {
         m_fbb.Clear();
-        finish<FixedSize>(m_fbb);
+        finish(m_fbb);
         m_fbb.Finish();
     }
 
-    template<bool FixedSize = false>
     void finish(flexbuffers::Builder& out) const
     {
-        out.Vector([&]() { std::apply([this, &out](const auto&... entry) { (..., entry.template finish<FixedSize>(out)); }, m_data); });
+        // Note that we do not enforce bitwidth in a tuple.
+        // Users are encouraged to initialize trivial types
+        // to large values to enforce sufficiently large bitwidths for mutability.
+
+        out.Vector([&]() { std::apply([this, &out](const auto&... entry) { (..., entry.finish(out)); }, m_data); });
     }
 
     const std::vector<uint8_t>& get_buffer() const { return m_fbb.GetBuffer(); }

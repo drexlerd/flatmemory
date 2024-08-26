@@ -37,10 +37,11 @@
 
 namespace flatmemory
 {
-/**
- * ID class for non-trivial Vector type.
- */
-template<IsTrivialFlexbufferOrNonTrivialType T>
+
+/// @brief `Vector2` is an id class for the non-trivial vector type.
+/// @tparam T is the nested element type.
+/// @tparam FixedBitwidth defines whether trivial flexbuffer types should be serialized with fixed bitwidth.
+template<IsTrivialFlexbufferOrNonTrivialType T, bool FixedBitwidth = false>
 struct Vector2 : public NonTrivialType
 {
     /// @brief Non-trivial copy-constructor
@@ -48,8 +49,8 @@ struct Vector2 : public NonTrivialType
     Vector2(const Vector2& other) {}
 };
 
-template<IsTrivialFlexbufferType T>
-class Builder<Vector2<T>> : public IBuilder<Builder<Vector2<T>>>
+template<IsTrivialFlexbufferType T, bool FixedBitwidth>
+class Builder<Vector2<T, FixedBitwidth>> : public IBuilder<Builder<Vector2<T, FixedBitwidth>>>
 {
 public:
     using ValueType = T;
@@ -62,22 +63,19 @@ public:
     Builder(size_t count, const T& value) : m_data(count, value), m_fbb() {}
 
     /// @brief Construct the buffer in the builder.
-    /// @tparam FixedSize defines whether trivial flexbuffer types should be serialized with fixed bitwidth.
-    template<bool FixedSize = false>
     void finish()
     {
         m_fbb.Clear();
-        finish<FixedSize>(m_fbb);
+        finish(m_fbb);
         m_fbb.Finish();
     }
 
     /// @brief Construct the buffer in the builder.
-    /// @tparam FixedSize defines whether trivial flexbuffer types should be serialized with fixed bitwidth.
+    /// @tparam FixedBitwidth defines whether trivial flexbuffer types should be serialized with fixed bitwidth.
     /// @param out is the builder that contains the final buffer.
-    template<bool FixedSize = false>
     void finish(flexbuffers::Builder& out) const
     {
-        if constexpr (FixedSize)
+        if constexpr (FixedBitwidth)
         {
             if (!m_data.empty())
             {
@@ -94,7 +92,7 @@ public:
                 }
             });
 
-        if constexpr (FixedSize)
+        if constexpr (FixedBitwidth)
         {
             out.ForceMinimumBitWidth(flexbuffers::BIT_WIDTH_8);
         }
@@ -145,8 +143,8 @@ private:
     flexbuffers::Builder m_fbb;
 };
 
-template<IsNonTrivialType T>
-class Builder<Vector2<T>> : public IBuilder<Builder<Vector2<T>>>
+template<IsNonTrivialType T, bool FixedBitwidth>
+class Builder<Vector2<T, FixedBitwidth>> : public IBuilder<Builder<Vector2<T, FixedBitwidth>>>
 {
 public:
     using ValueType = T;
@@ -158,15 +156,13 @@ public:
     explicit Builder(size_t count) : m_data(count), m_fbb() {}
     Builder(size_t count, const Builder<T>& value) : m_data(count, value), m_fbb() {}
 
-    template<bool FixedSize = false>
     void finish()
     {
         m_fbb.Clear();
-        finish<FixedSize>(m_fbb);
+        finish(m_fbb);
         m_fbb.Finish();
     }
 
-    template<bool FixedSize = false>
     void finish(flexbuffers::Builder& out) const
     {
         out.Vector(
@@ -174,7 +170,7 @@ public:
             {
                 for (auto& element : m_data)
                 {
-                    element.template finish<FixedSize>(out);
+                    element.finish(out);
                 }
             });
     }
@@ -228,8 +224,8 @@ private:
  * View
  */
 
-template<IsTrivialFlexbufferType T>
-class View<Vector2<T>>
+template<IsTrivialFlexbufferType T, bool FixedBitwidth>
+class View<Vector2<T, FixedBitwidth>>
 {
 private:
     flexbuffers::Vector m_data;
@@ -268,8 +264,8 @@ public:
     size_t size() const { return m_data.size(); }
 };
 
-template<IsNonTrivialType T>
-class View<Vector2<T>>
+template<IsNonTrivialType T, bool FixedBitwidth>
+class View<Vector2<T, FixedBitwidth>>
 {
 private:
     flexbuffers::Vector m_data;
@@ -301,8 +297,8 @@ public:
 /**
  * ConstView
  */
-template<IsTrivialFlexbufferType T>
-class ConstView<Vector2<T>>
+template<IsTrivialFlexbufferType T, bool FixedBitwidth>
+class ConstView<Vector2<T, FixedBitwidth>>
 {
 private:
     flexbuffers::Vector m_data;
@@ -331,8 +327,8 @@ public:
     size_t size() const { return m_data.size(); }
 };
 
-template<IsNonTrivialType T>
-class ConstView<Vector2<T>>
+template<IsNonTrivialType T, bool FixedBitwidth>
+class ConstView<Vector2<T, FixedBitwidth>>
 {
 private:
     flexbuffers::Vector m_data;
