@@ -23,6 +23,7 @@
  */
 
 #include "flatmemory/details/types/bitset.hpp"
+#include "flatmemory/details/types/bitset2.hpp"
 #include "flatmemory/details/types/formatter.hpp"
 #include "flatmemory/details/types/formatter_impl.hpp"
 #include "flatmemory/details/types/optional.hpp"

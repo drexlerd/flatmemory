@@ -10,10 +10,12 @@ add_executable(${TEST_NAME}
     "containers/unordered_set.cpp"
     "containers/vector.cpp"
     "types/bitset.cpp"
+    "types/bitset2.cpp"
     "types/optional.cpp"
     "types/tuple.cpp"
+    "types/tuple2.cpp"
     "types/vector.cpp"
-    "types/typed_vector.cpp"
+    "types/vector2.cpp"
 )
 
 target_link_libraries(${TEST_NAME}

@@ -739,7 +739,7 @@ BitsetUtils::ConstIterator<Block>::ConstIterator(bool default_bit_value, const B
     m_block_index(0),
     m_bit_index(-1),
     m_cur_block(num_blocks > 0 ? m_blocks[m_block_index] : block_zeroes<Block>),
-    m_end_pos((m_num_blocks + 1) * block_size<Block> - 1),
+    m_end_pos((num_blocks + 1) * block_size<Block> - 1),
     m_pos(begin ? -1 : m_end_pos)
 {
     if (default_bit_value)
@@ -753,6 +753,10 @@ BitsetUtils::ConstIterator<Block>::ConstIterator(bool default_bit_value, const B
         {
             // The first bit is not set, so we need to find it
             next_set_bit();
+        }
+        else if (num_blocks == 0)
+        {
+            m_pos = m_end_pos;
         }
         else
         {
@@ -869,8 +873,6 @@ void Builder<Bitset<Block, Tag>>::resize_to_fit(const Other& other)
     {
         m_blocks.resize(other.get_blocks().size(), m_default_bit_value ? BitsetUtils::block_ones<Block> : BitsetUtils::block_zeroes<Block>);
     }
-
-    assert(m_blocks.size() > 0);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
@@ -895,14 +897,15 @@ Builder<Bitset<Block, Tag>>::Builder() : Builder(0)
 template<IsUnsignedIntegral Block, typename Tag>
 Builder<Bitset<Block, Tag>>::Builder(std::size_t size) :
     m_default_bit_value(false),
-    m_blocks((size / BitsetUtils::block_size<Block>) +1, BitsetUtils::block_zeroes<Block>)
+    m_blocks((size + BitsetUtils::block_size<Block> - 1) / (BitsetUtils::block_size<Block>), BitsetUtils::block_zeroes<Block>)
 {
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
 Builder<Bitset<Block, Tag>>::Builder(std::size_t size, bool default_bit_value) :
     m_default_bit_value(default_bit_value),
-    m_blocks((size / BitsetUtils::block_size<Block>) +1, default_bit_value ? BitsetUtils::block_ones<Block> : BitsetUtils::block_zeroes<Block>)
+    m_blocks((size + BitsetUtils::block_size<Block> - 1) / (BitsetUtils::block_size<Block>),
+             default_bit_value ? BitsetUtils::block_ones<Block> : BitsetUtils::block_zeroes<Block>)
 {
 }
 
@@ -981,11 +984,7 @@ void Builder<Bitset<Block, Tag>>::unset(std::size_t position)
 template<IsUnsignedIntegral Block, typename Tag>
 void Builder<Bitset<Block, Tag>>::unset_all()
 {
-    assert(m_blocks.size() > 0);
-
-    m_blocks[0] = (m_default_bit_value) ? BitsetUtils::block_ones<Block> : BitsetUtils::block_zeroes<Block>;
-
-    m_blocks.resize(1);
+    m_blocks.clear();
 }
 
 template<IsUnsignedIntegral Block, typename Tag>

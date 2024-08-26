@@ -24,6 +24,40 @@ namespace flatmemory
 {
 
 /**
+ * Templated wrapper to set minimum bitwidth
+ */
+
+template<typename T>
+void set_minimum_bitwidth(T value, flexbuffers::Builder& builder)
+{
+    static_assert(std::false_type::value, "No suitable overload found for set_minimum_bitwidth<T>.");
+}
+
+template<>
+inline void set_minimum_bitwidth(int8_t value, flexbuffers::Builder& builder)
+{
+    builder.ForceMinimumBitWidth(flexbuffers::BIT_WIDTH_8);
+}
+
+template<>
+inline void set_minimum_bitwidth(int16_t value, flexbuffers::Builder& builder)
+{
+    builder.ForceMinimumBitWidth(flexbuffers::BIT_WIDTH_16);
+}
+
+template<>
+inline void set_minimum_bitwidth(uint64_t value, flexbuffers::Builder& builder)
+{
+    builder.ForceMinimumBitWidth(flexbuffers::BIT_WIDTH_64);
+}
+
+template<>
+inline void set_minimum_bitwidth(bool value, flexbuffers::Builder& builder)
+{
+    builder.ForceMinimumBitWidth(flexbuffers::BIT_WIDTH_8);
+}
+
+/**
  * Templated wrapper function to serialize trivial flexbuffer types.
  */
 
@@ -42,9 +76,19 @@ inline void serialize_scalar_value(int8_t value, flexbuffers::Builder& builder)
 template<>
 inline void serialize_scalar_value(int16_t value, flexbuffers::Builder& builder)
 {
-    builder.ForceMinimumBitWidth(flexbuffers::BIT_WIDTH_16);
     builder.Int(value);
-    builder.ForceMinimumBitWidth(flexbuffers::BIT_WIDTH_8);
+}
+
+template<>
+inline void serialize_scalar_value(uint64_t value, flexbuffers::Builder& builder)
+{
+    builder.UInt(value);
+}
+
+template<>
+inline void serialize_scalar_value(bool value, flexbuffers::Builder& builder)
+{
+    builder.Bool(value);
 }
 
 /**
@@ -69,6 +113,18 @@ inline int16_t retrieve_scalar_value<int16_t>(flexbuffers::Reference reference)
     return reference.AsInt16();
 }
 
+template<>
+inline uint64_t retrieve_scalar_value<uint64_t>(flexbuffers::Reference reference)
+{
+    return reference.AsUInt64();
+}
+
+template<>
+inline bool retrieve_scalar_value<bool>(flexbuffers::Reference reference)
+{
+    return reference.AsBool();
+}
+
 /**
  * Templated wrapper function to mutate trivial flexbuffer types.
  */
@@ -90,6 +146,18 @@ template<>
 inline bool mutate_scalar_value(int16_t value, flexbuffers::Reference reference)
 {
     return reference.MutateInt(value);
+}
+
+template<>
+inline bool mutate_scalar_value(uint64_t value, flexbuffers::Reference reference)
+{
+    return reference.MutateUInt(value);
+}
+
+template<>
+inline bool mutate_scalar_value(bool value, flexbuffers::Reference reference)
+{
+    return reference.MutateBool(value);
 }
 
 }

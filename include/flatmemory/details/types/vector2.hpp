@@ -61,16 +61,31 @@ public:
     explicit Builder(size_t count) : m_data(count), m_fbb() {}
     Builder(size_t count, const T& value) : m_data(count, value), m_fbb() {}
 
+    /// @brief Construct the buffer in the builder.
+    /// @tparam FixedSize defines whether trivial flexbuffer types should be serialized with fixed bitwidth.
+    template<bool FixedSize = false>
     void finish()
     {
         m_fbb.Clear();
-        finish(m_fbb);
+        finish<FixedSize>(m_fbb);
         m_fbb.Finish();
     }
 
-    void finish(flexbuffers::Builder& out)
+    /// @brief Construct the buffer in the builder.
+    /// @tparam FixedSize defines whether trivial flexbuffer types should be serialized with fixed bitwidth.
+    /// @param out is the builder that contains the final buffer.
+    template<bool FixedSize = false>
+    void finish(flexbuffers::Builder& out) const
     {
-        out.Vector(
+        if constexpr (FixedSize)
+        {
+            if (!m_data.empty())
+            {
+                set_minimum_bitwidth(ValueType(), out);
+            }
+        }
+
+        out.TypedVector(
             [&]()
             {
                 for (auto& element : m_data)
@@ -78,6 +93,11 @@ public:
                     serialize_scalar_value(element, out);
                 }
             });
+
+        if constexpr (FixedSize)
+        {
+            out.ForceMinimumBitWidth(flexbuffers::BIT_WIDTH_8);
+        }
     }
 
     const std::vector<uint8_t>& get_buffer() const { return m_fbb.GetBuffer(); }
@@ -138,20 +158,23 @@ public:
     explicit Builder(size_t count) : m_data(count), m_fbb() {}
     Builder(size_t count, const Builder<T>& value) : m_data(count, value), m_fbb() {}
 
+    template<bool FixedSize = false>
     void finish()
     {
         m_fbb.Clear();
-        finish(m_fbb);
+        finish<FixedSize>(m_fbb);
         m_fbb.Finish();
     }
-    void finish(flexbuffers::Builder& out)
+
+    template<bool FixedSize = false>
+    void finish(flexbuffers::Builder& out) const
     {
         out.Vector(
             [&]()
             {
                 for (auto& element : m_data)
                 {
-                    element.finish(out);
+                    element.template finish<FixedSize>(out);
                 }
             });
     }
@@ -224,7 +247,7 @@ public:
 
     /// @brief Constructor to interpret raw data created by its corresponding builder
     View(const uint8_t* buffer, size_t size) : View(flexbuffers::GetRoot(buffer, size)) {}
-    View(flexbuffers::Reference reference) : m_data(reference.AsVector()) {}
+    View(flexbuffers::Reference reference) : m_data(reference.AsTypedVector()) {}
 
     /**
      * Element access
@@ -297,7 +320,7 @@ public:
 
     /// @brief Constructor to interpret raw data created by its corresponding builder
     ConstView(const uint8_t* buffer, size_t size) : ConstView(flexbuffers::GetRoot(buffer, size)) {}
-    ConstView(flexbuffers::Reference reference) : m_data(reference.AsVector()) {}
+    ConstView(flexbuffers::Reference reference) : m_data(reference.AsTypedVector()) {}
 
     /**
      * Element access

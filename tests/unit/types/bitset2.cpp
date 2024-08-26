@@ -26,41 +26,24 @@ namespace flatmemory::tests
  * Constructors
  */
 
-TEST(FlatmemoryTests, TypesTypedVectorDefaultConstructorTest)
+TEST(FlatmemoryTests, TypesBitset2DefaultConstructorTest)
 {
     {
         // 1D
-        auto builder = Builder<Vector2<int16_t>>();
+        auto builder = Builder<Bitset2<uint64_t, void>>();
         builder.finish();
-        EXPECT_EQ(builder.size(), 0);
-        EXPECT_EQ(builder.get_buffer().size(), 4);
-    }
-
-    {
-        // 2D
-        auto builder = Builder<Vector2<Vector2<int16_t>>>();
-        builder.finish();
-        EXPECT_EQ(builder.size(), 0);
-        EXPECT_EQ(builder.get_buffer().size(), 4);
+        EXPECT_EQ(builder.get_buffer().size(), 9);
     }
 }
 
-TEST(FlatmemoryTests, TypesTypedVectorConstructorTest)
+TEST(FlatmemoryTests, TypesBitset2ConstructorTest)
 {
     {
         // 1D
-        auto builder = Builder<Vector2<int16_t>>(3);
+        auto builder = Builder<Bitset2<uint64_t, void>>(10);
         builder.finish();
-        EXPECT_EQ(builder.size(), 3);
-        EXPECT_EQ(builder.get_buffer().size(), 10);
-    }
-
-    {
-        // 2D
-        auto builder = Builder<Vector2<Vector2<int16_t>>>(3);
-        builder.finish();
-        EXPECT_EQ(builder.size(), 3);
-        EXPECT_EQ(builder.get_buffer().size(), 13);
+        EXPECT_EQ(builder.get_buffer().size(), 96);
     }
 }
+
 }
