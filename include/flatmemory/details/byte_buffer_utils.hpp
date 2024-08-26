@@ -36,18 +36,20 @@ namespace flatmemory
 template<IsTriviallyCopyable T>
 T read_value(const uint8_t* buf)
 {
-    T value;
-    std::memcpy(&value, buf, sizeof(T));
-    return value;
+    alignas(T) std::byte temp[sizeof(T)];  // Temporary aligned buffer
+    std::memcpy(temp, buf, sizeof(T));     // Copy the bytes into the aligned buffer
+    // Use placement new to safely construct the object
+    return *::new (temp) T(*reinterpret_cast<T*>(temp));
 }
 
 /// @brief Read unaligned data.
 template<IsTriviallyCopyable T>
 T read_value(uint8_t* buf)
 {
-    T value;
-    std::memcpy(&value, buf, sizeof(T));
-    return value;
+    alignas(T) std::byte temp[sizeof(T)];  // Temporary aligned buffer
+    std::memcpy(temp, buf, sizeof(T));     // Copy the bytes into the aligned buffer
+    // Use placement new to safely construct the object
+    return *::new (temp) T(*reinterpret_cast<T*>(temp));
 }
 
 /// @brief Write unaligned data.
