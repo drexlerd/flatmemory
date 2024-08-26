@@ -128,9 +128,6 @@ private:
     template<typename>
     friend class IBuilder;
 
-    template<size_t... Is>
-    size_t finish_iterative_impl(std::index_sequence<Is...>, size_t pos, ByteBuffer& out);
-
     void finish_impl();
     size_t finish_impl(size_t pos, ByteBuffer& out);
 
@@ -346,42 +343,6 @@ constexpr void Layout<Tuple<Ts...>>::print() const
 // Builder
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
-template<size_t... Is>
-size_t Builder<Tuple<Ts...>>::finish_iterative_impl(std::index_sequence<Is...>, size_t pos, ByteBuffer& out)
-{
-    size_t data_pos = Layout<Tuple<Ts...>>::data_positions.back();
-
-    (
-        [&]
-        {
-            using T = element_type<Is>;
-            constexpr bool is_trivial = IsTriviallyCopyable<T>;
-
-            if constexpr (is_trivial)
-            {
-                /* Write the data inline. */
-                auto& value = std::get<Is>(m_data);
-                out.write(pos + Layout<Tuple<Ts...>>::data_positions[Is], value);
-            }
-            else
-            {
-                /* Write the distance between written data pos and offset pos at the offset pos. */
-                out.write(pos + Layout<Tuple<Ts...>>::data_positions[Is], static_cast<OffsetType>(data_pos - Layout<Tuple<Ts...>>::data_positions[Is]));
-
-                /* Write the data at offset */
-                auto& nested_builder = std::get<Is>(m_data);
-                data_pos += nested_builder.finish(pos + data_pos, out);
-            }
-        }(),
-        ...);
-
-    /* Write size of the buffer to the beginning. */
-    out.write(pos + Layout<Tuple<Ts...>>::buffer_size_position, static_cast<BufferSizeType>(data_pos));
-
-    return data_pos;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
 void Builder<Tuple<Ts...>>::finish_impl()
 {
     m_buffer.set_size(this->finish(0, m_buffer));
@@ -390,7 +351,45 @@ void Builder<Tuple<Ts...>>::finish_impl()
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
 size_t Builder<Tuple<Ts...>>::finish_impl(size_t pos, ByteBuffer& out)
 {
-    return finish_iterative_impl(std::make_index_sequence<sizeof...(Ts)> {}, pos, out);
+    size_t data_pos = Layout<Tuple<Ts...>>::data_positions.back();
+
+    // Apply the lambda to both the tuple elements and their indices
+    std::apply(
+        [&](auto&&... elements)
+        {
+            // unsued if tuple has size 0
+            [[maybe_unused]] size_t index = 0;
+            (
+                [&]()
+                {
+                    using T = std::decay_t<decltype(elements)>;
+                    constexpr bool is_trivial = IsTriviallyCopyable<T>;
+
+                    if constexpr (is_trivial)
+                    {
+                        // Write the data inline
+                        out.write(pos + Layout<Tuple<Ts...>>::data_positions[index], elements);
+                    }
+                    else
+                    {
+                        // Write the distance between written data pos and offset pos at the offset pos
+                        out.write(pos + Layout<Tuple<Ts...>>::data_positions[index],
+                                  static_cast<OffsetType>(data_pos - Layout<Tuple<Ts...>>::data_positions[index]));
+
+                        // Write the data at offset
+                        data_pos += elements.finish(pos + data_pos, out);
+                    }
+
+                    ++index;  // Increment index for the next element
+                }(),
+                ...);
+        },
+        m_data);
+
+    /* Write size of the buffer to the beginning. */
+    out.write(pos + Layout<Tuple<Ts...>>::buffer_size_position, static_cast<BufferSizeType>(data_pos));
+
+    return data_pos;
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
