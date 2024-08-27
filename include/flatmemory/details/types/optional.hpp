@@ -59,8 +59,8 @@ template<IsTriviallyCopyableOrNonTrivialType T>
 class Layout<Optional<T>>
 {
 public:
-    static constexpr size_t bool_position = 0;
-    static constexpr size_t data_position = bool_position + sizeof(bool);
+    static constexpr size_t has_value_position = 0;
+    static constexpr size_t value_position = has_value_position + sizeof(bool);
 
     constexpr void print() const;
 };
@@ -186,9 +186,9 @@ private:
     size_t finish_impl(size_t pos, ByteBuffer& out)
     {
         /* Write whether the optional has a value. */
-        out.write(pos + Layout<Optional<T>>::bool_position, m_has_value);
+        out.write(pos + Layout<Optional<T>>::has_value_position, m_has_value);
 
-        size_t data_pos = Layout<Optional<T>>::data_position;
+        size_t data_pos = Layout<Optional<T>>::value_position;
 
         if (m_has_value)
         {
@@ -319,9 +319,9 @@ private:
     size_t finish_impl(size_t pos, ByteBuffer& out)
     {
         /* Write whether the optional has a value. */
-        out.write(pos + Layout<Optional<T>>::bool_position, m_has_value);
+        out.write(pos + Layout<Optional<T>>::has_value_position, m_has_value);
 
-        size_t data_pos = Layout<Optional<T>>::data_position;
+        size_t data_pos = Layout<Optional<T>>::value_position;
 
         if (m_has_value)
         {
@@ -352,27 +352,27 @@ public:
      * Observers
      */
 
-    T operator->() { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
-    T operator->() const { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
+    T operator->() { return read_value<T>(m_buf + Layout<Optional<T>>::value_position); }
+    T operator->() const { return read_value<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    T operator*() & { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
-    T operator*() const& { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
+    T operator*() & { return read_value<T>(m_buf + Layout<Optional<T>>::value_position); }
+    T operator*() const& { return read_value<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    T operator*() && { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
-    T operator*() const&& { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
+    T operator*() && { return read_value<T>(m_buf + Layout<Optional<T>>::value_position); }
+    T operator*() const&& { return read_value<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    explicit operator bool() const { return read_value<bool>(m_buf + Layout<Optional<T>>::bool_position); }
-    bool has_value() const { return read_value<bool>(m_buf + Layout<Optional<T>>::bool_position); }
+    explicit operator bool() const { return read_value<bool>(m_buf + Layout<Optional<T>>::has_value_position); }
+    bool has_value() const { return read_value<bool>(m_buf + Layout<Optional<T>>::has_value_position); }
 
-    T value() & { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
-    T value() const& { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
+    T value() & { return read_value<T>(m_buf + Layout<Optional<T>>::value_position); }
+    T value() const& { return read_value<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    T value() && { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
-    T value() const&& { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
+    T value() && { return read_value<T>(m_buf + Layout<Optional<T>>::value_position); }
+    T value() const&& { return read_value<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    void mutate(T value) { write_value(m_buf + Layout<Optional<T>>::data_position, value); }
-    void mutate(const T& value) { write_value(m_buf + Layout<Optional<T>>::data_position, value); }
-    void mutate(T&& value) { write_value(m_buf + Layout<Optional<T>>::data_position, std::move(value)); }
+    void mutate(T value) { write_value(m_buf + Layout<Optional<T>>::value_position, value); }
+    void mutate(const T& value) { write_value(m_buf + Layout<Optional<T>>::value_position, value); }
+    void mutate(T&& value) { write_value(m_buf + Layout<Optional<T>>::value_position, std::move(value)); }
 
     uint8_t* buffer() { return m_buf; }
     const uint8_t* buffer() const { return m_buf; }
@@ -381,9 +381,9 @@ public:
     {
         if (!has_value())
         {
-            return Layout<Optional<T>>::data_position;
+            return Layout<Optional<T>>::value_position;
         }
-        return Layout<Optional<T>>::data_position + sizeof(T);
+        return Layout<Optional<T>>::value_position + sizeof(T);
     }
 
 private:
@@ -409,23 +409,23 @@ public:
      * Observers
      */
 
-    View<T> operator->() { return View<T>(m_buf + Layout<Optional<T>>::data_position); }
-    ConstView<T> operator->() const { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
+    View<T> operator->() { return View<T>(m_buf + Layout<Optional<T>>::value_position); }
+    ConstView<T> operator->() const { return ConstView<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    View<T> operator*() & { return View<T>(m_buf + Layout<Optional<T>>::data_position); }
-    ConstView<T> operator*() const& { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
+    View<T> operator*() & { return View<T>(m_buf + Layout<Optional<T>>::value_position); }
+    ConstView<T> operator*() const& { return ConstView<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    View<T> operator*() && { return View<T>(m_buf + Layout<Optional<T>>::data_position); }
-    ConstView<T> operator*() const&& { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
+    View<T> operator*() && { return View<T>(m_buf + Layout<Optional<T>>::value_position); }
+    ConstView<T> operator*() const&& { return ConstView<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    explicit operator bool() const { return read_value<bool>(m_buf + Layout<Optional<T>>::bool_position); }
-    bool has_value() const { return read_value<bool>(m_buf + Layout<Optional<T>>::bool_position); }
+    explicit operator bool() const { return read_value<bool>(m_buf + Layout<Optional<T>>::has_value_position); }
+    bool has_value() const { return read_value<bool>(m_buf + Layout<Optional<T>>::has_value_position); }
 
-    View<T> value() & { return View<T>(m_buf + Layout<Optional<T>>::data_position); }
-    ConstView<T> value() const& { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
+    View<T> value() & { return View<T>(m_buf + Layout<Optional<T>>::value_position); }
+    ConstView<T> value() const& { return ConstView<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    View<T> value() && { return View<T>(m_buf + Layout<Optional<T>>::data_position); }
-    ConstView<T> value() const&& { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
+    View<T> value() && { return View<T>(m_buf + Layout<Optional<T>>::value_position); }
+    ConstView<T> value() const&& { return ConstView<T>(m_buf + Layout<Optional<T>>::value_position); }
 
     uint8_t* buffer() { return m_buf; }
     const uint8_t* buffer() const { return m_buf; }
@@ -434,9 +434,9 @@ public:
     {
         if (!has_value())
         {
-            return Layout<Optional<T>>::data_position;
+            return Layout<Optional<T>>::value_position;
         }
-        return Layout<Optional<T>>::data_position + sizeof(T);
+        return Layout<Optional<T>>::value_position + sizeof(T);
     }
 
 private:
@@ -466,18 +466,18 @@ public:
      * Observers
      */
 
-    T operator->() const { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
+    T operator->() const { return read_value<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    T operator*() const& { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
+    T operator*() const& { return read_value<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    T operator*() const&& { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
+    T operator*() const&& { return read_value<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    explicit operator bool() const { return read_value<bool>(m_buf + Layout<Optional<T>>::bool_position); }
-    bool has_value() const { return read_value<bool>(m_buf + Layout<Optional<T>>::bool_position); }
+    explicit operator bool() const { return read_value<bool>(m_buf + Layout<Optional<T>>::has_value_position); }
+    bool has_value() const { return read_value<bool>(m_buf + Layout<Optional<T>>::has_value_position); }
 
-    T value() const& { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
+    T value() const& { return read_value<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    T value() const&& { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
+    T value() const&& { return read_value<T>(m_buf + Layout<Optional<T>>::value_position); }
 
     const uint8_t* buffer() const { return m_buf; }
 
@@ -485,9 +485,9 @@ public:
     {
         if (!has_value())
         {
-            return Layout<Optional<T>>::data_position;
+            return Layout<Optional<T>>::value_position;
         }
-        return Layout<Optional<T>>::data_position + sizeof(T);
+        return Layout<Optional<T>>::value_position + sizeof(T);
     }
 
 private:
@@ -513,18 +513,18 @@ public:
      * Observers
      */
 
-    ConstView<T> operator->() const { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
+    ConstView<T> operator->() const { return ConstView<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    ConstView<T> operator*() const& { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
+    ConstView<T> operator*() const& { return ConstView<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    ConstView<T> operator*() const&& { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
+    ConstView<T> operator*() const&& { return ConstView<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    explicit operator bool() const { return read_value<bool>(m_buf + Layout<Optional<T>>::bool_position); }
-    bool has_value() const { return read_value<bool>(m_buf + Layout<Optional<T>>::bool_position); }
+    explicit operator bool() const { return read_value<bool>(m_buf + Layout<Optional<T>>::has_value_position); }
+    bool has_value() const { return read_value<bool>(m_buf + Layout<Optional<T>>::has_value_position); }
 
-    ConstView<T> value() const& { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
+    ConstView<T> value() const& { return ConstView<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    ConstView<T> value() const&& { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
+    ConstView<T> value() const&& { return ConstView<T>(m_buf + Layout<Optional<T>>::value_position); }
 
     const uint8_t* buffer() const { return m_buf; }
 
@@ -532,9 +532,9 @@ public:
     {
         if (!has_value())
         {
-            return Layout<Optional<T>>::data_position;
+            return Layout<Optional<T>>::value_position;
         }
-        return Layout<Optional<T>>::data_position + sizeof(T);
+        return Layout<Optional<T>>::value_position + sizeof(T);
     }
 
 private:
