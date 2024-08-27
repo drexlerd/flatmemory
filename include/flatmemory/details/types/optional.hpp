@@ -42,13 +42,12 @@
 namespace flatmemory
 {
 /**
- * ID class for non-trivial Optional type.
- *
- * The idea is to encode in the prefix size whether the optional holds a value of type T as follows:
- * If the size prefix = sizeof(BufferSizeType), then the optional does not hold a value.
- * This works because hashing or equality will be correct
+ * ID class
  */
 
+/// @brief Optional encodes in the prefix size whether it holds a value of type T as follows:
+/// If the size prefix = sizeof(BufferSizeType), then the optional does not hold a value.
+/// @tparam T
 template<IsTriviallyCopyableOrNonTrivialType T>
 struct Optional : public NonTrivialType
 {
@@ -71,47 +70,9 @@ public:
 };
 
 /**
- * Free function operators
- */
-
-template<IsOptional O>
-bool operator==(const O& lhs, const O& rhs);
-
-template<IsOptional O>
-bool operator==(const O& lhs, std::nullopt_t);
-
-template<IsOptional O>
-bool operator==(std::nullopt_t, const O& rhs);
-
-template<IsOptional O1, IsOptional O2>
-    requires HaveSameValueType<O1, O2>
-bool operator==(const O1& lhs, const O2& rhs);
-
-template<IsOptional O>
-bool operator==(std::nullopt_t, const O& rhs);
-
-template<IsOptional O>
-bool operator==(const O& lhs, std::nullopt_t);
-
-template<IsOptional O>
-bool operator!=(const O& lhs, const O& rhs);
-
-template<IsOptional O>
-bool operator!=(const O& lhs, std::nullopt_t);
-
-template<IsOptional O>
-bool operator!=(std::nullopt_t, const O& rhs);
-
-template<IsOptional O>
-bool operator!=(const O& lhs, std::nullopt_t);
-
-template<IsOptional O>
-bool operator!=(std::nullopt_t, const O& rhs);
-
-/**
  * Builder
  */
-// Specialization for trivially copyable types
+
 template<IsTriviallyCopyable T>
 class Builder<Optional<T>> : public IBuilder<Builder<Optional<T>>>
 {
@@ -404,6 +365,7 @@ private:
 /**
  * ConstView
  */
+
 template<IsTriviallyCopyable T>
 class ConstView<Optional<T>>
 {
@@ -475,6 +437,48 @@ private:
     template<typename>
     friend class Builder;
 };
+
+/**
+ * Free function operators
+ */
+
+template<IsOptional O>
+bool operator==(const O& lhs, const O& rhs);
+
+template<IsOptional O>
+bool operator==(const O& lhs, std::nullopt_t);
+
+template<IsOptional O>
+bool operator==(std::nullopt_t, const O& rhs);
+
+template<IsOptional O1, IsOptional O2>
+    requires HaveSameValueType<O1, O2>
+bool operator==(const O1& lhs, const O2& rhs);
+
+template<IsOptional O>
+bool operator!=(const O& lhs, const O& rhs)
+{
+    return !(lhs == rhs);
+}
+
+template<IsOptional O>
+bool operator!=(const O& lhs, std::nullopt_t)
+{
+    return !(lhs == std::nullopt);
+}
+
+template<IsOptional O>
+bool operator!=(std::nullopt_t, const O& rhs)
+{
+    return !(std::nullopt == rhs);
+}
+
+template<IsOptional O1, IsOptional O2>
+    requires HaveSameValueType<O1, O2>
+bool operator!=(const O1& lhs, const O2& rhs)
+{
+    return !(lhs == rhs);
+}
 
 }
 
