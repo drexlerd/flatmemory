@@ -57,6 +57,22 @@ struct Optional : public NonTrivialType
     Optional(const Optional& other) {}
 };
 
+template<IsTriviallyCopyable T>
+struct Optional<T> : public NonTrivialType
+{
+    /// @brief Non-trivial copy-constructor
+    /// @param other
+    Optional(const Optional& other) {}
+};
+
+template<IsNonTrivialType T>
+struct Optional<T> : public NonTrivialType
+{
+    /// @brief Non-trivial copy-constructor
+    /// @param other
+    Optional(const Optional& other) {}
+};
+
 /**
  * Layout
  */
