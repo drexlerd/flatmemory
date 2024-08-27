@@ -551,6 +551,80 @@ Builder<Optional<T>>& Builder<Optional<T>>::operator=(Builder&& other)
     return *this;
 }
 
+template<IsNonTrivialType T>
+Builder<Optional<T>>::Builder()
+    requires(std::default_initializable<Builder<T>>)
+    : m_data(), m_buffer()
+{
+}
+
+template<IsNonTrivialType T>
+Builder<Optional<T>>::Builder(std::nullopt_t) : m_data(std::nullopt), m_buffer()
+{
+}
+
+template<IsNonTrivialType T>
+Builder<Optional<T>>::Builder(const Builder<T>& value) : m_data(value), m_buffer()
+{
+}
+
+template<IsNonTrivialType T>
+Builder<Optional<T>>::Builder(Builder<T>&& value) : m_data(std::move(value)), m_buffer()
+{
+}
+
+template<IsNonTrivialType T>
+Builder<Optional<T>>::Builder(const Builder& other) : m_data(other.m_data), m_buffer(other.m_buffer)
+{
+}
+
+template<IsNonTrivialType T>
+Builder<Optional<T>>::Builder(Builder&& other) : m_data(std::move(other.m_data)), m_buffer(std::move(other.m_data))
+{
+}
+
+template<IsNonTrivialType T>
+Builder<Optional<T>>& Builder<Optional<T>>::operator=(std::nullopt_t)
+{
+    m_data = std::nullopt;
+    return *this;
+}
+
+template<IsNonTrivialType T>
+Builder<Optional<T>>& Builder<Optional<T>>::operator=(const Builder<T>& value)
+{
+    m_data = value;
+    return *this;
+}
+
+template<IsNonTrivialType T>
+Builder<Optional<T>>& Builder<Optional<T>>::operator=(Builder<T>&& value)
+{
+    m_data = std::move(value);
+    return *this;
+}
+
+template<IsNonTrivialType T>
+Builder<Optional<T>>& Builder<Optional<T>>::operator=(const Builder& other)
+{
+    if (this != &other)
+    {
+        m_data = other.m_data;
+    }
+    return *this;
+}
+
+template<IsNonTrivialType T>
+Builder<Optional<T>>& Builder<Optional<T>>::operator=(Builder&& other)
+{
+    if (this != &other)
+    {
+        m_data = std::move(other.m_data);
+        m_buffer = std::move(other.m_buffer);
+    }
+    return *this;
+}
+
 /**
  * Observers
  */
@@ -623,6 +697,78 @@ T&& Builder<Optional<T>>::value() &&
 
 template<IsTriviallyCopyable T>
 const T&& Builder<Optional<T>>::value() const&&
+{
+    return m_data.value();
+}
+
+template<IsNonTrivialType T>
+Builder<T>* Builder<Optional<T>>::operator->()
+{
+    return m_data.operator->();
+}
+
+template<IsNonTrivialType T>
+const Builder<T>* Builder<Optional<T>>::operator->() const
+{
+    return m_data.operator->();
+}
+
+template<IsNonTrivialType T>
+Builder<T>& Builder<Optional<T>>::operator*() &
+{
+    return *m_data;
+}
+
+template<IsNonTrivialType T>
+const Builder<T>& Builder<Optional<T>>::operator*() const&
+{
+    return *m_data;
+}
+
+template<IsNonTrivialType T>
+Builder<T>&& Builder<Optional<T>>::operator*() &&
+{
+    return *m_data;
+}
+
+template<IsNonTrivialType T>
+const Builder<T>&& Builder<Optional<T>>::operator*() const&&
+{
+    return *m_data;
+}
+
+template<IsNonTrivialType T>
+Builder<Optional<T>>::operator bool() const
+{
+    return m_data.operator bool();
+}
+
+template<IsNonTrivialType T>
+bool Builder<Optional<T>>::has_value() const
+{
+    return m_data.has_value();
+}
+
+template<IsNonTrivialType T>
+Builder<T>& Builder<Optional<T>>::value() &
+{
+    return m_data.value();
+}
+
+template<IsNonTrivialType T>
+const Builder<T>& Builder<Optional<T>>::value() const&
+{
+    return m_data.value();
+}
+
+template<IsNonTrivialType T>
+Builder<T>&& Builder<Optional<T>>::value() &&
+{
+    return m_data.value();
+}
+
+template<IsNonTrivialType T>
+const Builder<T>&& Builder<Optional<T>>::value() const&&
 {
     return m_data.value();
 }
