@@ -179,7 +179,6 @@ public:
      */
 
     using ValueType = T;
-    using T_ = typename maybe_builder<T>::type;
 
     /**
      * Constructors
@@ -196,8 +195,10 @@ public:
     auto operator[](size_t pos) const;
     auto at(size_t pos);
     auto at(size_t pos) const;
-    T_* data();
-    const T_* data() const;
+    T* data()
+        requires(IsTriviallyCopyable<T>);
+    const T* data() const
+        requires(IsTriviallyCopyable<T>);
     uint8_t* buffer();
     const uint8_t* buffer() const;
 
@@ -289,7 +290,6 @@ public:
      */
 
     using ValueType = T;
-    using T_ = typename maybe_builder<T>::type;
 
     /**
      * Constructors
@@ -316,7 +316,8 @@ public:
 
     auto operator[](size_t pos) const;
     auto at(size_t pos) const;
-    const T_* data() const;
+    const T* data() const
+        requires(IsTriviallyCopyable<T>);
     const uint8_t* buffer() const;
 
     /**
@@ -684,15 +685,17 @@ auto View<Vector<T>>::at(size_t pos) const
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-View<Vector<T>>::T_* View<Vector<T>>::data()
+T* View<Vector<T>>::data()
+    requires(IsTriviallyCopyable<T>)
 {
-    return reinterpret_cast<View<Vector<T>>::T_*>(m_buf + Layout<Vector<T>>::vector_data_position);
+    return reinterpret_cast<T*>(m_buf + Layout<Vector<T>>::vector_data_position);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-const View<Vector<T>>::T_* View<Vector<T>>::data() const
+const T* View<Vector<T>>::data() const
+    requires(IsTriviallyCopyable<T>)
 {
-    return reinterpret_cast<const View<Vector<T>>::T_*>(m_buf + Layout<Vector<T>>::vector_data_position);
+    return reinterpret_cast<const T*>(m_buf + Layout<Vector<T>>::vector_data_position);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
@@ -950,9 +953,10 @@ auto ConstView<Vector<T>>::at(size_t pos) const
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-const ConstView<Vector<T>>::T_* ConstView<Vector<T>>::data() const
+const T* ConstView<Vector<T>>::data() const
+    requires(IsTriviallyCopyable<T>)
 {
-    return reinterpret_cast<const ConstView<Vector<T>>::T_*>(m_buf + Layout<Vector<T>>::vector_data_position);
+    return reinterpret_cast<const T*>(m_buf + Layout<Vector<T>>::vector_data_position);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
