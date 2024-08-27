@@ -70,16 +70,93 @@ public:
 };
 
 /**
+ * Free function operators
+ */
+
+template<IsOptional O>
+bool operator==(const O& lhs, const O& rhs);
+
+template<IsOptional O>
+bool operator==(const O& lhs, std::nullopt_t);
+
+template<IsOptional O>
+bool operator==(std::nullopt_t, const O& rhs);
+
+template<IsOptional O1, IsOptional O2>
+    requires HaveSameValueType<O1, O2>
+bool operator==(const O1& lhs, const O2& rhs);
+
+template<IsOptional O>
+bool operator==(std::nullopt_t, const O& rhs);
+
+template<IsOptional O>
+bool operator==(const O& lhs, std::nullopt_t);
+
+template<IsOptional O>
+bool operator!=(const O& lhs, const O& rhs);
+
+template<IsOptional O>
+bool operator!=(const O& lhs, std::nullopt_t);
+
+template<IsOptional O>
+bool operator!=(std::nullopt_t, const O& rhs);
+
+template<IsOptional O>
+bool operator!=(const O& lhs, std::nullopt_t);
+
+template<IsOptional O>
+bool operator!=(std::nullopt_t, const O& rhs);
+
+/**
  * Builder
  */
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTriviallyCopyable T>
 class Builder<Optional<T>> : public IBuilder<Builder<Optional<T>>>
 {
 public:
-    using T_ = typename maybe_builder<T>::type;
+    using ValueType = T;
+
+    /**
+     * Constructors and assignments
+     */
+
+    Builder();
+    Builder(std::nullopt_t);
+    Builder(const T& value);
+    Builder(T&& value);
+    Builder(const Builder& other);
+    Builder(Builder&& other);
+
+    Builder& operator=(std::nullopt_t);
+    Builder& operator=(const T& value);
+    Builder& operator=(T&& value);
+    Builder& operator=(const Builder& other);
+    Builder& operator=(Builder&& other);
+
+    /**
+     * Observers
+     */
+
+    T* operator->();
+    const T* operator->() const;
+
+    T& operator*() &;
+    const T& operator*() const&;
+
+    T&& operator*() &&;
+    const T&& operator*() const&&;
+
+    explicit operator bool() const;
+    bool has_value() const;
+
+    T& value() &;
+    const T& value() const&;
+
+    T&& value() &&;
+    const T&& value() const&&;
 
 private:
-    std::optional<T_> m_data;
+    std::optional<T> m_data;
     ByteBuffer m_buffer;
 
     /* Implement IBuilder interface. */
@@ -91,83 +168,106 @@ private:
 
     auto& get_buffer_impl();
     const auto& get_buffer_impl() const;
+};
 
+template<IsNonTrivialType T>
+class Builder<Optional<T>> : public IBuilder<Builder<Optional<T>>>
+{
 public:
+    using ValueType = T;
+
     /**
      * Constructors and assignments
      */
 
     Builder()
-        requires(std::default_initializable<typename maybe_builder<T>::type>);
+        requires(std::default_initializable<Builder<T>>);
     Builder(std::nullopt_t);
+    Builder(const Builder<T>& other);
+    Builder(Builder<T>&& other);
     Builder(const Builder& other);
     Builder(Builder&& other);
-    Builder(const View<Optional<T>>& other);
-    Builder(View<Optional<T>>&& other);
-    Builder(const ConstView<Optional<T>>& other);
-    Builder(ConstView<Optional<T>>&& other);
 
     Builder& operator=(std::nullopt_t);
+    Builder& operator=(const Builder<T>& other);
+    Builder& operator=(Builder<T>&& other);
     Builder& operator=(const Builder& other);
     Builder& operator=(Builder&& other);
-    Builder& operator=(const View<Optional<T>>& other);
-    Builder& operator=(View<Optional<T>>&& other);
-    Builder& operator=(const ConstView<Optional<T>>& other);
-    Builder& operator=(ConstView<Optional<T>>&& other);
 
     /**
      * Observers
      */
 
-    T_* operator->();
-    const T_* operator->() const;
+    Builder<T>* operator->();
+    const Builder<T>* operator->() const;
 
-    T_& operator*() &;
-    const T_& operator*() const&;
+    Builder<T>& operator*() &;
+    const Builder<T>& operator*() const&;
 
-    T_&& operator*() &&;
-    const T_&& operator*() const&&;
+    Builder<T>&& operator*() &&;
+    const Builder<T>&& operator*() const&&;
 
     explicit operator bool() const;
     bool has_value() const;
 
-    T_& value() &;
-    const T_& value() const&;
+    Builder<T>& value() &;
+    const Builder<T>& value() const&;
 
-    T_&& value() &&;
-    const T_&& value() const&&;
+    Builder<T>&& value() &&;
+    const Builder<T>&& value() const&&;
+
+private:
+    std::optional<Builder<T>> m_data;
+    ByteBuffer m_buffer;
+
+    /* Implement IBuilder interface. */
+    template<typename>
+    friend class IBuilder;
+
+    void finish_impl();
+    size_t finish_impl(size_t pos, ByteBuffer& out);
+
+    auto& get_buffer_impl();
+    const auto& get_buffer_impl() const;
 };
-
-/**
- * Builder operators
- */
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool operator==(const Builder<Optional<T>>& lhs, const Builder<Optional<T>>& rhs);
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool operator==(const Builder<Optional<T>>& lhs, std::nullopt_t);
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool operator==(std::nullopt_t, const Builder<Optional<T>>& rhs);
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool operator!=(const Builder<Optional<T>>& lhs, const Builder<Optional<T>>& rhs);
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool operator!=(const Builder<Optional<T>>& lhs, std::nullopt_t);
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-bool operator!=(std::nullopt_t, const Builder<Optional<T>>& rhs);
 
 /**
  * View
  */
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTriviallyCopyable T>
 class View<Optional<T>>
 {
 public:
-    using T_ = typename maybe_builder<T>::type;
+    using ValueType = T;
+
+    /// @brief Constructor to interpret raw data created by its corresponding builder
+    View(const uint8_t* buf);
+
+    /**
+     * Observers
+     */
+
+    T operator->();
+    T operator->() const;
+
+    T operator*() &;
+    T operator*() const&;
+
+    T operator*() &&;
+    T operator*() const&&;
+
+    explicit operator bool() const;
+    bool has_value() const;
+
+    T value() &;
+    T value() const&;
+
+    T value() &&;
+    T value() const&&;
+
+    void mutate(T value);
+    void mutate(const T& value);
+    void mutate(T&& value);
 
 private:
     uint8_t* m_buf;
@@ -177,8 +277,14 @@ private:
 
     template<typename>
     friend class Builder;
+};
 
+template<IsNonTrivialType T>
+class View<Optional<T>>
+{
 public:
+    using ValueType = T;
+
     /// @brief Constructor to interpret raw data created by its corresponding builder
     View(const uint8_t* buf);
 
@@ -186,33 +292,62 @@ public:
      * Observers
      */
 
-    T_* operator->();
-    const T_* operator->() const;
+    View<T> operator->();
+    ConstView<T> operator->() const;
 
-    T_& operator*() &;
-    const T_& operator*() const&;
+    View<T> operator*() &;
+    ConstView<T> operator*() const&;
 
-    T_&& operator*() &&;
-    const T_&& operator*() const&&;
+    View<T> operator*() &&;
+    ConstView<T> operator*() const&&;
 
     explicit operator bool() const;
     bool has_value() const;
 
-    T_& value() &;
-    const T_& value() const&;
+    View<T> value() &;
+    ConstView<T> value() const&;
 
-    T_&& value() &&;
-    const T_&& value() const&&;
+    View<T> value() &&;
+    ConstView<T> value() const&&;
+
+private:
+    uint8_t* m_buf;
+
+    /// @brief Default constructor to make view a trivial data type and serializable
+    View() = default;
+
+    template<typename>
+    friend class Builder;
 };
 
 /**
  * ConstView
  */
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTriviallyCopyable T>
 class ConstView<Optional<T>>
 {
 public:
-    using T_ = typename maybe_builder<T>::type;
+    using ValueType = T;
+
+    /// @brief Constructor to interpret raw data created by its corresponding builder
+    ConstView(const uint8_t* buf);
+
+    /**
+     * Observers
+     */
+
+    T operator->() const;
+
+    T operator*() const&;
+
+    T operator*() const&&;
+
+    explicit operator bool() const;
+    bool has_value() const;
+
+    T value() const&;
+
+    T value() const&&;
 
 private:
     const uint8_t* m_buf;
@@ -222,8 +357,14 @@ private:
 
     template<typename>
     friend class Builder;
+};
 
+template<IsNonTrivialType T>
+class ConstView<Optional<T>>
+{
 public:
+    using ValueType = T;
+
     /// @brief Constructor to interpret raw data created by its corresponding builder
     ConstView(const uint8_t* buf);
 
@@ -231,18 +372,27 @@ public:
      * Observers
      */
 
-    const T_* operator->() const;
+    ConstView<T> operator->() const;
 
-    const T_& operator*() const&;
+    ConstView<T> operator*() const&;
 
-    const T_&& operator*() const&&;
+    ConstView<T> operator*() const&&;
 
     explicit operator bool() const;
     bool has_value() const;
 
-    const T_& value() const&;
+    ConstView<T> value() const&;
 
-    const T_&& value() const&&;
+    ConstView<T> value() const&&;
+
+private:
+    const uint8_t* m_buf;
+
+    /// @brief Default constructor to make view a trivial data type and serializable
+    ConstView() = default;
+
+    template<typename>
+    friend class Builder;
 };
 
 /**
@@ -253,30 +403,21 @@ public:
  * IBuilder interface
  */
 
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTriviallyCopyable T>
 void Builder<Optional<T>>::finish_impl()
 {
     finish_impl(0, m_buffer);
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTriviallyCopyable T>
 size_t Builder<Optional<T>>::finish_impl(size_t pos, ByteBuffer& out)
 {
     size_t data_pos = Layout<Optional<T>>::data_position;
 
     if (m_data)
     {
-        constexpr bool is_trivial = IsTriviallyCopyable<T>;
-        if constexpr (is_trivial)
-        {
-            /* Write the trivial data inline. */
-            m_buffer.write(pos + data_pos, m_data);
-        }
-        else
-        {
-            /* Write the buffer inline. */
-            m_data.finish(pos + data_pos, m_buffer);
-        }
+        /* Write the trivial data inline. */
+        m_buffer.write(pos + data_pos, m_data);
     }
 
     /* Write the size of the buffer to the beginning. */
@@ -286,13 +427,49 @@ size_t Builder<Optional<T>>::finish_impl(size_t pos, ByteBuffer& out)
     return data_pos;
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTriviallyCopyable T>
 auto& Builder<Optional<T>>::get_buffer_impl()
 {
     return m_buffer;
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTriviallyCopyable T>
+const auto& Builder<Optional<T>>::get_buffer_impl() const
+{
+    return m_buffer;
+}
+
+template<IsNonTrivialType T>
+void Builder<Optional<T>>::finish_impl()
+{
+    finish_impl(0, m_buffer);
+}
+
+template<IsNonTrivialType T>
+size_t Builder<Optional<T>>::finish_impl(size_t pos, ByteBuffer& out)
+{
+    size_t data_pos = Layout<Optional<T>>::data_position;
+
+    if (m_data)
+    {
+        /* Write the buffer inline. */
+        m_data.finish(pos + data_pos, m_buffer);
+    }
+
+    /* Write the size of the buffer to the beginning. */
+    out.write(pos + Layout<Vector<T>>::buffer_size_position, static_cast<BufferSizeType>(data_pos));
+    out.set_size(data_pos);
+
+    return data_pos;
+}
+
+template<IsNonTrivialType T>
+auto& Builder<Optional<T>>::get_buffer_impl()
+{
+    return m_buffer;
+}
+
+template<IsNonTrivialType T>
 const auto& Builder<Optional<T>>::get_buffer_impl() const
 {
     return m_buffer;
@@ -302,56 +479,58 @@ const auto& Builder<Optional<T>>::get_buffer_impl() const
  * Constructors and assignments
  */
 
-template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Optional<T>>::Builder()
-    requires(std::default_initializable<typename Builder<Optional<T>>::T_>)
-    : m_data(Builder<Optional<T>>::T_()), m_buffer()
+template<IsTriviallyCopyable T>
+Builder<Optional<T>>::Builder() : m_data(), m_buffer()
 {
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTriviallyCopyable T>
 Builder<Optional<T>>::Builder(std::nullopt_t) : m_data(std::nullopt), m_buffer()
 {
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTriviallyCopyable T>
+Builder<Optional<T>>::Builder(const T& value) : m_data(value), m_buffer()
+{
+}
+
+template<IsTriviallyCopyable T>
+Builder<Optional<T>>::Builder(T&& value) : m_data(std::move(value)), m_buffer()
+{
+}
+
+template<IsTriviallyCopyable T>
 Builder<Optional<T>>::Builder(const Builder& other) : m_data(other.m_data), m_buffer(other.m_buffer)
 {
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTriviallyCopyable T>
 Builder<Optional<T>>::Builder(Builder&& other) : m_data(std::move(other.m_data)), m_buffer(std::move(other.m_data))
 {
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Optional<T>>::Builder(const View<Optional<T>>& other) : m_data(other.value()), m_buffer()
-{
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Optional<T>>::Builder(View<Optional<T>>&& other) : m_data(other.value()), m_buffer()
-{
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Optional<T>>::Builder(const ConstView<Optional<T>>& other) : m_data(other.value()), m_buffer()
-{
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Optional<T>>::Builder(ConstView<Optional<T>>&& other) : m_data(other.value()), m_buffer()
-{
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTriviallyCopyable T>
 Builder<Optional<T>>& Builder<Optional<T>>::operator=(std::nullopt_t)
 {
     m_data = std::nullopt;
     return *this;
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTriviallyCopyable T>
+Builder<Optional<T>>& Builder<Optional<T>>::operator=(const T& value)
+{
+    m_data = value;
+    return *this;
+}
+
+template<IsTriviallyCopyable T>
+Builder<Optional<T>>& Builder<Optional<T>>::operator=(T&& value)
+{
+    m_data = std::move(value);
+    return *this;
+}
+
+template<IsTriviallyCopyable T>
 Builder<Optional<T>>& Builder<Optional<T>>::operator=(const Builder& other)
 {
     if (this != &other)
@@ -361,7 +540,7 @@ Builder<Optional<T>>& Builder<Optional<T>>::operator=(const Builder& other)
     return *this;
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTriviallyCopyable T>
 Builder<Optional<T>>& Builder<Optional<T>>::operator=(Builder&& other)
 {
     if (this != &other)
@@ -372,118 +551,78 @@ Builder<Optional<T>>& Builder<Optional<T>>::operator=(Builder&& other)
     return *this;
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Optional<T>>& Builder<Optional<T>>::operator=(const View<Optional<T>>& other)
-{
-    if (this != &other)
-    {
-        m_data = other.m_data;
-    }
-    return *this;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Optional<T>>& Builder<Optional<T>>::operator=(View<Optional<T>>&& other)
-{
-    if (this != &other)
-    {
-        m_data = other.m_data;
-    }
-    return *this;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Optional<T>>& Builder<Optional<T>>::operator=(const ConstView<Optional<T>>& other)
-{
-    if (this != &other)
-    {
-        m_data = other.m_data;
-    }
-    return *this;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Optional<T>>& Builder<Optional<T>>::operator=(ConstView<Optional<T>>&& other)
-{
-    if (this != &other)
-    {
-        m_data = other.m_data;
-    }
-    return *this;
-}
-
 /**
  * Observers
  */
 
-template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Optional<T>>::T_* Builder<Optional<T>>::operator->()
+template<IsTriviallyCopyable T>
+T* Builder<Optional<T>>::operator->()
 {
     return m_data.operator->();
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
-const Builder<Optional<T>>::T_* Builder<Optional<T>>::operator->() const
+template<IsTriviallyCopyable T>
+const T* Builder<Optional<T>>::operator->() const
 {
     return m_data.operator->();
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Optional<T>>::T_& Builder<Optional<T>>::operator*() &
+template<IsTriviallyCopyable T>
+T& Builder<Optional<T>>::operator*() &
 {
     return *m_data;
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
-const Builder<Optional<T>>::T_& Builder<Optional<T>>::operator*() const&
+template<IsTriviallyCopyable T>
+const T& Builder<Optional<T>>::operator*() const&
 {
     return *m_data;
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Optional<T>>::T_&& Builder<Optional<T>>::operator*() &&
+template<IsTriviallyCopyable T>
+T&& Builder<Optional<T>>::operator*() &&
 {
     return *m_data;
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
-const Builder<Optional<T>>::T_&& Builder<Optional<T>>::operator*() const&&
+template<IsTriviallyCopyable T>
+const T&& Builder<Optional<T>>::operator*() const&&
 {
     return *m_data;
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTriviallyCopyable T>
 Builder<Optional<T>>::operator bool() const
 {
     return m_data.operator bool();
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
+template<IsTriviallyCopyable T>
 bool Builder<Optional<T>>::has_value() const
 {
     return m_data.has_value();
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Optional<T>>::T_& Builder<Optional<T>>::value() &
+template<IsTriviallyCopyable T>
+T& Builder<Optional<T>>::value() &
 {
     return m_data.value();
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
-const Builder<Optional<T>>::T_& Builder<Optional<T>>::value() const&
+template<IsTriviallyCopyable T>
+const T& Builder<Optional<T>>::value() const&
 {
     return m_data.value();
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Optional<T>>::T_&& Builder<Optional<T>>::value() &&
+template<IsTriviallyCopyable T>
+T&& Builder<Optional<T>>::value() &&
 {
     return m_data.value();
 }
 
-template<IsTriviallyCopyableOrNonTrivialType T>
-const Builder<Optional<T>>::T_&& Builder<Optional<T>>::value() const&&
+template<IsTriviallyCopyable T>
+const T&& Builder<Optional<T>>::value() const&&
 {
     return m_data.value();
 }

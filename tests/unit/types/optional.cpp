@@ -30,16 +30,16 @@ TEST(FlatmemoryTests, TypesOptionalDefaultConstructorTest)
         auto builder = Builder<Optional<uint16_t>>();
         builder.finish();
 
-        EXPECT_TRUE(builder.has_value());
-        EXPECT_EQ(builder.value(), 0);
+        EXPECT_FALSE(builder.has_value());
+        EXPECT_ANY_THROW(builder.value());
         EXPECT_EQ(builder.buffer().size(), 4);
     }
     {
-        auto builder = Builder<Optional<uint64_t>>();
+        auto builder = Builder<Optional<uint64_t>>(42);
         builder.finish();
 
         EXPECT_TRUE(builder.has_value());
-        EXPECT_EQ(builder.value(), 0);
+        EXPECT_EQ(builder.value(), 42);
         EXPECT_EQ(builder.buffer().size(), 4);
     }
 }

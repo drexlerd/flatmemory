@@ -201,6 +201,55 @@ concept IsVectorConstView = is_vector_const_view_helper<T>::value;
 template<typename T>
 concept IsVector = IsVectorBuilder<T> || IsVectorView<T> || IsVectorConstView<T>;
 
+/**
+ * Optional
+ */
+
+template<IsTriviallyCopyableOrNonTrivialType T>
+struct Optional;
+
+template<typename T>
+struct is_optional_builder_helper : std::false_type
+{
+};
+
+template<typename T>
+struct is_optional_view_helper : std::false_type
+{
+};
+
+template<typename T>
+struct is_optional_const_view_helper : std::false_type
+{
+};
+
+template<IsTriviallyCopyableOrNonTrivialType T>
+struct is_optional_builder_helper<Builder<Optional<T>>> : std::true_type
+{
+};
+
+template<IsTriviallyCopyableOrNonTrivialType T>
+struct is_optional_view_helper<View<Optional<T>>> : std::true_type
+{
+};
+
+template<IsTriviallyCopyableOrNonTrivialType T>
+struct is_optional_const_view_helper<ConstView<Optional<T>>> : std::true_type
+{
+};
+
+template<typename T>
+concept IsOptionalBuilder = is_optional_builder_helper<T>::value;
+
+template<typename T>
+concept IsOptionalView = is_optional_view_helper<T>::value;
+
+template<typename T>
+concept IsOptionalConstView = is_optional_const_view_helper<T>::value;
+
+template<typename T>
+concept IsOptional = IsOptionalBuilder<T> || IsOptionalView<T> || IsOptionalConstView<T>;
+
 }
 
 #endif
