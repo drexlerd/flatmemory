@@ -119,8 +119,10 @@ public:
     const T_& operator[](size_t pos) const;
     T_& at(size_t pos);
     const T_& at(size_t pos) const;
-    T_* data();
-    const T_* data() const;
+    T* data()
+        requires(IsTriviallyCopyable<T>);
+    const T* data() const
+        requires(IsTriviallyCopyable<T>);
 
     /**
      * Iterators
@@ -540,13 +542,15 @@ const Builder<Vector<T>>::T_& Builder<Vector<T>>::at(size_t pos) const
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-Builder<Vector<T>>::T_* Builder<Vector<T>>::data()
+T* Builder<Vector<T>>::data()
+    requires(IsTriviallyCopyable<T>)
 {
     return m_data.data();
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
-const Builder<Vector<T>>::T_* Builder<Vector<T>>::data() const
+const T* Builder<Vector<T>>::data() const
+    requires(IsTriviallyCopyable<T>)
 {
     return m_data.data();
 }
