@@ -35,18 +35,14 @@
 #include <iostream>
 #include <optional>
 
-/**
- * UNDER CONSTRUCTION
- */
-
 namespace flatmemory
 {
 /**
  * ID class
  */
 
-/// @brief Optional encodes in the prefix size whether it holds a value of type T as follows:
-/// If the size prefix = sizeof(BufferSizeType), then the optional does not hold a value.
+/// @brief `Optional` implements an optional where a boolean encodes whether it holds a value of type T or not.
+/// There is no additional buffer size prefix because taking the buffer size of T + 1 suffices.
 /// @tparam T
 template<IsTriviallyCopyableOrNonTrivialType T>
 struct Optional : public NonTrivialType
@@ -63,8 +59,8 @@ template<IsTriviallyCopyableOrNonTrivialType T>
 class Layout<Optional<T>>
 {
 public:
-    static constexpr size_t buffer_size_position = 0;
-    static constexpr size_t data_position = buffer_size_position + sizeof(BufferSizeType);
+    static constexpr size_t bool_position = 0;
+    static constexpr size_t data_position = bool_position + sizeof(bool);
 
     constexpr void print() const;
 };
@@ -80,29 +76,31 @@ public:
     using ValueType = T;
 
     // Constructors and assignments (inline definitions)
-    Builder() : m_data(), m_buffer() {}
-    Builder(std::nullopt_t) : m_data(std::nullopt), m_buffer() {}
-    Builder(const T& value) : m_data(value), m_buffer() {}
-    Builder(T&& value) : m_data(std::move(value)), m_buffer() {}
+    Builder() : m_has_value(false), m_value(), m_buffer() {}
+    Builder(std::nullopt_t) : m_has_value(false), m_value(), m_buffer() {}
+    Builder(const T& value) : m_has_value(true), m_value(value), m_buffer() {}
+    Builder(T&& value) : m_has_value(true), m_value(std::move(value)), m_buffer() {}
 
-    Builder(const Builder& other) : m_data(other.m_data), m_buffer(other.m_buffer) {}
-    Builder(Builder&& other) : m_data(std::move(other.m_data)), m_buffer(std::move(other.m_data)) {}
+    Builder(const Builder& other) : m_has_value(other.m_has_value), m_value(other.m_value), m_buffer(other.m_buffer) {}
+    Builder(Builder&& other) : m_has_value(other.m_has_value), m_value(std::move(other.m_value)), m_buffer(std::move(other.m_buffer)) {}
 
     Builder& operator=(std::nullopt_t)
     {
-        m_data = std::nullopt;
+        m_has_value = false;
         return *this;
     }
 
     Builder& operator=(const T& value)
     {
-        m_data = value;
+        m_has_value = true;
+        m_value = value;
         return *this;
     }
 
     Builder& operator=(T&& value)
     {
-        m_data = std::move(value);
+        m_has_value = true;
+        m_value = std::move(value);
         return *this;
     }
 
@@ -110,7 +108,9 @@ public:
     {
         if (this != &other)
         {
-            m_data = other.m_data;
+            m_has_value = other.m_has_value;
+            m_value = other.m_value;
+            m_buffer = other.m_buffer;
         }
         return *this;
     }
@@ -119,52 +119,82 @@ public:
     {
         if (this != &other)
         {
-            m_data = std::move(other.m_data);
+            m_has_value = other.m_has_value;
+            m_value = std::move(other.m_value);
             m_buffer = std::move(other.m_buffer);
         }
         return *this;
     }
 
     // Observers (inline definitions)
-    T* operator->() { return m_data.operator->(); }
-    const T* operator->() const { return m_data.operator->(); }
+    T* operator->() { return &m_value; }
+    const T* operator->() const { return &m_value; }
 
-    T& operator*() & { return *m_data; }
-    const T& operator*() const& { return *m_data; }
+    T& operator*() & { return m_value; }
+    const T& operator*() const& { return m_value; }
 
-    T&& operator*() && { return *m_data; }
-    const T&& operator*() const&& { return *m_data; }
+    T&& operator*() && { return std::move(m_value); }
+    const T&& operator*() const&& { return std::move(m_value); }
 
-    explicit operator bool() const { return m_data.operator bool(); }
-    bool has_value() const { return m_data.has_value(); }
+    explicit operator bool() const { return m_has_value; }
+    bool has_value() const { return m_has_value; }
 
-    T& value() & { return m_data.value(); }
-    const T& value() const& { return m_data.value(); }
-    T&& value() && { return m_data.value(); }
-    const T&& value() const&& { return m_data.value(); }
+    T& value() &
+    {
+        if (!m_has_value)
+        {
+            throw std::runtime_error("Optional<T>::value(): Tried to access non existing value.");
+        }
+        return m_value;
+    }
+    const T& value() const&
+    {
+        if (!m_has_value)
+        {
+            throw std::runtime_error("Optional<T>::value(): Tried to access non existing value.");
+        }
+        return m_value;
+    }
+    T&& value() &&
+    {
+        if (!m_has_value)
+        {
+            throw std::runtime_error("Optional<T>::value(): Tried to access non existing value.");
+        }
+        return std::move(m_value);
+    }
+    const T&& value() const&&
+    {
+        if (!m_has_value)
+        {
+            throw std::runtime_error("Optional<T>::value(): Tried to access non existing value.");
+        }
+        return std::move(m_value);
+    }
 
 private:
-    std::optional<T> m_data;
+    bool m_has_value;
+    T m_value;
+
     ByteBuffer m_buffer;
 
     /* Implement IBuilder interface. */
     template<typename>
     friend class IBuilder;
 
-    void finish_impl() { finish_impl(0, m_buffer); }
+    void finish_impl() { m_buffer.set_size(finish_impl(0, m_buffer)); }
     size_t finish_impl(size_t pos, ByteBuffer& out)
     {
+        /* Write whether the optional has a value. */
+        out.write(pos + Layout<Optional<T>>::bool_position, m_has_value);
+
         size_t data_pos = Layout<Optional<T>>::data_position;
 
-        if (m_data)
+        if (m_has_value)
         {
-            /* Write the trivial data inline. */
-            m_buffer.write(pos + data_pos, m_data);
+            /* Write the value inline. */
+            data_pos += out.write(pos + data_pos, m_value);
         }
-
-        /* Write the size of the buffer to the beginning. */
-        out.write(pos + Layout<Vector<T>>::buffer_size_position, static_cast<BufferSizeType>(data_pos));
-        out.set_size(data_pos);
 
         return data_pos;
     }
@@ -180,29 +210,31 @@ public:
     using ValueType = T;
 
     // Constructors and assignments (inline definitions)
-    Builder() : m_data(), m_buffer() {}
-    Builder(std::nullopt_t) : m_data(std::nullopt), m_buffer() {}
-    Builder(const Builder<T>& value) : m_data(value), m_buffer() {}
-    Builder(Builder<T>&& value) : m_data(std::move(value)), m_buffer() {}
+    Builder() : m_has_value(false), m_value(), m_buffer() {}
+    Builder(std::nullopt_t) : m_has_value(false), m_value(), m_buffer() {}
+    Builder(const Builder<T>& value) : m_has_value(true), m_value(value), m_buffer() {}
+    Builder(Builder<T>&& value) : m_has_value(true), m_value(std::move(value)), m_buffer() {}
 
-    Builder(const Builder& other) : m_data(other.m_data), m_buffer(other.m_buffer) {}
-    Builder(Builder&& other) : m_data(std::move(other.m_data)), m_buffer(std::move(other.m_data)) {}
+    Builder(const Builder& other) : m_has_value(other.m_has_value), m_value(other.m_value), m_buffer(other.m_buffer) {}
+    Builder(Builder&& other) : m_has_value(other.m_has_value), m_value(std::move(other.m_value)), m_buffer(std::move(other.m_data)) {}
 
     Builder& operator=(std::nullopt_t)
     {
-        m_data = std::nullopt;
+        m_has_value = false;
         return *this;
     }
 
     Builder& operator=(const Builder<T>& value)
     {
-        m_data = value;
+        m_has_value = true;
+        m_value = value;
         return *this;
     }
 
     Builder& operator=(Builder<T>&& value)
     {
-        m_data = std::move(value);
+        m_has_value = true;
+        m_value = value;
         return *this;
     }
 
@@ -210,7 +242,9 @@ public:
     {
         if (this != &other)
         {
-            m_data = other.m_data;
+            m_has_value = other.m_has_value;
+            m_value = other.m_value;
+            m_buffer = other.m_buffer;
         }
         return *this;
     }
@@ -219,52 +253,81 @@ public:
     {
         if (this != &other)
         {
-            m_data = std::move(other.m_data);
+            m_has_value = std::move(other.m_has_value);
+            m_value = std::move(other.m_buffer);
             m_buffer = std::move(other.m_buffer);
         }
         return *this;
     }
 
-    // Observers (inline definitions)
-    Builder<T>* operator->() { return m_data.operator->(); }
-    const Builder<T>* operator->() const { return m_data.operator->(); }
+    Builder<T>* operator->() { return &m_value; }
+    const Builder<T>* operator->() const { return &m_value; }
 
-    Builder<T>& operator*() & { return *m_data; }
-    const Builder<T>& operator*() const& { return *m_data; }
+    Builder<T>& operator*() & { return m_value; }
+    const Builder<T>& operator*() const& { return m_value; }
 
-    Builder<T>&& operator*() && { return *m_data; }
-    const Builder<T>&& operator*() const&& { return *m_data; }
+    Builder<T>&& operator*() && { return std::move(m_value); }
+    const Builder<T>&& operator*() const&& { return std::move(m_value); }
 
-    explicit operator bool() const { return m_data.operator bool(); }
-    bool has_value() const { return m_data.has_value(); }
+    explicit operator bool() const { return m_has_value; }
+    bool has_value() const { return m_has_value; }
 
-    Builder<T>& value() & { return m_data.value(); }
-    const Builder<T>& value() const& { return m_data.value(); }
-    Builder<T>&& value() && { return m_data.value(); }
-    const Builder<T>&& value() const&& { return m_data.value(); }
+    Builder<T>& value() &
+    {
+        if (!m_has_value)
+        {
+            throw std::runtime_error("Optional<T>::value(): Tried to access non existing value.");
+        }
+        return m_value;
+    }
+    const Builder<T>& value() const&
+    {
+        if (!m_has_value)
+        {
+            throw std::runtime_error("Optional<T>::value(): Tried to access non existing value.");
+        }
+        return m_value;
+    }
+    Builder<T>&& value() &&
+    {
+        if (!m_has_value)
+        {
+            throw std::runtime_error("Optional<T>::value(): Tried to access non existing value.");
+        }
+        return std::move(m_value);
+    }
+    const Builder<T>&& value() const&&
+    {
+        if (!m_has_value)
+        {
+            throw std::runtime_error("Optional<T>::value(): Tried to access non existing value.");
+        }
+        return std::move(m_value);
+    }
 
 private:
-    std::optional<Builder<T>> m_data;
+    bool m_has_value;
+    Builder<T> m_value;
+
     ByteBuffer m_buffer;
 
     /* Implement IBuilder interface. */
     template<typename>
     friend class IBuilder;
 
-    void finish_impl() { finish_impl(0, m_buffer); }
+    void finish_impl() { m_buffer.set_size(finish_impl(0, m_buffer)); }
     size_t finish_impl(size_t pos, ByteBuffer& out)
     {
+        /* Write whether the optional has a value. */
+        out.write(pos + Layout<Optional<T>>::bool_position, m_has_value);
+
         size_t data_pos = Layout<Optional<T>>::data_position;
 
-        if (m_data)
+        if (m_has_value)
         {
-            /* Write the buffer inline. */
-            m_data.finish(pos + data_pos, m_buffer);
+            /* Write the value inline. */
+            data_pos += m_value.finish(pos + data_pos, out);
         }
-
-        /* Write the size of the buffer to the beginning. */
-        out.write(pos + Layout<Vector<T>>::buffer_size_position, static_cast<BufferSizeType>(data_pos));
-        out.set_size(data_pos);
 
         return data_pos;
     }
@@ -283,33 +346,45 @@ public:
     using ValueType = T;
 
     /// @brief Constructor to interpret raw data created by its corresponding builder
-    View(const uint8_t* buf);
+    View(uint8_t* buf) : m_buf(buf) {}
 
     /**
      * Observers
      */
 
-    T operator->();
-    T operator->() const;
+    T operator->() { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
+    T operator->() const { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
 
-    T operator*() &;
-    T operator*() const&;
+    T operator*() & { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
+    T operator*() const& { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
 
-    T operator*() &&;
-    T operator*() const&&;
+    T operator*() && { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
+    T operator*() const&& { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
 
-    explicit operator bool() const;
-    bool has_value() const;
+    explicit operator bool() const { return read_value<bool>(m_buf + Layout<Optional<T>>::bool_position); }
+    bool has_value() const { return read_value<bool>(m_buf + Layout<Optional<T>>::bool_position); }
 
-    T value() &;
-    T value() const&;
+    T value() & { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
+    T value() const& { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
 
-    T value() &&;
-    T value() const&&;
+    T value() && { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
+    T value() const&& { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
 
-    void mutate(T value);
-    void mutate(const T& value);
-    void mutate(T&& value);
+    void mutate(T value) { write_value(m_buf + Layout<Optional<T>>::data_position, value); }
+    void mutate(const T& value) { write_value(m_buf + Layout<Optional<T>>::data_position, value); }
+    void mutate(T&& value) { write_value(m_buf + Layout<Optional<T>>::data_position, std::move(value)); }
+
+    uint8_t* buffer() { return m_buf; }
+    const uint8_t* buffer() const { return m_buf; }
+
+    BufferSizeType buffer_size() const
+    {
+        if (!has_value())
+        {
+            return Layout<Optional<T>>::data_position;
+        }
+        return Layout<Optional<T>>::data_position + sizeof(T);
+    }
 
 private:
     uint8_t* m_buf;
@@ -328,29 +403,41 @@ public:
     using ValueType = T;
 
     /// @brief Constructor to interpret raw data created by its corresponding builder
-    View(const uint8_t* buf);
+    View(uint8_t* buf) : m_buf(buf) {}
 
     /**
      * Observers
      */
 
-    View<T> operator->();
-    ConstView<T> operator->() const;
+    View<T> operator->() { return View<T>(m_buf + Layout<Optional<T>>::data_position); }
+    ConstView<T> operator->() const { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
 
-    View<T> operator*() &;
-    ConstView<T> operator*() const&;
+    View<T> operator*() & { return View<T>(m_buf + Layout<Optional<T>>::data_position); }
+    ConstView<T> operator*() const& { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
 
-    View<T> operator*() &&;
-    ConstView<T> operator*() const&&;
+    View<T> operator*() && { return View<T>(m_buf + Layout<Optional<T>>::data_position); }
+    ConstView<T> operator*() const&& { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
 
-    explicit operator bool() const;
-    bool has_value() const;
+    explicit operator bool() const { return read_value<bool>(m_buf + Layout<Optional<T>>::bool_position); }
+    bool has_value() const { return read_value<bool>(m_buf + Layout<Optional<T>>::bool_position); }
 
-    View<T> value() &;
-    ConstView<T> value() const&;
+    View<T> value() & { return View<T>(m_buf + Layout<Optional<T>>::data_position); }
+    ConstView<T> value() const& { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
 
-    View<T> value() &&;
-    ConstView<T> value() const&&;
+    View<T> value() && { return View<T>(m_buf + Layout<Optional<T>>::data_position); }
+    ConstView<T> value() const&& { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
+
+    uint8_t* buffer() { return m_buf; }
+    const uint8_t* buffer() const { return m_buf; }
+
+    BufferSizeType buffer_size() const
+    {
+        if (!has_value())
+        {
+            return Layout<Optional<T>>::data_position;
+        }
+        return Layout<Optional<T>>::data_position + sizeof(T);
+    }
 
 private:
     uint8_t* m_buf;
@@ -373,24 +460,35 @@ public:
     using ValueType = T;
 
     /// @brief Constructor to interpret raw data created by its corresponding builder
-    ConstView(const uint8_t* buf);
+    ConstView(const uint8_t* buf) : m_buf(buf) {}
 
     /**
      * Observers
      */
 
-    T operator->() const;
+    T operator->() const { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
 
-    T operator*() const&;
+    T operator*() const& { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
 
-    T operator*() const&&;
+    T operator*() const&& { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
 
-    explicit operator bool() const;
-    bool has_value() const;
+    explicit operator bool() const { return read_value<bool>(m_buf + Layout<Optional<T>>::bool_position); }
+    bool has_value() const { return read_value<bool>(m_buf + Layout<Optional<T>>::bool_position); }
 
-    T value() const&;
+    T value() const& { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
 
-    T value() const&&;
+    T value() const&& { return read_value<T>(m_buf + Layout<Optional<T>>::data_position); }
+
+    const uint8_t* buffer() const { return m_buf; }
+
+    BufferSizeType buffer_size() const
+    {
+        if (!has_value())
+        {
+            return Layout<Optional<T>>::data_position;
+        }
+        return Layout<Optional<T>>::data_position + sizeof(T);
+    }
 
 private:
     const uint8_t* m_buf;
@@ -409,24 +507,35 @@ public:
     using ValueType = T;
 
     /// @brief Constructor to interpret raw data created by its corresponding builder
-    ConstView(const uint8_t* buf);
+    ConstView(const uint8_t* buf) : m_buf(buf) {}
 
     /**
      * Observers
      */
 
-    ConstView<T> operator->() const;
+    ConstView<T> operator->() const { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
 
-    ConstView<T> operator*() const&;
+    ConstView<T> operator*() const& { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
 
-    ConstView<T> operator*() const&&;
+    ConstView<T> operator*() const&& { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
 
-    explicit operator bool() const;
-    bool has_value() const;
+    explicit operator bool() const { return read_value<bool>(m_buf + Layout<Optional<T>>::bool_position); }
+    bool has_value() const { return read_value<bool>(m_buf + Layout<Optional<T>>::bool_position); }
 
-    ConstView<T> value() const&;
+    ConstView<T> value() const& { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
 
-    ConstView<T> value() const&&;
+    ConstView<T> value() const&& { return ConstView<T>(m_buf + Layout<Optional<T>>::data_position); }
+
+    const uint8_t* buffer() const { return m_buf; }
+
+    BufferSizeType buffer_size() const
+    {
+        if (!has_value())
+        {
+            return Layout<Optional<T>>::data_position;
+        }
+        return Layout<Optional<T>>::data_position + sizeof(T);
+    }
 
 private:
     const uint8_t* m_buf;
@@ -443,17 +552,57 @@ private:
  */
 
 template<IsOptional O>
-bool operator==(const O& lhs, const O& rhs);
+bool operator==(const O& lhs, const O& rhs)
+{
+    if (&lhs != &rhs)
+    {
+        if (lhs.has_value() != rhs.has_value())
+        {
+            // One has value, the other doesn't.
+            return false;
+        }
+        if (!lhs.has_value())
+        {
+            // Both are empty.
+            return true;
+        }
+        assert(lhs.has_value() && rhs.has_value());
+        // Both have values.
+        return lhs.value() == rhs.value();
+    }
+    return true;
+}
 
 template<IsOptional O>
-bool operator==(const O& lhs, std::nullopt_t);
+bool operator==(const O& lhs, std::nullopt_t)
+{
+    return (!lhs.has_value());
+}
 
 template<IsOptional O>
-bool operator==(std::nullopt_t, const O& rhs);
+bool operator==(std::nullopt_t, const O& rhs)
+{
+    return (!rhs.has_value());
+}
 
 template<IsOptional O1, IsOptional O2>
     requires HaveSameValueType<O1, O2>
-bool operator==(const O1& lhs, const O2& rhs);
+bool operator==(const O1& lhs, const O2& rhs)
+{
+    if (lhs.has_value() != rhs.has_value())
+    {
+        // One has value, the other doesn't.
+        return false;
+    }
+    if (!lhs.has_value())
+    {
+        // Both are empty.
+        return true;
+    }
+    assert(lhs.has_value() && rhs.has_value());
+    // Both have values.
+    return lhs.value() == rhs.value();
+}
 
 template<IsOptional O>
 bool operator!=(const O& lhs, const O& rhs)
@@ -481,5 +630,18 @@ bool operator!=(const O1& lhs, const O2& rhs)
 }
 
 }
+
+template<flatmemory::IsOptional O>
+struct std::hash<O>
+{
+    size_t operator()(const O& optional) const
+    {
+        if (!optional.has_value())
+        {
+            return 1;
+        }
+        return flatmemory::hash_combine(optional.value());
+    }
+};
 
 #endif

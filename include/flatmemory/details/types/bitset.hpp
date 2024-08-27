@@ -37,10 +37,14 @@
 namespace flatmemory
 {
 /**
- * ID class for non-trivial Bitset type.
- * The optional tag can be used to disallow operations with bitsets with other non-default tags.
+ * ID class
  */
 
+/// @brief `Bitset` implements a dynamic bitset with possibly infinite size.
+/// The optional tag can be used to disallow operations with bitsets with other non-default tags.
+/// There is no additional buffer size prefix because the buffer size is Vector<Block> + sizeof(bool).
+/// @tparam Tag
+/// @tparam Block
 template<IsUnsignedIntegral Block, typename Tag>
 struct Bitset : public NonTrivialType
 {
@@ -57,8 +61,7 @@ template<IsUnsignedIntegral Block, typename Tag>
 class Layout<Bitset<Block, Tag>>
 {
 public:
-    static constexpr size_t buffer_size_position = 0;
-    static constexpr size_t default_bit_value_position = buffer_size_position + sizeof(BufferSizeType);
+    static constexpr size_t default_bit_value_position = 0;
     static constexpr size_t blocks_position = default_bit_value_position + sizeof(bool);
 
     constexpr void print() const;
@@ -513,8 +516,7 @@ private:
 template<IsUnsignedIntegral Block, typename Tag>
 constexpr void Layout<Bitset<Block, Tag>>::print() const
 {
-    std::cout << "buffer_size_position: " << buffer_size_position << "\n"
-              << "default_bit_value_position: " << default_bit_value_position << "\n"
+    std::cout << "default_bit_value_position: " << default_bit_value_position << "\n"
               << "blocks_position: " << blocks_position << std::endl;
 }
 
@@ -825,9 +827,6 @@ size_t Builder<Bitset<Block, Tag>>::finish_impl(size_t pos, ByteBuffer& out)
 
     /* Write the blocks inline because there is no other data. */
     data_pos += m_blocks.finish(pos + data_pos, out);
-
-    /* Write the size of the buffer to the beginning. */
-    out.write(pos + BitsetLayout::buffer_size_position, static_cast<BufferSizeType>(data_pos));
 
     return data_pos;
 }
@@ -1273,9 +1272,7 @@ const uint8_t* View<Bitset<Block, Tag>>::buffer() const
 template<IsUnsignedIntegral Block, typename Tag>
 BufferSizeType View<Bitset<Block, Tag>>::buffer_size() const
 {
-    assert(m_buf);
-    assert(test_correct_alignment<BufferSizeType>(m_buf + BitsetLayout::buffer_size_position));
-    return read_value<BufferSizeType>(m_buf + BitsetLayout::buffer_size_position);
+    return sizeof(bool) + get_blocks().buffer_size();
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
@@ -1375,9 +1372,7 @@ const uint8_t* ConstView<Bitset<Block, Tag>>::buffer() const
 template<IsUnsignedIntegral Block, typename Tag>
 BufferSizeType ConstView<Bitset<Block, Tag>>::buffer_size() const
 {
-    assert(m_buf);
-    assert(test_correct_alignment<BufferSizeType>(m_buf + BitsetLayout::buffer_size_position));
-    return read_value<BufferSizeType>(m_buf + BitsetLayout::buffer_size_position);
+    return sizeof(bool) + get_blocks().buffer_size();
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
