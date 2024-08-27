@@ -26,6 +26,7 @@
 #include "flatmemory/details/concepts.hpp"
 #include "flatmemory/details/layout.hpp"
 #include "flatmemory/details/types.hpp"
+#include "flatmemory/details/types/declarations.hpp"
 #include "flatmemory/details/view.hpp"
 #include "flatmemory/details/view_const.hpp"
 
