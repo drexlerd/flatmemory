@@ -290,19 +290,71 @@ struct StructTest
     uint64_t y;
 };
 
+static_assert(sizeof(StructTest) == 16);
+
 TEST(FlatmemoryTests, TypesTupleStructTest)
 {
-    EXPECT_EQ((IsTriviallyCopyable<View<Tuple<StructTest>>>), true);
-    EXPECT_EQ((IsTriviallyCopyable<Tuple<StructTest>>), false);
+    EXPECT_EQ((IsTriviallyCopyable<View<Tuple<Vector<uint32_t>, StructTest>>>), true);
+    EXPECT_EQ((IsTriviallyCopyable<Tuple<Vector<uint32_t>, StructTest>>), false);
 
-    auto builder = Builder<Tuple<StructTest>>();
-    builder.get<0>().x = 5;
-    builder.get<0>().y = 10;
+    auto builder = Builder<Tuple<Vector<uint32_t>, StructTest>>();
+    builder.get<0>().resize(1);
+    builder.get<1>().x = 5;
+    builder.get<1>().y = 10;
+    builder.finish();
+    EXPECT_EQ(builder.buffer().size(), 36);
+
+    auto view = View<Tuple<Vector<uint32_t>, StructTest>>(builder.buffer().data());
+    EXPECT_EQ(view.get<0>().size(), 1);
+    EXPECT_EQ(view.get<0>().at(0), 0);
+    EXPECT_EQ(view.get<1>().x, 5);
+    EXPECT_EQ(view.get<1>().y, 10);
+    EXPECT_EQ(view.buffer_size(), 36);
+}
+
+/*
+struct FlatSimpleEffect
+{
+    bool is_negated;
+    size_t atom_id;
+};  // __attribute__((packed));  // Pack the struct to avoid padding
+
+static_assert(sizeof(FlatSimpleEffect) == 16);
+
+TEST(FlatmemoryTests, TypesTupleConditionalEffectTest)
+{
+    uint8_t buffer[16] = { 00, 00, 00, 00, 00, 00, 00, 00, 04, 00, 00, 00, 00, 00, 00, 00 };
+    auto effect = read_value<FlatSimpleEffect>(buffer);
+    EXPECT_FALSE(effect.is_negated);
+    EXPECT_EQ(effect.atom_id, 4);
+
+    using FlatIndexListLayout = flatmemory::Vector<uint32_t>;
+
+    using FlatConditionalEffectLayout = flatmemory::Tuple<FlatIndexListLayout,  // Positive static atom indices
+                                                          FlatIndexListLayout,  // Negative static atom indices
+                                                          FlatIndexListLayout,  // Positive fluent atom indices
+                                                          FlatIndexListLayout,  // Negative fluent atom indices
+                                                          FlatIndexListLayout,  // Positive derived atom indices
+                                                          FlatIndexListLayout,  // Negative derived atom indices
+                                                          FlatSimpleEffect>;    // simple add or delete effect
+
+    Layout<FlatConditionalEffectLayout>().print();
+
+    auto builder = Builder<FlatConditionalEffectLayout>();
+    builder.get<0>().push_back(4);
+    builder.get<0>().push_back(10);
+    builder.get<3>().push_back(1);
+    builder.get<6>().is_negated = false;
+    builder.get<6>().atom_id = 4;
+
     builder.finish();
 
-    auto view = View<Tuple<StructTest>>(builder.buffer().data());
-    EXPECT_EQ(view.get<0>().x, 5);
-    EXPECT_EQ(view.get<0>().y, 10);
+    auto view = View<FlatConditionalEffectLayout>(builder.buffer().data());
+    print(builder.buffer().data(), builder.buffer().size());
+
+    EXPECT_FALSE(view.get<6>().is_negated);
+    EXPECT_EQ(view.get<6>().atom_id, 4);
 }
+*/
 
 }

@@ -852,8 +852,6 @@ void Builder<Bitset<Block, Tag>>::resize_to_fit(const Other& other)
     {
         m_blocks.resize(other.get_blocks().size(), m_default_bit_value ? BitsetUtils::block_ones<Block> : BitsetUtils::block_zeroes<Block>);
     }
-
-    assert(m_blocks.size() > 0);
 }
 
 template<IsUnsignedIntegral Block, typename Tag>

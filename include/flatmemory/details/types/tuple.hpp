@@ -360,8 +360,7 @@ size_t Builder<Tuple<Ts...>>::finish_iterative_impl(std::index_sequence<Is...>, 
             if constexpr (is_trivial)
             {
                 /* Write the data inline. */
-                auto& value = std::get<Is>(m_data);
-                out.write(pos + Layout<Tuple<Ts...>>::data_positions[Is], value);
+                out.write(pos + Layout<Tuple<Ts...>>::data_positions[Is], std::get<Is>(m_data));
             }
             else
             {
@@ -461,14 +460,6 @@ auto View<Tuple<Ts...>>::get()
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
 template<std::size_t I>
-void View<Tuple<Ts...>>::mutate(View<Tuple<Ts...>>::element_type<I> value)
-    requires(IsTriviallyCopyable<View<Tuple<Ts...>>::element_type<I>>)
-{
-    return write_value<View<Tuple<Ts...>>::element_type<I>>(m_buf + Layout<Tuple<Ts...>>::data_positions[I], value);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-template<std::size_t I>
 auto View<Tuple<Ts...>>::get() const
 {
     static_assert(I < sizeof...(Ts));
@@ -483,6 +474,14 @@ auto View<Tuple<Ts...>>::get() const
         const auto offset_pos = m_buf + Layout<Tuple<Ts...>>::data_positions[I];
         return const_element_view_type<I>(offset_pos + read_value<OffsetType>(offset_pos));
     }
+}
+
+template<IsTriviallyCopyableOrNonTrivialType... Ts>
+template<std::size_t I>
+void View<Tuple<Ts...>>::mutate(View<Tuple<Ts...>>::element_type<I> value)
+    requires(IsTriviallyCopyable<View<Tuple<Ts...>>::element_type<I>>)
+{
+    return write_value<View<Tuple<Ts...>>::element_type<I>>(m_buf + Layout<Tuple<Ts...>>::data_positions[I], value);
 }
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
