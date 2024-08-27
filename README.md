@@ -5,19 +5,18 @@ Flatmemory is a C++20 library for serialization and zero-cost deserialization. S
 ## Key Features and Advantages
 
 1. **Efficient Memory Management:** Flatmemory excels in scenarios where minimal memory allocations are critical. Builders reuse their memory, and serialized data can be efficiently written to large preallocated buffers. This minimizes the overhead typically associated with object creation and memory management.
-2. **Cache-Friendly Data Layout:** The library stores data contiguously in memory, enhancing cache locality. This leads to improved runtime performance, especially in scenarios where large datasets are processed.
-3. **Composite and Trivial Types:** Flatmemory supports a variety of non-trivial composite types like `Tuple`, `Vector`, and `Bitset`. Trivial types `T` that satisfy `std::is_trivially_copyable_v<T>` are stored in place, while non-trivial types are managed using offsets. 
-4. **No Code Generation Required:** Unlike some serialization libraries, Flatmemory does not rely on code generation tools.
+2. **Cache-Friendly Data Layout:** Flatmemory stores data contiguously in memory, enhancing cache locality.
+3. **Non-Trivial and Trivial Types:** Flatmemory supports a variety of non-trivial composite types like `Tuple`, `Vector`, and `Bitset`. Trivial types `T` that satisfy `std::is_trivially_copyable_v<T>` are stored in place, while non-trivial types are managed using offsets of type `uint32_t`.
+4. **Generic Programming:** Unlike other serialization libraries, Flatmemory does not rely on code generation tools. Instead, Flatmemory is purely based on templates, allowing serialization of generic types at ease.
 
 ## Limitations
 
-1. **Fixed Memory Layouts:** Once an object is serialized, its memory layout cannot be extended while maintaining backward compatibility. This trade-off is necessary to achieve the library’s performance goals.
-2. **Non-Resizable Objects:** Serialized objects have a fixed size, and operations that would alter their structure (such as inserting elements in a vector) are not permitted.
+1. **Fixed Memory Layouts:** Once an object is serialized, its memory layout cannot be extended while maintaining backward compatibility. However, the library can be extended to work for such use cases as well.
+2. **Non-Resizable Objects:** Serialized objects have a fixed size, and operations that would alter their structure (such as inserting elements in a vector) are not permitted. Instead, the user has to reconstruct a new buffer. Mutating trivially copieable types is possible.
 
 ## Example
 
-In this example, we use a `Builder` to serialize a 2-dimensional `Vector` of `uint16_t` into a sequence of bytes. A respective `View` can interpret the data.
-For a sequence of `N` insert operations, zero memory allocations on average are needed to construct a two dimensional vector (assuming a fixed size), and the usual `log(N)` memory allocations are needed to store them in a buffer that uses doubling strategy for memory allocation. Instead of reallocating memory, an additional buffer segment of double the size is allocated.
+In this example, we use a `Builder` to serialize a 2-dimensional `Vector` of `uint16_t` into a sequence of bytes. A respective `View` can interpret the data. For a sequence of `N` insert operations, zero memory allocations on average are needed to construct a two dimensional vector (assuming a fixed size), and the usual `log(N)` memory allocations are needed to store them in a buffer that uses doubling strategy for memory allocation. Instead of reallocating memory, an additional buffer segment of double the size is allocated to ensure that existing views do not become invalidated.
 
 ```cpp
 #include <flatmemory/flatmemory.hpp>
