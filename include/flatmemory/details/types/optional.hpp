@@ -652,10 +652,36 @@ bool operator!=(const O1& lhs, const O2& rhs)
 
 }
 
-template<flatmemory::IsOptional O>
-struct std::hash<O>
+template<flatmemory::IsTriviallyCopyableOrNonTrivialType T>
+struct std::hash<flatmemory::Builder<flatmemory::Optional<T>>>
 {
-    size_t operator()(const O& optional) const
+    size_t operator()(const flatmemory::Builder<flatmemory::Optional<T>>& optional) const
+    {
+        if (!optional.has_value())
+        {
+            return 1;
+        }
+        return flatmemory::hash_combine(optional.value());
+    }
+};
+
+template<flatmemory::IsTriviallyCopyableOrNonTrivialType T>
+struct std::hash<flatmemory::View<flatmemory::Optional<T>>>
+{
+    size_t operator()(const flatmemory::View<flatmemory::Optional<T>>& optional) const
+    {
+        if (!optional.has_value())
+        {
+            return 1;
+        }
+        return flatmemory::hash_combine(optional.value());
+    }
+};
+
+template<flatmemory::IsTriviallyCopyableOrNonTrivialType T>
+struct std::hash<flatmemory::ConstView<flatmemory::Optional<T>>>
+{
+    size_t operator()(const flatmemory::ConstView<flatmemory::Optional<T>>& optional) const
     {
         if (!optional.has_value())
         {

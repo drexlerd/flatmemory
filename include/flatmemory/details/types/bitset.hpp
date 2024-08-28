@@ -1527,23 +1527,70 @@ std::ostream& operator<<(std::ostream& out, ConstView<Bitset<Block, Tag>> elemen
  * Hashing
  */
 
-template<flatmemory::IsBitset B>
-struct std::hash<B>
+template<flatmemory::IsUnsignedIntegral Block, typename Tag>
+struct std::hash<flatmemory::Builder<flatmemory::Bitset<Block, Tag>>>
 {
-    size_t operator()(const B& bitset) const
+    size_t operator()(const flatmemory::Builder<flatmemory::Bitset<Block, Tag>>& bitset) const
     {
         // Fetch data
         const bool default_bit_value = bitset.get_default_bit_value();
         const auto& blocks = bitset.get_blocks();
 
-        const auto default_block =
-            default_bit_value ? flatmemory::BitsetUtils::block_ones<typename B::BlockType> : flatmemory::BitsetUtils::block_zeroes<typename B::BlockType>;
+        const auto default_block = default_bit_value ? flatmemory::BitsetUtils::block_ones<Block> : flatmemory::BitsetUtils::block_zeroes<Block>;
         const auto seed = static_cast<uint32_t>(default_block);
 
         // Find the last block that differs from the default block
         auto last_relevant_index = static_cast<int64_t>(blocks.size()) - 1;
         for (; (last_relevant_index >= 0) && (blocks[last_relevant_index] == default_block); --last_relevant_index) {}
-        const auto length = static_cast<std::size_t>(last_relevant_index + 1) * sizeof(typename B::BlockType);
+        const auto length = static_cast<std::size_t>(last_relevant_index + 1) * sizeof(Block);
+
+        // Compute a hash value up to and including this block
+        int64_t hash[2] = { 0, 0 };
+        flatmemory::MurmurHash3_x64_128(blocks.data(), length, seed, hash);
+        return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
+    }
+};
+
+template<flatmemory::IsUnsignedIntegral Block, typename Tag>
+struct std::hash<flatmemory::View<flatmemory::Bitset<Block, Tag>>>
+{
+    size_t operator()(const flatmemory::View<flatmemory::Bitset<Block, Tag>>& bitset) const
+    {
+        // Fetch data
+        const bool default_bit_value = bitset.get_default_bit_value();
+        const auto& blocks = bitset.get_blocks();
+
+        const auto default_block = default_bit_value ? flatmemory::BitsetUtils::block_ones<Block> : flatmemory::BitsetUtils::block_zeroes<Block>;
+        const auto seed = static_cast<uint32_t>(default_block);
+
+        // Find the last block that differs from the default block
+        auto last_relevant_index = static_cast<int64_t>(blocks.size()) - 1;
+        for (; (last_relevant_index >= 0) && (blocks[last_relevant_index] == default_block); --last_relevant_index) {}
+        const auto length = static_cast<std::size_t>(last_relevant_index + 1) * sizeof(Block);
+
+        // Compute a hash value up to and including this block
+        int64_t hash[2] = { 0, 0 };
+        flatmemory::MurmurHash3_x64_128(blocks.data(), length, seed, hash);
+        return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
+    }
+};
+
+template<flatmemory::IsUnsignedIntegral Block, typename Tag>
+struct std::hash<flatmemory::ConstView<flatmemory::Bitset<Block, Tag>>>
+{
+    size_t operator()(const flatmemory::ConstView<flatmemory::Bitset<Block, Tag>>& bitset) const
+    {
+        // Fetch data
+        const bool default_bit_value = bitset.get_default_bit_value();
+        const auto& blocks = bitset.get_blocks();
+
+        const auto default_block = default_bit_value ? flatmemory::BitsetUtils::block_ones<Block> : flatmemory::BitsetUtils::block_zeroes<Block>;
+        const auto seed = static_cast<uint32_t>(default_block);
+
+        // Find the last block that differs from the default block
+        auto last_relevant_index = static_cast<int64_t>(blocks.size()) - 1;
+        for (; (last_relevant_index >= 0) && (blocks[last_relevant_index] == default_block); --last_relevant_index) {}
+        const auto length = static_cast<std::size_t>(last_relevant_index + 1) * sizeof(Block);
 
         // Compute a hash value up to and including this block
         int64_t hash[2] = { 0, 0 };
