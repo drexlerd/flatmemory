@@ -31,10 +31,10 @@ struct NonTrivialType
 };
 
 template<typename T>
-concept IsNonTrivialType = std::derived_from<T, NonTrivialType>;
+concept IsTriviallyCopyable = std::is_trivially_copyable_v<T>;
 
 template<typename T>
-concept IsTriviallyCopyable = std::is_trivially_copyable_v<T>;
+concept IsNonTrivialType = !IsTriviallyCopyable<T> && std::derived_from<T, NonTrivialType>;
 
 template<typename T>
 concept IsTriviallyCopyableOrNonTrivialType = (IsTriviallyCopyable<T> || IsNonTrivialType<T>);
