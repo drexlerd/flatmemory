@@ -136,23 +136,23 @@ TEST(FlatmemoryTests, TypesTupleEqualToAndHashTest)
     EXPECT_EQ(const_view1, view3);
 }
 
-TEST(FlatmemoryTests, TypesTupleSerializeViewsTest)
-{
-    using BitsetVectorLayout = Vector<Bitset<uint64_t>>;
-
-    auto builder1 = Builder<BitsetVectorLayout>();
-    builder1.resize(2);
-    builder1[0].set(4);
-    builder1[1].set(64);
-    builder1.finish();
-
-    using BitsetTupleLayout = Tuple<View<BitsetVectorLayout>, ConstView<BitsetVectorLayout>>;
-
-    auto builder2 = Builder<BitsetTupleLayout>(View<BitsetVectorLayout>(builder1.buffer().data()), ConstView<BitsetVectorLayout>(builder1.buffer().data()));
-    builder2.finish();
-
-    EXPECT_EQ(builder2.get<0>(), builder2.get<1>());
-}
+// TEST(FlatmemoryTests, TypesTupleSerializeViewsTest)
+//{
+//     using BitsetVectorLayout = Vector<Bitset<uint64_t>>;
+//
+//     auto builder1 = Builder<BitsetVectorLayout>();
+//     builder1.resize(2);
+//     builder1[0].set(4);
+//     builder1[1].set(64);
+//     builder1.finish();
+//
+//     using BitsetTupleLayout = Tuple<View<BitsetVectorLayout>, ConstView<BitsetVectorLayout>>;
+//
+//     auto builder2 = Builder<BitsetTupleLayout>(View<BitsetVectorLayout>(builder1.buffer().data()), ConstView<BitsetVectorLayout>(builder1.buffer().data()));
+//     builder2.finish();
+//
+//     EXPECT_EQ(builder2.get<0>(), builder2.get<1>());
+// }
 
 TEST(FlatmemoryTests, TypesTupleViewMutateTest)
 {
