@@ -204,15 +204,9 @@ private:
      */
 
     template<typename T>
-    auto get_element(uint8_t* buf)
-    {
-        static_assert(std::false_type::value, "View<Tuple<Ts...>>::get_element(...): Expected usage of overload.");
-    }
+    auto get_element(uint8_t* buf);
     template<typename T>
-    auto get_element(const uint8_t* buf) const
-    {
-        static_assert(std::false_type::value, "View<Tuple<Ts...>>::get_element(...): Expected usage of overload.");
-    }
+    auto get_element(const uint8_t* buf) const;
 
     template<IsTriviallyCopyable T>
     T get_element(uint8_t* buf)
@@ -312,10 +306,7 @@ private:
      */
 
     template<typename T>
-    auto get_element(const uint8_t* buf) const
-    {
-        static_assert(std::false_type::value, "ConstView<Tuple<Ts...>>::get_element(...): Expected usage of overload.");
-    }
+    auto get_element(const uint8_t* buf) const;
 
     template<IsTriviallyCopyable T>
     T get_element(const uint8_t* buf) const
