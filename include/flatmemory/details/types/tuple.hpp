@@ -144,7 +144,7 @@ public:
 
     Builder(std::conditional_t<IsTriviallyCopyable<Ts>, Ts, Builder<Ts>>&&... args)
         requires(sizeof...(Ts) > 0)
-        : m_data(std::forward<std::conditional_t<IsTriviallyCopyable<Ts>, Ts, Builder<Ts>>>(args)...), m_buffer()
+        : m_data(std::forward<Ts>(args)...), m_buffer()
     {
     }
 
