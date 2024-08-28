@@ -75,7 +75,10 @@ class Builder<Optional<T>> : public IBuilder<Builder<Optional<T>>>
 public:
     using ValueType = T;
 
-    // Constructors and assignments (inline definitions)
+    /**
+     * Constructors
+     */
+
     Builder() : m_has_value(false), m_value(), m_buffer() {}
     Builder(std::nullopt_t) : m_has_value(false), m_value(), m_buffer() {}
     Builder(const T& value) : m_has_value(true), m_value(value), m_buffer() {}
@@ -83,6 +86,10 @@ public:
 
     Builder(const Builder& other) : m_has_value(other.m_has_value), m_value(other.m_value), m_buffer(other.m_buffer) {}
     Builder(Builder&& other) : m_has_value(other.m_has_value), m_value(std::move(other.m_value)), m_buffer(std::move(other.m_buffer)) {}
+
+    /**
+     * Assignment operators
+     */
 
     Builder& operator=(std::nullopt_t)
     {
@@ -126,7 +133,10 @@ public:
         return *this;
     }
 
-    // Observers (inline definitions)
+    /**
+     * Observers
+     */
+
     T* operator->() { return &m_value; }
     const T* operator->() const { return &m_value; }
 
@@ -209,7 +219,10 @@ class Builder<Optional<T>> : public IBuilder<Builder<Optional<T>>>
 public:
     using ValueType = T;
 
-    // Constructors and assignments (inline definitions)
+    /**
+     * Constructors
+     */
+
     Builder() : m_has_value(false), m_value(), m_buffer() {}
     Builder(std::nullopt_t) : m_has_value(false), m_value(), m_buffer() {}
     Builder(const Builder<T>& value) : m_has_value(true), m_value(value), m_buffer() {}
@@ -217,6 +230,10 @@ public:
 
     Builder(const Builder& other) : m_has_value(other.m_has_value), m_value(other.m_value), m_buffer(other.m_buffer) {}
     Builder(Builder&& other) : m_has_value(other.m_has_value), m_value(std::move(other.m_value)), m_buffer(std::move(other.m_data)) {}
+
+    /**
+     * Assignment operators
+     */
 
     Builder& operator=(std::nullopt_t)
     {
@@ -259,6 +276,10 @@ public:
         }
         return *this;
     }
+
+    /**
+     * Observers
+     */
 
     Builder<T>* operator->() { return &m_value; }
     const Builder<T>* operator->() const { return &m_value; }

@@ -49,24 +49,6 @@ struct Tuple : public NonTrivialType
 };
 
 /**
- * Operators
- */
-
-template<IsTuple T>
-bool operator==(const T& lhs, const T& rhs);
-
-template<IsTuple T1, IsTuple T2>
-    requires HaveSameValueTypes<T1, T2>
-bool operator==(const T1& lhs, const T2& rhs);
-
-template<IsTuple T>
-bool operator!=(const T& lhs, const T& rhs);
-
-template<IsTuple T1, IsTuple T2>
-    requires HaveSameValueTypes<T1, T2>
-bool operator!=(const T1& lhs, const T2& rhs);
-
-/**
  * Layout
  */
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
@@ -92,36 +74,98 @@ public:
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
 class Builder<Tuple<Ts...>> : public IBuilder<Builder<Tuple<Ts...>>>
 {
+private:
+    template<IsTriviallyCopyableOrNonTrivialType T>
+    class TupleEntry
+    {
+        static_assert(std::false_type::value, "Builder<Tuple<Ts...>>::TupleEntry(...): Expected usage of overload.");
+    };
+
+    template<IsTriviallyCopyable T>
+    class TupleEntry<T>
+    {
+    public:
+        TupleEntry() : m_value() {}
+        TupleEntry(const T& value) : m_value(value) {}
+        TupleEntry(T&& value) : m_value(std::move(value)) {}
+
+        T& get() { return m_value; }
+        const T& get() const { return m_value; }
+
+        size_t finish(size_t offset_pos, size_t data_pos, ByteBuffer& out)
+        {
+            /* Write the data inline. */
+            out.write(offset_pos, m_value);
+
+            return data_pos;
+        }
+
+    private:
+        T m_value;
+    };
+
+    template<IsNonTrivialType T>
+    class TupleEntry<T>
+    {
+    public:
+        TupleEntry() : m_value() {}
+        TupleEntry(const Builder<T>& value) : m_value(value) {}
+        TupleEntry(Builder<T>&& value) : m_value(std::move(value)) {}
+
+        Builder<T>& get() { return m_value; }
+        const Builder<T>& get() const { return m_value; }
+
+        size_t finish(size_t offset_pos, size_t data_pos, ByteBuffer& out)
+        {
+            /* Write the distance between written data pos and offset pos at the offset pos. */
+            out.write(offset_pos, static_cast<OffsetType>(data_pos - offset_pos));
+
+            /* Write the data at offset */
+            data_pos += m_value.finish(data_pos, out);
+
+            return data_pos;
+        }
+
+    private:
+        Builder<T> m_value;
+    };
+
 public:
     /**
      * Type declarations
      */
 
     using ValueTypes = std::tuple<Ts...>;
-    template<size_t I>
-    using element_type = std::tuple_element_t<I, std::tuple<Ts...>>;
-    template<size_t I>
-    using element_builder_type = typename maybe_builder<element_type<I>>::type;
 
     /**
      * Constructors
      */
 
-    Builder(Ts&&... args);
+    Builder(std::conditional_t<IsTriviallyCopyable<Ts>, Ts, Builder<Ts>>&&... args)
+        requires(sizeof...(Ts) > 0)
+        : m_data(std::forward<std::conditional_t<IsTriviallyCopyable<Ts>, Ts, Builder<Ts>>>(args)...), m_buffer()
+    {
+    }
 
-    /// @brief Default constructor enabled only if all Ts are default-constructible.
-    Builder()
-        requires(std::default_initializable<typename maybe_builder<Ts>::type> && ...);
+    Builder() : m_data(), m_buffer() {}
 
     /**
      * Lookup
      */
 
     template<std::size_t I>
-    auto& get();
+    auto& get()
+    {
+        static_assert(I < sizeof...(Ts));
+        return std::get<I>(m_data).get();
+    }
 
     template<std::size_t I>
-    const auto& get() const;
+    const auto& get() const
+    {
+        static_assert(I < sizeof...(Ts));
+        return std::get<I>(m_data).get();
+    }
 
 private:
     /* Implement IBuilder interface. */
@@ -129,16 +173,26 @@ private:
     friend class IBuilder;
 
     template<size_t... Is>
-    size_t finish_iterative_impl(std::index_sequence<Is...>, size_t pos, ByteBuffer& out);
+    size_t finish_iterative_impl(std::index_sequence<Is...>, size_t pos, ByteBuffer& out)
+    {
+        size_t data_pos = Layout<Tuple<Ts...>>::data_positions.back();
 
-    void finish_impl();
-    size_t finish_impl(size_t pos, ByteBuffer& out);
+        ([&] { data_pos = std::get<Is>(m_data).finish(Layout<Tuple<Ts...>>::data_positions[Is], data_pos, out); }(), ...);
 
-    auto& get_buffer_impl();
-    const auto& get_buffer_impl() const;
+        /* Write size of the buffer to the beginning. */
+        out.write(pos + Layout<Tuple<Ts...>>::buffer_size_position, static_cast<BufferSizeType>(data_pos));
+
+        return data_pos;
+    }
+
+    void finish_impl() { m_buffer.set_size(this->finish(0, m_buffer)); }
+    size_t finish_impl(size_t pos, ByteBuffer& out) { return finish_iterative_impl(std::make_index_sequence<sizeof...(Ts)> {}, pos, out); }
+
+    auto& get_buffer_impl() { return m_buffer; }
+    const auto& get_buffer_impl() const { return m_buffer; }
 
 private:
-    std::tuple<typename maybe_builder<Ts>::type...> m_data;
+    std::tuple<TupleEntry<Ts>...> m_data;
     ByteBuffer m_buffer;
 };
 
@@ -148,18 +202,50 @@ private:
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
 class View<Tuple<Ts...>>
 {
+private:
+    /**
+     * Helper lookup functions
+     */
+
+    template<typename T>
+    auto get_element(uint8_t* buf)
+    {
+        static_assert(std::false_type::value, "View<Tuple<Ts...>>::get_element(...): Expected usage of overload.");
+    }
+    template<typename T>
+    auto get_element(const uint8_t* buf) const
+    {
+        static_assert(std::false_type::value, "View<Tuple<Ts...>>::get_element(...): Expected usage of overload.");
+    }
+
+    template<IsTriviallyCopyable T>
+    T get_element(uint8_t* buf)
+    {
+        return read_value<T>(buf);
+    }
+    template<IsTriviallyCopyable T>
+    T get_element(const uint8_t* buf) const
+    {
+        return read_value<T>(buf);
+    }
+
+    template<IsNonTrivialType T>
+    View<T> get_element(uint8_t* buf)
+    {
+        return View<T>(buf + read_value<OffsetType>(buf));
+    }
+    template<IsNonTrivialType T>
+    ConstView<T> get_element(const uint8_t* buf) const
+    {
+        return ConstView<T>(buf + read_value<OffsetType>(buf));
+    }
+
 public:
     /**
      * Type declarations
      */
 
     using ValueTypes = std::tuple<Ts...>;
-    template<size_t I>
-    using element_type = std::tuple_element_t<I, std::tuple<Ts...>>;
-    template<size_t I>
-    using element_view_type = View<std::tuple_element_t<I, std::tuple<Ts...>>>;
-    template<size_t I>
-    using const_element_view_type = ConstView<std::tuple_element_t<I, std::tuple<Ts...>>>;
 
     /**
      * Constructors
@@ -167,7 +253,7 @@ public:
 
     /// @brief Constructor to interpret raw data created by its corresponding builder.
     /// @param data
-    View(uint8_t* data);
+    View(uint8_t* data) : m_buf(data) { assert(m_buf); }
 
     /**
      * Lookup
@@ -177,24 +263,41 @@ public:
     ///
     /// If the I-th type is dynamic we must add the offset to the actual data first.
     template<std::size_t I>
-    auto get();
+    auto get()
+    {
+        static_assert(I < sizeof...(Ts));
+        assert(m_buf);
+        return get_element<std::tuple_element_t<I, std::tuple<Ts...>>>(m_buf + Layout<Tuple<Ts...>>::data_positions[I]);
+    }
 
     template<std::size_t I>
-    auto get() const;
+    auto get() const
+    {
+        static_assert(I < sizeof...(Ts));
+        assert(m_buf);
+        return get_element<std::tuple_element_t<I, std::tuple<Ts...>>>(m_buf + Layout<Tuple<Ts...>>::data_positions[I]);
+    }
 
     template<std::size_t I>
-    void mutate(element_type<I> value)
-        requires(IsTriviallyCopyable<element_type<I>>);
+    void mutate(std::tuple_element_t<I, std::tuple<Ts...>> value)
+        requires(IsTriviallyCopyable<std::tuple_element_t<I, std::tuple<Ts...>>>)
+    {
+        return write_value<std::tuple_element_t<I, std::tuple<Ts...>>>(m_buf + Layout<Tuple<Ts...>>::data_positions[I], value);
+    }
 
-    uint8_t* buffer();
-    const uint8_t* buffer() const;
+    uint8_t* buffer() { return m_buf; }
+    const uint8_t* buffer() const { return m_buf; }
 
-    BufferSizeType buffer_size() const;
+    BufferSizeType buffer_size() const
+    {
+        assert(m_buf);
+        return read_value<BufferSizeType>(m_buf + Layout<Tuple<Ts...>>::buffer_size_position);
+    }
 
     /**
      * Capacity
      */
-    size_t size() const;
+    size_t size() const { return Layout<Tuple<Ts...>>::size; }
 
 private:
     uint8_t* m_buf;
@@ -207,16 +310,35 @@ private:
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
 class ConstView<Tuple<Ts...>>
 {
+private:
+    /**
+     * Helper lookup functions
+     */
+
+    template<typename T>
+    auto get_element(const uint8_t* buf) const
+    {
+        static_assert(std::false_type::value, "ConstView<Tuple<Ts...>>::get_element(...): Expected usage of overload.");
+    }
+
+    template<IsTriviallyCopyable T>
+    T get_element(const uint8_t* buf) const
+    {
+        return read_value<T>(buf);
+    }
+
+    template<IsNonTrivialType T>
+    ConstView<T> get_element(const uint8_t* buf) const
+    {
+        return ConstView<T>(buf + read_value<OffsetType>(buf));
+    }
+
 public:
     /**
      * Type declarations
      */
 
     using ValueTypes = std::tuple<Ts...>;
-    template<size_t I>
-    using element_type = std::tuple_element_t<I, std::tuple<Ts...>>;
-    template<size_t I>
-    using const_element_view_type = ConstView<std::tuple_element_t<I, std::tuple<Ts...>>>;
 
     /**
      * Constructors
@@ -224,13 +346,13 @@ public:
 
     /// @brief Constructor to interpret raw data created by its corresponding builder.
     /// @param data
-    ConstView(const uint8_t* data);
+    ConstView(const uint8_t* data) : m_buf(data) { assert(m_buf); }
 
     /**
      * Conversion constructor
      */
 
-    ConstView(const View<Tuple<Ts...>>& view);
+    ConstView(const View<Tuple<Ts...>>& view) : m_buf(view.buffer()) {}
 
     /**
      * Lookup
@@ -240,17 +362,26 @@ public:
     ///
     /// If the I-th type is dynamic we must add the offset to the actual data first.
     template<std::size_t I>
-    auto get() const;
+    auto get() const
+    {
+        static_assert(I < sizeof...(Ts));
+        assert(m_buf);
+        return get_element<std::tuple_element_t<I, std::tuple<Ts...>>>(m_buf + Layout<Tuple<Ts...>>::data_positions[I]);
+    }
 
-    BufferSizeType buffer_size() const;
+    BufferSizeType buffer_size() const
+    {
+        assert(m_buf);
+        return read_value<BufferSizeType>(m_buf + Layout<Tuple<Ts...>>::buffer_size_position);
+    }
 
-    const uint8_t* buffer() const;
+    const uint8_t* buffer() const { return m_buf; }
 
     /**
      * Capacity
      */
 
-    size_t size() const;
+    size_t size() const { return Layout<Tuple<Ts...>>::size; }
 
 private:
     const uint8_t* m_buf;
@@ -341,221 +472,6 @@ constexpr void Layout<Tuple<Ts...>>::print() const
         std::cout << pos << ", ";
     }
     std::cout << "]" << std::endl;
-}
-
-// Builder
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-template<size_t... Is>
-size_t Builder<Tuple<Ts...>>::finish_iterative_impl(std::index_sequence<Is...>, size_t pos, ByteBuffer& out)
-{
-    size_t data_pos = Layout<Tuple<Ts...>>::data_positions.back();
-
-    (
-        [&]
-        {
-            using T = element_type<Is>;
-            constexpr bool is_trivial = IsTriviallyCopyable<T>;
-
-            if constexpr (is_trivial)
-            {
-                /* Write the data inline. */
-                out.write(pos + Layout<Tuple<Ts...>>::data_positions[Is], std::get<Is>(m_data));
-            }
-            else
-            {
-                /* Write the distance between written data pos and offset pos at the offset pos. */
-                out.write(pos + Layout<Tuple<Ts...>>::data_positions[Is], static_cast<OffsetType>(data_pos - Layout<Tuple<Ts...>>::data_positions[Is]));
-
-                /* Write the data at offset */
-                auto& nested_builder = std::get<Is>(m_data);
-                data_pos += nested_builder.finish(pos + data_pos, out);
-            }
-        }(),
-        ...);
-
-    /* Write size of the buffer to the beginning. */
-    out.write(pos + Layout<Tuple<Ts...>>::buffer_size_position, static_cast<BufferSizeType>(data_pos));
-
-    return data_pos;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-void Builder<Tuple<Ts...>>::finish_impl()
-{
-    m_buffer.set_size(this->finish(0, m_buffer));
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-size_t Builder<Tuple<Ts...>>::finish_impl(size_t pos, ByteBuffer& out)
-{
-    return finish_iterative_impl(std::make_index_sequence<sizeof...(Ts)> {}, pos, out);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-auto& Builder<Tuple<Ts...>>::get_buffer_impl()
-{
-    return m_buffer;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-const auto& Builder<Tuple<Ts...>>::get_buffer_impl() const
-{
-    return m_buffer;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-Builder<Tuple<Ts...>>::Builder(Ts&&... args) : m_data(std::forward<Ts>(args)...), m_buffer()
-{
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-Builder<Tuple<Ts...>>::Builder()
-    requires(std::default_initializable<typename maybe_builder<Ts>::type> && ...)
-    : m_data(), m_buffer()
-{
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-template<std::size_t I>
-auto& Builder<Tuple<Ts...>>::get()
-{
-    static_assert(I < sizeof...(Ts));
-    return std::get<I>(m_data);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-template<std::size_t I>
-const auto& Builder<Tuple<Ts...>>::get() const
-{
-    static_assert(I < sizeof...(Ts));
-    return std::get<I>(m_data);
-}
-
-// View
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-View<Tuple<Ts...>>::View(uint8_t* data) : m_buf(data)
-{
-    assert(m_buf);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-template<std::size_t I>
-auto View<Tuple<Ts...>>::get()
-{
-    static_assert(I < sizeof...(Ts));
-    assert(m_buf);
-    constexpr bool is_trivial = IsTriviallyCopyable<element_type<I>>;
-    if constexpr (is_trivial)
-    {
-        return read_value<element_type<I>>(m_buf + Layout<Tuple<Ts...>>::data_positions[I]);
-    }
-    else
-    {
-        const auto offset_pos = m_buf + Layout<Tuple<Ts...>>::data_positions[I];
-        return element_view_type<I>(offset_pos + read_value<OffsetType>(offset_pos));
-    }
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-template<std::size_t I>
-auto View<Tuple<Ts...>>::get() const
-{
-    static_assert(I < sizeof...(Ts));
-    assert(m_buf);
-    constexpr bool is_trivial = IsTriviallyCopyable<element_type<I>>;
-    if constexpr (is_trivial)
-    {
-        return read_value<element_type<I>>(m_buf + Layout<Tuple<Ts...>>::data_positions[I]);
-    }
-    else
-    {
-        const auto offset_pos = m_buf + Layout<Tuple<Ts...>>::data_positions[I];
-        return const_element_view_type<I>(offset_pos + read_value<OffsetType>(offset_pos));
-    }
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-template<std::size_t I>
-void View<Tuple<Ts...>>::mutate(View<Tuple<Ts...>>::element_type<I> value)
-    requires(IsTriviallyCopyable<View<Tuple<Ts...>>::element_type<I>>)
-{
-    return write_value<View<Tuple<Ts...>>::element_type<I>>(m_buf + Layout<Tuple<Ts...>>::data_positions[I], value);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-uint8_t* View<Tuple<Ts...>>::buffer()
-{
-    return m_buf;
-}
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-const uint8_t* View<Tuple<Ts...>>::buffer() const
-{
-    return m_buf;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-BufferSizeType View<Tuple<Ts...>>::buffer_size() const
-{
-    assert(m_buf);
-    return read_value<BufferSizeType>(m_buf + Layout<Tuple<Ts...>>::buffer_size_position);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-size_t View<Tuple<Ts...>>::size() const
-{
-    return Layout<Tuple<Ts...>>::size;
-}
-
-// ConstView
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-ConstView<Tuple<Ts...>>::ConstView(const uint8_t* data) : m_buf(data)
-{
-    assert(m_buf);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-ConstView<Tuple<Ts...>>::ConstView(const View<Tuple<Ts...>>& view) : m_buf(view.buffer())
-{
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-template<std::size_t I>
-auto ConstView<Tuple<Ts...>>::get() const
-{
-    static_assert(I < sizeof...(Ts));
-    assert(m_buf);
-    constexpr bool is_trivial = IsTriviallyCopyable<element_type<I>>;
-    if constexpr (is_trivial)
-    {
-        return read_value<element_type<I>>(m_buf + Layout<Tuple<Ts...>>::data_positions[I]);
-    }
-    else
-    {
-        const auto offset_pos = m_buf + Layout<Tuple<Ts...>>::data_positions[I];
-        return const_element_view_type<I>(offset_pos + read_value<OffsetType>(offset_pos));
-    }
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-BufferSizeType ConstView<Tuple<Ts...>>::buffer_size() const
-{
-    assert(m_buf);
-    return read_value<BufferSizeType>(m_buf + Layout<Tuple<Ts...>>::buffer_size_position);
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-const uint8_t* ConstView<Tuple<Ts...>>::buffer() const
-{
-    return m_buf;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-size_t ConstView<Tuple<Ts...>>::size() const
-{
-    return Layout<Tuple<Ts...>>::size;
 }
 
 /**
