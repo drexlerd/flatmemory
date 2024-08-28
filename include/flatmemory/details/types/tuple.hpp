@@ -80,7 +80,7 @@ private:
     {
         TupleEntry()
         {
-            std::cout << "Instantiating get_element with type: " << typeid(T).name() << std::endl;
+            std::cerr << "Instantiating get_element with type: " << typeid(T).name() << std::endl;
             static_assert(std::false_type::value, "Builder<Tuple<Ts...>>::TupleEntry(...): Expected usage of overload.");
         }
     };
