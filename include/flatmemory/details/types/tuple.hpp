@@ -489,7 +489,7 @@ std::ostream& operator<<(std::ostream& out, ConstView<Tuple<Ts...>> element)
 
 }
 
-template<typename... Ts>
+template<flatmemory::IsTriviallyCopyableOrNonTrivialType... Ts>
 struct std::hash<flatmemory::Builder<flatmemory::Tuple<Ts...>>>
 {
     size_t operator()(const flatmemory::Builder<flatmemory::Tuple<Ts...>>& tuple) const
@@ -503,7 +503,7 @@ struct std::hash<flatmemory::Builder<flatmemory::Tuple<Ts...>>>
     }
 };
 
-template<typename... Ts>
+template<flatmemory::IsTriviallyCopyableOrNonTrivialType... Ts>
 struct std::hash<flatmemory::View<flatmemory::Tuple<Ts...>>>
 {
     size_t operator()(const flatmemory::View<flatmemory::Tuple<Ts...>>& tuple) const
@@ -515,7 +515,7 @@ struct std::hash<flatmemory::View<flatmemory::Tuple<Ts...>>>
     }
 };
 
-template<typename... Ts>
+template<flatmemory::IsTriviallyCopyableOrNonTrivialType... Ts>
 struct std::hash<flatmemory::ConstView<flatmemory::Tuple<Ts...>>>
 {
     size_t operator()(const flatmemory::ConstView<flatmemory::Tuple<Ts...>>& tuple) const
