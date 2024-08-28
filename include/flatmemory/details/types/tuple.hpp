@@ -75,10 +75,14 @@ template<IsTriviallyCopyableOrNonTrivialType... Ts>
 class Builder<Tuple<Ts...>> : public IBuilder<Builder<Tuple<Ts...>>>
 {
 private:
-    template<IsTriviallyCopyableOrNonTrivialType T>
+    template<typename T>
     class TupleEntry
     {
-        static_assert(std::false_type::value, "Builder<Tuple<Ts...>>::TupleEntry(...): Expected usage of overload.");
+        TupleEntry()
+        {
+            std::cout << "Instantiating get_element with type: " << typeid(T).name() << std::endl;
+            static_assert(std::false_type::value, "Builder<Tuple<Ts...>>::TupleEntry(...): Expected usage of overload.");
+        }
     };
 
     template<IsTriviallyCopyable T>
