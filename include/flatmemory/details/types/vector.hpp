@@ -353,7 +353,7 @@ public:
     void mutate(size_t pos, ValueType value)
         requires(IsTriviallyCopyable<ValueType>)
     {
-        write_value<View<Vector<T>>::ValueType>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(T), value);
+        write_value<T>(m_buf + Layout<Vector<T>>::vector_data_position + pos * sizeof(T), value);
     }
 
     /**
@@ -571,7 +571,7 @@ public:
     };
 
     ConstIterator begin() const { return ConstIterator(m_buf + Layout<Vector<T>>::vector_data_position); }
-    ConstIterator end() const { return View<Vector<T>>::ConstIterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(OffsetType) * size()); }
+    ConstIterator end() const { return ConstIterator(m_buf + Layout<Vector<T>>::vector_data_position + sizeof(OffsetType) * size()); }
 
     /**
      * Capacity
