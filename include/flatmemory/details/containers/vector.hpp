@@ -269,19 +269,19 @@ constexpr size_t VariableSizedTypeVector<T>::size() const
 template<IsTriviallyCopyableOrNonTrivialType T>
 void VariableSizedTypeVector<T>::push_back(const Builder<T>& builder)
 {
-    m_data.push_back(View<T>(m_storage.write(builder.buffer().data(), builder.buffer().size())));
+    m_data.push_back(View<T>(m_storage.write(builder.get_buffer().data(), builder.get_buffer().size())));
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
 void VariableSizedTypeVector<T>::push_back(const View<T>& view)
 {
-    m_data.push_back(View<T>(m_storage.write(view.buffer(), view.buffer_size())));
+    m_data.push_back(View<T>(m_storage.write(view.get_buffer(), view.get_buffer_size())));
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
 void VariableSizedTypeVector<T>::push_back(const ConstView<T>& view)
 {
-    m_data.push_back(View<T>(m_storage.write(view.buffer(), view.buffer_size())));
+    m_data.push_back(View<T>(m_storage.write(view.get_buffer(), view.get_buffer_size())));
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
@@ -305,7 +305,7 @@ FixedSizedTypeVector<T>::FixedSizedTypeVector(Builder<T> default_builder, NumByt
     m_storage(ByteBufferSegmented(initial_num_bytes_per_segment, maximum_num_bytes_per_segment)),
     m_default_builder(std::move(default_builder))
 {
-    if (m_default_builder.buffer().data() == nullptr)
+    if (m_default_builder.get_buffer().data() == nullptr)
     {
         throw std::runtime_error("Builder is not fully initialized! Did you forget to call finish()?");
     }
@@ -412,19 +412,19 @@ constexpr size_t FixedSizedTypeVector<T>::size() const
 template<IsTriviallyCopyableOrNonTrivialType T>
 void FixedSizedTypeVector<T>::push_back(const Builder<T>& builder)
 {
-    m_data.push_back(View<T>(m_storage.write(builder.buffer().data(), builder.buffer().size())));
+    m_data.push_back(View<T>(m_storage.write(builder.get_buffer().data(), builder.get_buffer().size())));
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
 void FixedSizedTypeVector<T>::push_back(const View<T>& view)
 {
-    m_data.push_back(View<T>(m_storage.write(view.buffer(), view.buffer_size())));
+    m_data.push_back(View<T>(m_storage.write(view.get_buffer(), view.get_buffer_size())));
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
 void FixedSizedTypeVector<T>::push_back(const ConstView<T>& view)
 {
-    m_data.push_back(View<T>(m_storage.write(view.buffer(), view.buffer_size())));
+    m_data.push_back(View<T>(m_storage.write(view.get_buffer(), view.get_buffer_size())));
 }
 
 template<IsTriviallyCopyableOrNonTrivialType T>
@@ -434,8 +434,8 @@ void FixedSizedTypeVector<T>::resize(size_t count)
     {
         throw std::logic_error("Resize to size smaller than current size is not supported. Use clear instead.");
     }
-    const uint8_t* default_data = m_default_builder.buffer().data();
-    size_t default_size = m_default_builder.buffer().size();
+    const uint8_t* default_data = m_default_builder.get_buffer().data();
+    size_t default_size = m_default_builder.get_buffer().size();
     while (size() <= count)
     {
         uint8_t* written_data = m_storage.write(default_data, default_size);

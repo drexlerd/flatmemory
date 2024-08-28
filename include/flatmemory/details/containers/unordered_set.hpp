@@ -139,8 +139,8 @@ void UnorderedSet<T, Hash, Equal>::clear()
 template<IsTriviallyCopyableOrNonTrivialType T, typename Hash, typename Equal>
 std::pair<typename UnorderedSet<T, Hash, Equal>::const_iterator, bool> UnorderedSet<T, Hash, Equal>::insert(const Builder<T>& builder)
 {
-    const uint8_t* data = builder.buffer().data();
-    size_t amount = builder.buffer().size();
+    const uint8_t* data = builder.get_buffer().data();
+    size_t amount = builder.get_buffer().size();
     const uint8_t* new_data = m_storage.write(data, amount);
     auto view = ConstView<T>(new_data);
     auto it = m_data.find(view);
@@ -157,8 +157,8 @@ std::pair<typename UnorderedSet<T, Hash, Equal>::const_iterator, bool> Unordered
 template<IsTriviallyCopyableOrNonTrivialType T, typename Hash, typename Equal>
 std::pair<typename UnorderedSet<T, Hash, Equal>::const_iterator, bool> UnorderedSet<T, Hash, Equal>::insert(ConstView<T>& view)
 {
-    const uint8_t* data = view.buffer();
-    size_t amount = view.buffer_size();
+    const uint8_t* data = view.get_buffer();
+    size_t amount = view.get_buffer_size();
     const uint8_t* new_data = m_storage.write(data, amount);
     auto result_view = ConstView<T>(new_data);
     auto it = m_data.find(result_view);
@@ -176,8 +176,8 @@ std::pair<typename UnorderedSet<T, Hash, Equal>::const_iterator, bool> Unordered
 template<IsTriviallyCopyableOrNonTrivialType T, typename Hash, typename Equal>
 std::pair<typename UnorderedSet<T, Hash, Equal>::const_iterator, bool> UnorderedSet<T, Hash, Equal>::insert(View<T>& view)
 {
-    const uint8_t* data = view.buffer();
-    size_t amount = view.buffer_size();
+    const uint8_t* data = view.get_buffer();
+    size_t amount = view.get_buffer_size();
     const uint8_t* new_data = m_storage.write(data, amount);
     auto result_view = ConstView<T>(new_data);
     auto it = m_data.find(result_view);

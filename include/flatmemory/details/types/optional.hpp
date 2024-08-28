@@ -209,8 +209,8 @@ private:
         return data_pos;
     }
 
-    auto& get_buffer_impl() { return m_buffer; }
-    const auto& get_buffer_impl() const { return m_buffer; }
+    ByteBuffer& get_buffer_impl() { return m_buffer; }
+    const ByteBuffer& get_buffer_impl() const { return m_buffer; }
 };
 
 template<IsNonTrivialType T>
@@ -353,15 +353,15 @@ private:
         return data_pos;
     }
 
-    auto& get_buffer_impl() { return m_buffer; }
-    const auto& get_buffer_impl() const { return m_buffer; }
+    ByteBuffer& get_buffer_impl() { return m_buffer; }
+    const ByteBuffer& get_buffer_impl() const { return m_buffer; }
 };
 
 /**
  * View
  */
 template<IsTriviallyCopyable T>
-class View<Optional<T>>
+class View<Optional<T>> : public IView<View<Optional<T>>>
 {
 public:
     using ValueType = T;
@@ -395,10 +395,14 @@ public:
     void mutate(const T& value) { write_value(m_buf + Layout<Optional<T>>::value_position, value); }
     void mutate(T&& value) { write_value(m_buf + Layout<Optional<T>>::value_position, std::move(value)); }
 
-    uint8_t* buffer() { return m_buf; }
-    const uint8_t* buffer() const { return m_buf; }
+private:
+    /* Implement IView interface. */
+    friend class IView<View<Optional<T>>>;
 
-    BufferSizeType buffer_size() const
+    uint8_t* get_buffer_impl() { return m_buf; }
+    const uint8_t* get_buffer_impl() const { return m_buf; }
+
+    BufferSizeType get_buffer_size_impl() const
     {
         if (!has_value())
         {
@@ -409,16 +413,10 @@ public:
 
 private:
     uint8_t* m_buf;
-
-    /// @brief Default constructor to make view a trivial data type and serializable
-    View() = default;
-
-    template<typename>
-    friend class Builder;
 };
 
 template<IsNonTrivialType T>
-class View<Optional<T>>
+class View<Optional<T>> : public IView<View<Optional<T>>>
 {
 public:
     using ValueType = T;
@@ -448,10 +446,14 @@ public:
     View<T> value() && { return View<T>(m_buf + Layout<Optional<T>>::value_position); }
     ConstView<T> value() const&& { return ConstView<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    uint8_t* buffer() { return m_buf; }
-    const uint8_t* buffer() const { return m_buf; }
+private:
+    /* Implement IView interface. */
+    friend class IView<View<Optional<T>>>;
 
-    BufferSizeType buffer_size() const
+    uint8_t* get_buffer_impl() { return m_buf; }
+    const uint8_t* get_buffer_impl() const { return m_buf; }
+
+    BufferSizeType get_buffer_size_impl() const
     {
         if (!has_value())
         {
@@ -462,12 +464,6 @@ public:
 
 private:
     uint8_t* m_buf;
-
-    /// @brief Default constructor to make view a trivial data type and serializable
-    View() = default;
-
-    template<typename>
-    friend class Builder;
 };
 
 /**
@@ -475,7 +471,7 @@ private:
  */
 
 template<IsTriviallyCopyable T>
-class ConstView<Optional<T>>
+class ConstView<Optional<T>> : public IConstView<ConstView<Optional<T>>>
 {
 public:
     using ValueType = T;
@@ -500,9 +496,13 @@ public:
 
     T value() const&& { return read_value<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    const uint8_t* buffer() const { return m_buf; }
+private:
+    /* Implement IConstView interface. */
+    friend class IConstView<ConstView<Optional<T>>>;
 
-    BufferSizeType buffer_size() const
+    const uint8_t* get_buffer_impl() const { return m_buf; }
+
+    BufferSizeType get_buffer_size_impl() const
     {
         if (!has_value())
         {
@@ -513,16 +513,10 @@ public:
 
 private:
     const uint8_t* m_buf;
-
-    /// @brief Default constructor to make view a trivial data type and serializable
-    ConstView() = default;
-
-    template<typename>
-    friend class Builder;
 };
 
 template<IsNonTrivialType T>
-class ConstView<Optional<T>>
+class ConstView<Optional<T>> : public IConstView<ConstView<Optional<T>>>
 {
 public:
     using ValueType = T;
@@ -547,9 +541,13 @@ public:
 
     ConstView<T> value() const&& { return ConstView<T>(m_buf + Layout<Optional<T>>::value_position); }
 
-    const uint8_t* buffer() const { return m_buf; }
+private:
+    /* Implement IConstView interface. */
+    friend class IConstView<ConstView<Optional<T>>>;
 
-    BufferSizeType buffer_size() const
+    const uint8_t* get_buffer_impl() const { return m_buf; }
+
+    BufferSizeType get_buffer_size_impl() const
     {
         if (!has_value())
         {
@@ -560,12 +558,6 @@ public:
 
 private:
     const uint8_t* m_buf;
-
-    /// @brief Default constructor to make view a trivial data type and serializable
-    ConstView() = default;
-
-    template<typename>
-    friend class Builder;
 };
 
 /**

@@ -22,6 +22,28 @@
 
 namespace flatmemory
 {
+
+/**
+ * Interface class.
+ */
+template<typename Derived>
+class IView
+{
+private:
+    /// @brief Helper to cast to Derived.
+    constexpr const auto& self() const { return static_cast<const Derived&>(*this); }
+    constexpr auto& self() { return static_cast<Derived&>(*this); }
+
+public:
+    /// @brief Get the pointer to the beginning of the buffer.
+    uint8_t* get_buffer() { return self().get_buffer_impl(); }
+    const uint8_t* get_buffer() const { return self().get_buffer_impl(); }
+
+    /// @brief Get the buffer size.
+    /// @return
+    size_t get_buffer_size() const { return self().get_buffer_size_impl(); }
+};
+
 /**
  * Implementation class.
  *
@@ -30,24 +52,10 @@ namespace flatmemory
  * Define operations to access the underlying raw data.
  */
 template<typename Tag>
-class View
+class View : public IView<View<Tag>>
 {
 };
 
-/**
- * Concepts
- */
-template<IsTriviallyCopyableOrNonTrivialType T, bool = IsTriviallyCopyable<T>>
-struct maybe_view
-{
-    using type = T;
-};
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-struct maybe_view<T, false>
-{
-    using type = View<T>;
-};
 }
 
 #endif

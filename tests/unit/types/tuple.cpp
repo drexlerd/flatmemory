@@ -79,18 +79,18 @@ TEST(FlatmemoryTests, TypesTupleEqualToAndHashTest)
     EXPECT_NE(std::hash<Builder<BitsetTupleLayout>>()(builder1), std::hash<Builder<BitsetTupleLayout>>()(builder2));
 
     // Test View
-    auto view1 = View<BitsetTupleLayout>(builder1.buffer().data());
-    auto view2 = View<BitsetTupleLayout>(builder2.buffer().data());
-    auto view3 = View<BitsetTupleLayout>(builder3.buffer().data());
+    auto view1 = View<BitsetTupleLayout>(builder1.get_buffer().data());
+    auto view2 = View<BitsetTupleLayout>(builder2.get_buffer().data());
+    auto view3 = View<BitsetTupleLayout>(builder3.get_buffer().data());
     EXPECT_EQ(view1, view3);
     EXPECT_EQ(std::hash<View<BitsetTupleLayout>>()(view1), std::hash<View<BitsetTupleLayout>>()(view3));
     EXPECT_NE(view1, view2);
     EXPECT_NE(std::hash<View<BitsetTupleLayout>>()(view1), std::hash<View<BitsetTupleLayout>>()(view2));
 
     // Test ConstView
-    auto const_view1 = ConstView<BitsetTupleLayout>(builder1.buffer().data());
-    auto const_view2 = ConstView<BitsetTupleLayout>(builder2.buffer().data());
-    auto const_view3 = ConstView<BitsetTupleLayout>(builder3.buffer().data());
+    auto const_view1 = ConstView<BitsetTupleLayout>(builder1.get_buffer().data());
+    auto const_view2 = ConstView<BitsetTupleLayout>(builder2.get_buffer().data());
+    auto const_view3 = ConstView<BitsetTupleLayout>(builder3.get_buffer().data());
     EXPECT_EQ(const_view1, const_view3);
     EXPECT_EQ(std::hash<ConstView<BitsetTupleLayout>>()(const_view1), std::hash<ConstView<BitsetTupleLayout>>()(const_view3));
     EXPECT_NE(const_view1, const_view2);
@@ -148,7 +148,8 @@ TEST(FlatmemoryTests, TypesTupleSerializeViewsTest)
 
     using BitsetTupleLayout = Tuple<View<BitsetVectorLayout>, ConstView<BitsetVectorLayout>>;
 
-    auto builder2 = Builder<BitsetTupleLayout>(View<BitsetVectorLayout>(builder1.buffer().data()), ConstView<BitsetVectorLayout>(builder1.buffer().data()));
+    auto builder2 =
+        Builder<BitsetTupleLayout>(View<BitsetVectorLayout>(builder1.get_buffer().data()), ConstView<BitsetVectorLayout>(builder1.get_buffer().data()));
     builder2.finish();
 
     EXPECT_EQ(builder2.get<0>(), builder2.get<1>());
@@ -159,7 +160,7 @@ TEST(FlatmemoryTests, TypesTupleViewMutateTest)
     auto builder = Builder<Tuple<uint16_t, int32_t>>();
     builder.finish();
 
-    auto view = View<Tuple<uint16_t, int32_t>>(builder.buffer().data());
+    auto view = View<Tuple<uint16_t, int32_t>>(builder.get_buffer().data());
     EXPECT_EQ(view.get<0>(), 0);
     EXPECT_EQ(view.get<1>(), 0);
 
@@ -181,8 +182,8 @@ TEST(FlatmemoryTests, TypesTupleEmptyTest)
     auto builder = Builder<Tuple<>>();
     builder.finish();
 
-    EXPECT_NE(builder.buffer().data(), nullptr);
-    EXPECT_EQ(builder.buffer().size(), 4);
+    EXPECT_NE(builder.get_buffer().data(), nullptr);
+    EXPECT_EQ(builder.get_buffer().size(), 4);
 }
 
 TEST(FlatmemoryTests, TypesTupleTest)
@@ -200,10 +201,10 @@ TEST(FlatmemoryTests, TypesTupleTest)
     builder.get<1>() = 6;
     builder.get<2>() = 7;
     builder.finish();
-    EXPECT_NE(builder.buffer().data(), nullptr);
-    EXPECT_EQ(builder.buffer().size(), 10);
+    EXPECT_NE(builder.get_buffer().data(), nullptr);
+    EXPECT_EQ(builder.get_buffer().size(), 10);
 
-    auto view = View<Tuple<int16_t, uint16_t, uint16_t>>(builder.buffer().data());
+    auto view = View<Tuple<int16_t, uint16_t, uint16_t>>(builder.get_buffer().data());
     EXPECT_EQ(view.get<0>(), 5);
     EXPECT_EQ(view.get<1>(), 6);
     EXPECT_EQ(view.get<2>(), 7);
@@ -224,10 +225,10 @@ TEST(FlatmemoryTests, TypesTuplePaddingTest)
     builder.get<1>() = 6;
     builder.get<2>() = 7;
     builder.finish();
-    EXPECT_NE(builder.buffer().data(), nullptr);
-    EXPECT_EQ(builder.buffer().size(), 12);
+    EXPECT_NE(builder.get_buffer().data(), nullptr);
+    EXPECT_EQ(builder.get_buffer().size(), 12);
 
-    auto view = View<Tuple<int16_t, int32_t, uint16_t>>(builder.buffer().data());
+    auto view = View<Tuple<int16_t, int32_t, uint16_t>>(builder.get_buffer().data());
     EXPECT_EQ(view.get<0>(), 5);
     EXPECT_EQ(view.get<1>(), 6);
     EXPECT_EQ(view.get<2>(), 7);
@@ -241,10 +242,10 @@ TEST(FlatmemoryTests, TypesTupleVectorTest)
     auto builder = Builder<Tuple<Vector<uint64_t>>>();
     builder.get<0>().resize(3);
     builder.finish();
-    EXPECT_NE(builder.buffer().data(), nullptr);
-    EXPECT_EQ(builder.buffer().size(), 40);
+    EXPECT_NE(builder.get_buffer().data(), nullptr);
+    EXPECT_EQ(builder.get_buffer().size(), 40);
 
-    auto view = View<Tuple<Vector<uint64_t>>>(builder.buffer().data());
+    auto view = View<Tuple<Vector<uint64_t>>>(builder.get_buffer().data());
     EXPECT_EQ(view.get<0>().size(), 3);
 }
 
@@ -257,10 +258,10 @@ TEST(FlatmemoryTests, TypesTupleVector2Test)
     builder.get<0>().resize(3);
     builder.get<1>().resize(4);
     builder.finish();
-    EXPECT_NE(builder.buffer().data(), nullptr);
-    EXPECT_EQ(builder.buffer().size(), 60);
+    EXPECT_NE(builder.get_buffer().data(), nullptr);
+    EXPECT_EQ(builder.get_buffer().size(), 60);
 
-    auto view = View<Tuple<Vector<uint64_t>, Vector<uint16_t>>>(builder.buffer().data());
+    auto view = View<Tuple<Vector<uint64_t>, Vector<uint16_t>>>(builder.get_buffer().data());
     EXPECT_EQ(view.get<0>().size(), 3);
     EXPECT_EQ(view.get<1>().size(), 4);
 }
@@ -277,7 +278,7 @@ TEST(FlatmemoryTests, TypesTupleVectorVectorTest)
     builder.get<0>()[2].resize(4);
     builder.finish();
 
-    auto view = View<Tuple<Vector<Vector<uint8_t>>>>(builder.buffer().data());
+    auto view = View<Tuple<Vector<Vector<uint8_t>>>>(builder.get_buffer().data());
     EXPECT_EQ(view.get<0>().size(), 3);
     EXPECT_EQ(view.get<0>()[0].size(), 2);
     EXPECT_EQ(view.get<0>()[1].size(), 3);
@@ -302,14 +303,14 @@ TEST(FlatmemoryTests, TypesTupleStructTest)
     builder.get<1>().x = 5;
     builder.get<1>().y = 10;
     builder.finish();
-    EXPECT_EQ(builder.buffer().size(), 36);
+    EXPECT_EQ(builder.get_buffer().size(), 36);
 
-    auto view = View<Tuple<Vector<uint32_t>, StructTest>>(builder.buffer().data());
+    auto view = View<Tuple<Vector<uint32_t>, StructTest>>(builder.get_buffer().data());
     EXPECT_EQ(view.get<0>().size(), 1);
     EXPECT_EQ(view.get<0>().at(0), 0);
     EXPECT_EQ(view.get<1>().x, 5);
     EXPECT_EQ(view.get<1>().y, 10);
-    EXPECT_EQ(view.buffer_size(), 36);
+    EXPECT_EQ(view.get_buffer_size(), 36);
 }
 
 /*
@@ -349,8 +350,8 @@ TEST(FlatmemoryTests, TypesTupleConditionalEffectTest)
 
     builder.finish();
 
-    auto view = View<FlatConditionalEffectLayout>(builder.buffer().data());
-    print(builder.buffer().data(), builder.buffer().size());
+    auto view = View<FlatConditionalEffectLayout>(builder.get_buffer().data());
+    print(builder.get_buffer().data(), builder.get_buffer().size());
 
     EXPECT_FALSE(view.get<6>().is_negated);
     EXPECT_EQ(view.get<6>().atom_id, 4);

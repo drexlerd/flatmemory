@@ -89,18 +89,18 @@ TEST(FlatmemoryTests, TypesVectorEqualToAndHashTest)
     EXPECT_NE(std::hash<Builder<Vector1DLayout>>()(builder1d_1), std::hash<Builder<Vector1DLayout>>()(builder1d_2));
 
     // Test View
-    auto view1d_1 = View<Vector1DLayout>(builder1d_1.buffer().data());
-    auto view1d_2 = View<Vector1DLayout>(builder1d_2.buffer().data());
-    auto view1d_3 = View<Vector1DLayout>(builder1d_3.buffer().data());
+    auto view1d_1 = View<Vector1DLayout>(builder1d_1.get_buffer().data());
+    auto view1d_2 = View<Vector1DLayout>(builder1d_2.get_buffer().data());
+    auto view1d_3 = View<Vector1DLayout>(builder1d_3.get_buffer().data());
     EXPECT_EQ(view1d_1, view1d_3);
     EXPECT_EQ(std::hash<View<Vector1DLayout>>()(view1d_1), std::hash<View<Vector1DLayout>>()(view1d_3));
     EXPECT_NE(view1d_1, view1d_2);
     EXPECT_NE(std::hash<View<Vector1DLayout>>()(view1d_1), std::hash<View<Vector1DLayout>>()(view1d_2));
 
     // Test ConstView
-    auto const_view1d_1 = ConstView<Vector1DLayout>(builder1d_1.buffer().data());
-    auto const_view1d_2 = ConstView<Vector1DLayout>(builder1d_2.buffer().data());
-    auto const_view1d_3 = ConstView<Vector1DLayout>(builder1d_3.buffer().data());
+    auto const_view1d_1 = ConstView<Vector1DLayout>(builder1d_1.get_buffer().data());
+    auto const_view1d_2 = ConstView<Vector1DLayout>(builder1d_2.get_buffer().data());
+    auto const_view1d_3 = ConstView<Vector1DLayout>(builder1d_3.get_buffer().data());
     EXPECT_EQ(const_view1d_1, const_view1d_3);
     EXPECT_EQ(std::hash<ConstView<Vector1DLayout>>()(const_view1d_1), std::hash<ConstView<Vector1DLayout>>()(const_view1d_3));
     EXPECT_NE(const_view1d_1, const_view1d_2);
@@ -173,18 +173,18 @@ TEST(FlatmemoryTests, TypesVectorEqualToAndHashTest)
     EXPECT_NE(std::hash<Builder<Vector2DLayout>>()(builder2d_1), std::hash<Builder<Vector2DLayout>>()(builder2d_2));
 
     // Test View
-    auto view2d_1 = View<Vector2DLayout>(builder2d_1.buffer().data());
-    auto view2d_2 = View<Vector2DLayout>(builder2d_2.buffer().data());
-    auto view2d_3 = View<Vector2DLayout>(builder2d_3.buffer().data());
+    auto view2d_1 = View<Vector2DLayout>(builder2d_1.get_buffer().data());
+    auto view2d_2 = View<Vector2DLayout>(builder2d_2.get_buffer().data());
+    auto view2d_3 = View<Vector2DLayout>(builder2d_3.get_buffer().data());
     EXPECT_EQ(view2d_1, view2d_3);
     EXPECT_EQ(std::hash<View<Vector2DLayout>>()(view2d_1), std::hash<View<Vector2DLayout>>()(view2d_3));
     EXPECT_NE(view2d_1, view2d_2);
     EXPECT_NE(std::hash<View<Vector2DLayout>>()(view2d_1), std::hash<View<Vector2DLayout>>()(view2d_2));
 
     // Test ConstView
-    auto const_view2d_1 = ConstView<Vector2DLayout>(builder2d_1.buffer().data());
-    auto const_view2d_2 = ConstView<Vector2DLayout>(builder2d_2.buffer().data());
-    auto const_view2d_3 = ConstView<Vector2DLayout>(builder2d_3.buffer().data());
+    auto const_view2d_1 = ConstView<Vector2DLayout>(builder2d_1.get_buffer().data());
+    auto const_view2d_2 = ConstView<Vector2DLayout>(builder2d_2.get_buffer().data());
+    auto const_view2d_3 = ConstView<Vector2DLayout>(builder2d_3.get_buffer().data());
     EXPECT_EQ(const_view2d_1, const_view2d_3);
     EXPECT_EQ(std::hash<ConstView<Vector2DLayout>>()(const_view2d_1), std::hash<ConstView<Vector2DLayout>>()(const_view2d_3));
     EXPECT_NE(const_view2d_1, const_view2d_2);
@@ -242,9 +242,9 @@ TEST(FlatmemoryTests, TypesVectorTest)
     builder[1] = 6;
     builder.finish();
 
-    EXPECT_EQ(builder.buffer().size(), 12);
+    EXPECT_EQ(builder.get_buffer().size(), 12);
 
-    auto view = View<Vector<uint16_t>>(builder.buffer().data());
+    auto view = View<Vector<uint16_t>>(builder.get_buffer().data());
     EXPECT_EQ(view.size(), 2);
     EXPECT_EQ(view[0], 5);
     EXPECT_EQ(view[1], 6);
@@ -256,7 +256,7 @@ TEST(FlatmemoryTests, TypesVector2Test)
     builder.resize(3);
     builder.finish();
 
-    EXPECT_EQ(builder.buffer().size(), 14);
+    EXPECT_EQ(builder.get_buffer().size(), 14);
 }
 
 TEST(FlatmemoryTests, TypesVectorViewMutateTest)
@@ -265,7 +265,7 @@ TEST(FlatmemoryTests, TypesVectorViewMutateTest)
     builder.resize(3);
     builder.finish();
 
-    auto view = View<Vector<uint16_t>>(builder.buffer().data());
+    auto view = View<Vector<uint16_t>>(builder.get_buffer().data());
     view.mutate(0, 4);
     EXPECT_EQ(view[0], 4);
 }
@@ -279,10 +279,10 @@ TEST(FlatmemoryTests, TypesVectorVectorTest)
     builder[1].push_back(7);
     builder.finish();
 
-    EXPECT_EQ(builder.buffer().size(), 38);
+    EXPECT_EQ(builder.get_buffer().size(), 38);
 
-    auto view = View<Vector<Vector<uint16_t>>>(builder.buffer().data());
-    EXPECT_EQ(view.buffer_size(), 38);
+    auto view = View<Vector<Vector<uint16_t>>>(builder.get_buffer().data());
+    EXPECT_EQ(view.get_buffer_size(), 38);
     EXPECT_EQ(view.size(), 2);
     EXPECT_EQ(view[0][0], 5);
     EXPECT_EQ(view[1][0], 6);
@@ -303,13 +303,13 @@ TEST(FlatmemoryTests, TypesVectorViewIteratorTest)
     builder[2].resize(5);
     builder.finish();
 
-    auto view = VectorVectorUint32(builder.buffer().data());
+    auto view = VectorVectorUint32(builder.get_buffer().data());
     for (const auto element : view)
     {
         EXPECT_GT(element.size(), 0);
     }
 
-    auto const_view = ConstVectorVectorUint32(builder.buffer().data());
+    auto const_view = ConstVectorVectorUint32(builder.get_buffer().data());
     for (const auto element : const_view)
     {
         EXPECT_GT(element.size(), 0);
@@ -322,11 +322,11 @@ TEST(FlatmemoryTests, TypesVectorViewTest)
     builder1.finish();
 
     auto builder2 = Builder<Vector<View<Vector<uint16_t>>>>();
-    builder2.resize(3, View<Vector<uint16_t>>(builder1.buffer().data()));
+    builder2.resize(3, View<Vector<uint16_t>>(builder1.get_buffer().data()));
     builder2.finish();
 
     // 2 additional padding are added from 10 to 12
-    EXPECT_EQ(builder2.buffer().size(), 32);
+    EXPECT_EQ(builder2.get_buffer().size(), 32);
 }
 
 }

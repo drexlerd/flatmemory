@@ -50,26 +50,60 @@ struct Tuple : public NonTrivialType
 /**
  * Layout
  */
+
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
 class Layout<Tuple<Ts...>>
 {
 private:
     template<size_t... Is>
-    static consteval std::array<size_t, sizeof...(Ts) + 1> calculate_data_positions(std::index_sequence<Is...> index_sequence, size_t first_pos);
+    static consteval std::array<size_t, sizeof...(Ts) + 1> calculate_data_positions(std::index_sequence<Is...> index_sequence, size_t first_pos)
+    {
+        std::array<size_t, sizeof...(Ts) + 1> data_positions {};
+        (
+            [&]
+            {
+                data_positions[Is] = first_pos;
+
+                using T = std::tuple_element_t<Is, std::tuple<Ts...>>;
+                if constexpr (IsTriviallyCopyable<T>)
+                {
+                    first_pos += sizeof(T);
+                }
+                else
+                {
+                    first_pos += sizeof(OffsetType);
+                }
+            }(),
+            ...);
+
+        data_positions[sizeof...(Ts)] = first_pos;
+
+        return data_positions;
+    }
 
 public:
     static constexpr size_t size = sizeof...(Ts);
 
     static constexpr size_t buffer_size_position = 0;
-    static constexpr std::array<size_t, sizeof...(Ts) + 1> data_positions =
+    static constexpr std::array<size_t, sizeof...(Ts) + 1> offset_positions =
         calculate_data_positions(std::make_index_sequence<sizeof...(Ts)> {}, sizeof(BufferSizeType));
 
-    constexpr void print() const;
+    constexpr void print() const
+    {
+        std::cout << "buffer_size_position: " << buffer_size_position << "\n"
+                  << "data_positions: [";
+        for (const auto& pos : offset_positions)
+        {
+            std::cout << pos << ", ";
+        }
+        std::cout << "]" << std::endl;
+    }
 };
 
 /**
  * Builder
  */
+
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
 class Builder<Tuple<Ts...>> : public IBuilder<Builder<Tuple<Ts...>>>
 {
@@ -171,9 +205,9 @@ private:
     template<size_t... Is>
     size_t finish_iterative_impl(std::index_sequence<Is...>, size_t pos, ByteBuffer& out)
     {
-        size_t data_pos = Layout<Tuple<Ts...>>::data_positions.back();
+        size_t data_pos = Layout<Tuple<Ts...>>::offset_positions.back();
 
-        ([&] { data_pos = std::get<Is>(m_data).finish(Layout<Tuple<Ts...>>::data_positions[Is], data_pos, out); }(), ...);
+        ([&] { data_pos = std::get<Is>(m_data).finish(Layout<Tuple<Ts...>>::offset_positions[Is], data_pos, out); }(), ...);
 
         /* Write size of the buffer to the beginning. */
         out.write(pos + Layout<Tuple<Ts...>>::buffer_size_position, static_cast<BufferSizeType>(data_pos));
@@ -184,8 +218,8 @@ private:
     void finish_impl() { m_buffer.set_size(this->finish(0, m_buffer)); }
     size_t finish_impl(size_t pos, ByteBuffer& out) { return finish_iterative_impl(std::make_index_sequence<sizeof...(Ts)> {}, pos, out); }
 
-    auto& get_buffer_impl() { return m_buffer; }
-    const auto& get_buffer_impl() const { return m_buffer; }
+    ByteBuffer& get_buffer_impl() { return m_buffer; }
+    const ByteBuffer& get_buffer_impl() const { return m_buffer; }
 
 private:
     std::tuple<TupleEntry<Ts>...> m_data;
@@ -195,8 +229,9 @@ private:
 /**
  * View
  */
+
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
-class View<Tuple<Ts...>>
+class View<Tuple<Ts...>> : public IView<View<Tuple<Ts...>>>
 {
 private:
     /**
@@ -257,7 +292,7 @@ public:
     {
         static_assert(I < sizeof...(Ts));
         assert(m_buf);
-        return get_element<std::tuple_element_t<I, std::tuple<Ts...>>>(m_buf + Layout<Tuple<Ts...>>::data_positions[I]);
+        return get_element<std::tuple_element_t<I, std::tuple<Ts...>>>(m_buf + Layout<Tuple<Ts...>>::offset_positions[I]);
     }
 
     template<std::size_t I>
@@ -265,14 +300,14 @@ public:
     {
         static_assert(I < sizeof...(Ts));
         assert(m_buf);
-        return get_element<std::tuple_element_t<I, std::tuple<Ts...>>>(m_buf + Layout<Tuple<Ts...>>::data_positions[I]);
+        return get_element<std::tuple_element_t<I, std::tuple<Ts...>>>(m_buf + Layout<Tuple<Ts...>>::offset_positions[I]);
     }
 
     template<std::size_t I>
     void mutate(std::tuple_element_t<I, std::tuple<Ts...>> value)
         requires(IsTriviallyCopyable<std::tuple_element_t<I, std::tuple<Ts...>>>)
     {
-        return write_value<std::tuple_element_t<I, std::tuple<Ts...>>>(m_buf + Layout<Tuple<Ts...>>::data_positions[I], value);
+        return write_value<std::tuple_element_t<I, std::tuple<Ts...>>>(m_buf + Layout<Tuple<Ts...>>::offset_positions[I], value);
     }
 
     uint8_t* buffer() { return m_buf; }
@@ -290,6 +325,19 @@ public:
     size_t size() const { return Layout<Tuple<Ts...>>::size; }
 
 private:
+    /* Implement IView interface. */
+    friend class IView<View<Tuple<Ts...>>>;
+
+    uint8_t* get_buffer_impl() { return m_buf; }
+    const uint8_t* get_buffer_impl() const { return m_buf; }
+
+    BufferSizeType get_buffer_size_impl() const
+    {
+        assert(m_buf);
+        return read_value<BufferSizeType>(m_buf + Layout<Tuple<Ts...>>::buffer_size_position);
+    }
+
+private:
     uint8_t* m_buf;
 };
 
@@ -298,7 +346,7 @@ private:
  */
 
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
-class ConstView<Tuple<Ts...>>
+class ConstView<Tuple<Ts...>> : public IConstView<ConstView<Tuple<Ts...>>>
 {
 private:
     /**
@@ -353,16 +401,8 @@ public:
     {
         static_assert(I < sizeof...(Ts));
         assert(m_buf);
-        return get_element<std::tuple_element_t<I, std::tuple<Ts...>>>(m_buf + Layout<Tuple<Ts...>>::data_positions[I]);
+        return get_element<std::tuple_element_t<I, std::tuple<Ts...>>>(m_buf + Layout<Tuple<Ts...>>::offset_positions[I]);
     }
-
-    BufferSizeType buffer_size() const
-    {
-        assert(m_buf);
-        return read_value<BufferSizeType>(m_buf + Layout<Tuple<Ts...>>::buffer_size_position);
-    }
-
-    const uint8_t* buffer() const { return m_buf; }
 
     /**
      * Capacity
@@ -371,12 +411,20 @@ public:
     size_t size() const { return Layout<Tuple<Ts...>>::size; }
 
 private:
+    /* Implement IConstView interface. */
+    friend class IConstView<ConstView<Tuple<Ts...>>>;
+
+    const uint8_t* get_buffer_impl() const { return m_buf; }
+
+    BufferSizeType get_buffer_size_impl() const
+    {
+        assert(m_buf);
+        return read_value<BufferSizeType>(m_buf + Layout<Tuple<Ts...>>::buffer_size_position);
+    }
+
+private:
     const uint8_t* m_buf;
 };
-
-/**
- * Definitions
- */
 
 /**
  * Operators
@@ -419,49 +467,6 @@ bool operator!=(const T1& lhs, const T2& rhs)
 }
 
 /**
- * Layout
- */
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-template<size_t... Is>
-consteval std::array<size_t, sizeof...(Ts) + 1> Layout<Tuple<Ts...>>::calculate_data_positions(std::index_sequence<Is...> index_sequence, size_t first_pos)
-{
-    std::array<size_t, sizeof...(Ts) + 1> data_positions {};
-    (
-        [&]
-        {
-            data_positions[Is] = first_pos;
-
-            using T = std::tuple_element_t<Is, std::tuple<Ts...>>;
-            if constexpr (IsTriviallyCopyable<T>)
-            {
-                first_pos += sizeof(T);
-            }
-            else
-            {
-                first_pos += sizeof(OffsetType);
-            }
-        }(),
-        ...);
-
-    data_positions[sizeof...(Ts)] = first_pos;
-
-    return data_positions;
-}
-
-template<IsTriviallyCopyableOrNonTrivialType... Ts>
-constexpr void Layout<Tuple<Ts...>>::print() const
-{
-    std::cout << "buffer_size_position: " << buffer_size_position << "\n"
-              << "data_positions: [";
-    for (const auto& pos : data_positions)
-    {
-        std::cout << pos << ", ";
-    }
-    std::cout << "]" << std::endl;
-}
-
-/**
  * Pretty printing
  */
 
@@ -494,7 +499,7 @@ struct std::hash<flatmemory::View<flatmemory::Tuple<Ts...>>>
     {
         size_t seed = flatmemory::Layout<flatmemory::Tuple<Ts...>>::size;
         int64_t hash[2];
-        flatmemory::MurmurHash3_x64_128(tuple.buffer(), tuple.buffer_size(), seed, hash);
+        flatmemory::MurmurHash3_x64_128(tuple.get_buffer(), tuple.get_buffer_size(), seed, hash);
         return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
     }
 };
@@ -506,7 +511,7 @@ struct std::hash<flatmemory::ConstView<flatmemory::Tuple<Ts...>>>
     {
         size_t seed = flatmemory::Layout<flatmemory::Tuple<Ts...>>::size;
         int64_t hash[2];
-        flatmemory::MurmurHash3_x64_128(tuple.buffer(), tuple.buffer_size(), seed, hash);
+        flatmemory::MurmurHash3_x64_128(tuple.get_buffer(), tuple.get_buffer_size(), seed, hash);
         return static_cast<std::size_t>(hash[0] + 0x9e3779b9 + (hash[1] << 6) + (hash[1] >> 2));
     }
 };

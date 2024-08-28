@@ -32,7 +32,7 @@ TEST(FlatmemoryTests, TypesOptionalDefaultConstructorTest)
 
         EXPECT_FALSE(builder.has_value());
         EXPECT_ANY_THROW(builder.value());
-        EXPECT_EQ(builder.buffer().size(), 1);
+        EXPECT_EQ(builder.get_buffer().size(), 1);
     }
 }
 
@@ -44,7 +44,7 @@ TEST(FlatmemoryTests, TypesOptionalConstructorTest)
 
         EXPECT_TRUE(builder.has_value());
         EXPECT_EQ(builder.value(), 42);
-        EXPECT_EQ(builder.buffer().size(), 9);
+        EXPECT_EQ(builder.get_buffer().size(), 9);
     }
 
     {
@@ -57,7 +57,7 @@ TEST(FlatmemoryTests, TypesOptionalConstructorTest)
         EXPECT_EQ(builder.value().size(), 10);
         EXPECT_EQ(builder.value()[5], 42);
         EXPECT_EQ(builder.value()[7], 19);
-        EXPECT_EQ(builder.buffer().size(), 89);
+        EXPECT_EQ(builder.get_buffer().size(), 89);
     }
 }
 
@@ -90,18 +90,18 @@ TEST(FlatmemoryTests, TypesOptionalEqualToAndHashTest)
     EXPECT_NE(std::hash<Builder<OptionalLayout>>()(builder1), std::hash<Builder<OptionalLayout>>()(builder2));
 
     // Test View
-    auto view1 = View<OptionalLayout>(builder1.buffer().data());
-    auto view2 = View<OptionalLayout>(builder2.buffer().data());
-    auto view3 = View<OptionalLayout>(builder3.buffer().data());
+    auto view1 = View<OptionalLayout>(builder1.get_buffer().data());
+    auto view2 = View<OptionalLayout>(builder2.get_buffer().data());
+    auto view3 = View<OptionalLayout>(builder3.get_buffer().data());
     EXPECT_EQ(view1, view3);
     EXPECT_EQ(std::hash<View<OptionalLayout>>()(view1), std::hash<View<OptionalLayout>>()(view3));
     EXPECT_NE(view1, view2);
     EXPECT_NE(std::hash<View<OptionalLayout>>()(view1), std::hash<View<OptionalLayout>>()(view2));
 
     // Test ConstView
-    auto const_view1 = ConstView<OptionalLayout>(builder1.buffer().data());
-    auto const_view2 = ConstView<OptionalLayout>(builder2.buffer().data());
-    auto const_view3 = ConstView<OptionalLayout>(builder3.buffer().data());
+    auto const_view1 = ConstView<OptionalLayout>(builder1.get_buffer().data());
+    auto const_view2 = ConstView<OptionalLayout>(builder2.get_buffer().data());
+    auto const_view3 = ConstView<OptionalLayout>(builder3.get_buffer().data());
     EXPECT_EQ(const_view1, const_view3);
     EXPECT_EQ(std::hash<ConstView<OptionalLayout>>()(const_view1), std::hash<ConstView<OptionalLayout>>()(const_view3));
     EXPECT_NE(const_view1, const_view2);

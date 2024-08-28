@@ -23,29 +23,35 @@
 namespace flatmemory
 {
 /**
+ * Interface class.
+ */
+template<typename Derived>
+class IConstView
+{
+private:
+    /// @brief Helper to cast to Derived.
+    constexpr const auto& self() const { return static_cast<const Derived&>(*this); }
+    constexpr auto& self() { return static_cast<Derived&>(*this); }
+
+public:
+    /// @brief Get the pointer to the beginning of the buffer.
+    const uint8_t* get_buffer() const { return self().get_buffer_impl(); }
+
+    /// @brief Get the buffer size.
+    /// @return
+    size_t get_buffer_size() const { return self().get_buffer_size_impl(); }
+};
+
+/**
  * Implementation class.
  *
  * Provide overload with your Tag.
  */
 template<typename Tag>
-class ConstView
+class ConstView : public IConstView<View<Tag>>
 {
 };
 
-/**
- * Concepts
- */
-template<IsTriviallyCopyableOrNonTrivialType T, bool = IsTriviallyCopyable<T>>
-struct maybe_const_view
-{
-    using type = T;
-};
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-struct maybe_const_view<T, false>
-{
-    using type = ConstView<T>;
-};
 }
 
 #endif

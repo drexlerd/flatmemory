@@ -78,7 +78,7 @@ TEST(FlatmemoryTests, TypesBitsetViewConstructorTest)
     builder.finish();
 
     // Test ConstView
-    auto view = View<Bitset<uint64_t>>(builder.buffer().data());
+    auto view = View<Bitset<uint64_t>>(builder.get_buffer().data());
     EXPECT_EQ(builder, view);
 }
 
@@ -91,7 +91,7 @@ TEST(FlatmemoryTests, TypesBitsetConstViewConstructorTest)
     builder.finish();
 
     // Test ConstView
-    auto const_view = ConstView<Bitset<uint64_t>>(builder.buffer().data());
+    auto const_view = ConstView<Bitset<uint64_t>>(builder.get_buffer().data());
     EXPECT_EQ(builder, const_view);
 }
 
@@ -107,12 +107,12 @@ TEST(FlatmemoryTests, TypesBitsetConversionTest)
     builder.finish();
 
     // Test View
-    auto view = View<Bitset<uint64_t>>(builder.buffer().data());
+    auto view = View<Bitset<uint64_t>>(builder.get_buffer().data());
     auto copy_builder_view = Builder<Bitset<uint64_t>>(view);
     EXPECT_EQ(builder, copy_builder_view);
 
     // Test ConstView
-    auto const_view = ConstView<Bitset<uint64_t>>(builder.buffer().data());
+    auto const_view = ConstView<Bitset<uint64_t>>(builder.get_buffer().data());
     auto copy_builder_const_view = Builder<Bitset<uint64_t>>(const_view);
     EXPECT_EQ(builder, copy_builder_const_view);
 }
@@ -135,7 +135,7 @@ TEST(FlatmemoryTests, TypesBitsetAssignmentTest)
     EXPECT_EQ(builder, tmp_builder);
 
     // Test View
-    auto view = View<Bitset<uint64_t>>(builder.buffer().data());
+    auto view = View<Bitset<uint64_t>>(builder.get_buffer().data());
     auto tmp_builder_view = Builder<Bitset<uint64_t>>();
     EXPECT_NE(builder, tmp_builder_view);
     tmp_builder_view = view;
@@ -143,7 +143,7 @@ TEST(FlatmemoryTests, TypesBitsetAssignmentTest)
 
     // Test ConstView
     builder.finish();
-    auto const_view = ConstView<Bitset<uint64_t>>(builder.buffer().data());
+    auto const_view = ConstView<Bitset<uint64_t>>(builder.get_buffer().data());
     auto tmp_builder_const_view = Builder<Bitset<uint64_t>>();
     EXPECT_NE(builder, tmp_builder_const_view);
     tmp_builder_const_view = const_view;
@@ -178,18 +178,18 @@ TEST(FlatmemoryTests, TypesBitsetEqualToAndHashTest)
     EXPECT_NE(std::hash<Builder<BitsetLayout>>()(builder1), std::hash<Builder<BitsetLayout>>()(builder2));
 
     // Test View
-    auto view1 = View<BitsetLayout>(builder1.buffer().data());
-    auto view2 = View<BitsetLayout>(builder2.buffer().data());
-    auto view3 = View<BitsetLayout>(builder3.buffer().data());
+    auto view1 = View<BitsetLayout>(builder1.get_buffer().data());
+    auto view2 = View<BitsetLayout>(builder2.get_buffer().data());
+    auto view3 = View<BitsetLayout>(builder3.get_buffer().data());
     EXPECT_EQ(view1, view3);
     EXPECT_EQ(std::hash<View<BitsetLayout>>()(view1), std::hash<View<BitsetLayout>>()(view3));
     EXPECT_NE(view1, view2);
     EXPECT_NE(std::hash<View<BitsetLayout>>()(view1), std::hash<View<BitsetLayout>>()(view2));
 
     // Test ConstView
-    auto const_view1 = ConstView<BitsetLayout>(builder1.buffer().data());
-    auto const_view2 = ConstView<BitsetLayout>(builder2.buffer().data());
-    auto const_view3 = ConstView<BitsetLayout>(builder3.buffer().data());
+    auto const_view1 = ConstView<BitsetLayout>(builder1.get_buffer().data());
+    auto const_view2 = ConstView<BitsetLayout>(builder2.get_buffer().data());
+    auto const_view3 = ConstView<BitsetLayout>(builder3.get_buffer().data());
     EXPECT_EQ(const_view1, const_view3);
     EXPECT_EQ(std::hash<ConstView<BitsetLayout>>()(const_view1), std::hash<ConstView<BitsetLayout>>()(const_view3));
     EXPECT_NE(const_view1, const_view2);
@@ -421,12 +421,12 @@ TEST(FlatmemoryTests, TypesBitsetGetTest)
     EXPECT_FALSE(builder.get(64));
 
     // Test View
-    auto view = View<Bitset<uint64_t>>(builder.buffer().data());
+    auto view = View<Bitset<uint64_t>>(builder.get_buffer().data());
     EXPECT_TRUE(view.get(42));
     EXPECT_FALSE(view.get(64));
 
     // Test ConstView
-    auto const_view = View<Bitset<uint64_t>>(builder.buffer().data());
+    auto const_view = View<Bitset<uint64_t>>(builder.get_buffer().data());
     EXPECT_TRUE(const_view.get(42));
     EXPECT_FALSE(const_view.get(64));
 }
@@ -468,7 +468,7 @@ TEST(FlatmemoryTests, TypesBitsetIteratorTest)
 
     builder.finish();
 
-    auto view = View<Bitset<uint64_t>>(builder.buffer().data());
+    auto view = View<Bitset<uint64_t>>(builder.get_buffer().data());
     it = view.begin();
     end = view.end();
     EXPECT_EQ(*it, 0);
@@ -481,7 +481,7 @@ TEST(FlatmemoryTests, TypesBitsetIteratorTest)
     ++it;
     EXPECT_EQ(it, end);
 
-    auto const_view = ConstView<Bitset<uint64_t>>(builder.buffer().data());
+    auto const_view = ConstView<Bitset<uint64_t>>(builder.get_buffer().data());
     it = const_view.begin();
     end = const_view.end();
     EXPECT_EQ(*it, 0);

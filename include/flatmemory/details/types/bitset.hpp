@@ -324,8 +324,8 @@ public:
     bool& get_default_bit_value();
     bool get_default_bit_value() const;
 
-    auto& get_blocks();
-    const auto& get_blocks() const;
+    Builder<Vector<Block>>& get_blocks();
+    const Builder<Vector<Block>>& get_blocks() const;
 
 private:
     /* Implement IBuilder interface. */
@@ -335,8 +335,8 @@ private:
     void finish_impl();
     size_t finish_impl(size_t pos, ByteBuffer& out);
 
-    auto& get_buffer_impl();
-    const auto& get_buffer_impl() const;
+    ByteBuffer& get_buffer_impl();
+    const ByteBuffer& get_buffer_impl() const;
 
     template<IsBitset Other>
         requires HasBlockType<Other, Block> && HasCompatibleTagType<Other, Tag>
@@ -358,7 +358,7 @@ private:
  */
 
 template<IsUnsignedIntegral Block, typename Tag>
-class View<Bitset<Block, Tag>>
+class View<Bitset<Block, Tag>> : public IView<View<Bitset<Block, Tag>>>
 {
 public:
     /**
@@ -414,14 +414,19 @@ public:
      * Getters
      */
 
-    uint8_t* buffer();
-    const uint8_t* buffer() const;
-    BufferSizeType buffer_size() const;
-
     bool get_default_bit_value() const;
 
     View<Vector<Block>> get_blocks();
     ConstView<Vector<Block>> get_blocks() const;
+
+private:
+    /* Implement IView interface. */
+    friend class IView<View<Bitset<Block, Tag>>>;
+
+    uint8_t* get_buffer_impl();
+    const uint8_t* get_buffer_impl() const;
+
+    BufferSizeType get_buffer_size_impl() const;
 
 private:
     uint8_t* m_buf;
@@ -432,7 +437,7 @@ private:
  */
 
 template<IsUnsignedIntegral Block, typename Tag>
-class ConstView<Bitset<Block, Tag>>
+class ConstView<Bitset<Block, Tag>> : public IConstView<ConstView<Bitset<Block, Tag>>>
 {
 public:
     /**
@@ -494,13 +499,17 @@ public:
      * Getters
      */
 
-    const uint8_t* buffer() const;
-
-    BufferSizeType buffer_size() const;
-
     bool get_default_bit_value() const;
 
     ConstView<Vector<Block>> get_blocks() const;
+
+private:
+    /* Implement IConstView interface. */
+    friend class IConstView<ConstView<Bitset<Block, Tag>>>;
+
+    const uint8_t* get_buffer_impl() const;
+
+    BufferSizeType get_buffer_size_impl() const;
 
 private:
     const uint8_t* m_buf;
@@ -831,12 +840,12 @@ size_t Builder<Bitset<Block, Tag>>::finish_impl(size_t pos, ByteBuffer& out)
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-auto& Builder<Bitset<Block, Tag>>::get_buffer_impl()
+ByteBuffer& Builder<Bitset<Block, Tag>>::get_buffer_impl()
 {
     return m_buffer;
 }
 template<IsUnsignedIntegral Block, typename Tag>
-const auto& Builder<Bitset<Block, Tag>>::get_buffer_impl() const
+const ByteBuffer& Builder<Bitset<Block, Tag>>::get_buffer_impl() const
 {
     return m_buffer;
 }
@@ -1183,13 +1192,13 @@ bool Builder<Bitset<Block, Tag>>::get_default_bit_value() const
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-auto& Builder<Bitset<Block, Tag>>::get_blocks()
+Builder<Vector<Block>>& Builder<Bitset<Block, Tag>>::get_blocks()
 {
     return m_blocks;
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-const auto& Builder<Bitset<Block, Tag>>::get_blocks() const
+const Builder<Vector<Block>>& Builder<Bitset<Block, Tag>>::get_blocks() const
 {
     return m_blocks;
 }
@@ -1257,19 +1266,19 @@ View<Bitset<Block, Tag>>::ConstIterator View<Bitset<Block, Tag>>::end() const
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-uint8_t* View<Bitset<Block, Tag>>::buffer()
+uint8_t* View<Bitset<Block, Tag>>::get_buffer_impl()
 {
     return m_buf;
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-const uint8_t* View<Bitset<Block, Tag>>::buffer() const
+const uint8_t* View<Bitset<Block, Tag>>::get_buffer_impl() const
 {
     return m_buf;
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-BufferSizeType View<Bitset<Block, Tag>>::buffer_size() const
+BufferSizeType View<Bitset<Block, Tag>>::get_buffer_size_impl() const
 {
     return sizeof(bool) + get_blocks().buffer_size();
 }
@@ -1363,13 +1372,13 @@ ConstView<Bitset<Block, Tag>>::ConstIterator ConstView<Bitset<Block, Tag>>::end(
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-const uint8_t* ConstView<Bitset<Block, Tag>>::buffer() const
+const uint8_t* ConstView<Bitset<Block, Tag>>::get_buffer_impl() const
 {
     return m_buf;
 }
 
 template<IsUnsignedIntegral Block, typename Tag>
-BufferSizeType ConstView<Bitset<Block, Tag>>::buffer_size() const
+BufferSizeType ConstView<Bitset<Block, Tag>>::get_buffer_size_impl() const
 {
     return sizeof(bool) + get_blocks().buffer_size();
 }

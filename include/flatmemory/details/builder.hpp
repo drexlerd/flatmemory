@@ -53,8 +53,8 @@ public:
     size_t finish(size_t pos, ByteBuffer& out) { return self().finish_impl(pos, out); }
 
     /// @brief Access the serialized buffer
-    auto& buffer() { return self().get_buffer_impl(); }
-    const auto& buffer() const { return self().get_buffer_impl(); }
+    ByteBuffer& get_buffer() { return self().get_buffer_impl(); }
+    const ByteBuffer& get_buffer() const { return self().get_buffer_impl(); }
 };
 
 /**
@@ -69,20 +69,6 @@ class Builder : IBuilder<Builder<Tag>>
 {
 };
 
-/**
- * Concepts
- */
-template<IsTriviallyCopyableOrNonTrivialType T, bool = IsTriviallyCopyable<T>>
-struct maybe_builder
-{
-    using type = T;
-};
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-struct maybe_builder<T, false>
-{
-    using type = Builder<T>;
-};
 }
 
 #endif
