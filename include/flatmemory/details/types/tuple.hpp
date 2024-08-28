@@ -72,7 +72,7 @@ public:
  * Builder
  */
 
-template<typename T>
+template<IsTriviallyCopyableOrNonTrivialType T>
 class TupleEntry
 {
     TupleEntry() { static_assert(std::false_type::value, "Builder<Tuple<Ts...>>::TupleEntry(...): Expected usage of overload."); }
