@@ -25,7 +25,6 @@
 #include "flatmemory/details/layout.hpp"
 #include "flatmemory/details/types.hpp"
 #include "flatmemory/details/types/declarations.hpp"
-#include "flatmemory/details/types/formatter.hpp"
 #include "flatmemory/details/types/vector.hpp"
 
 #include <algorithm>
@@ -1517,8 +1516,6 @@ static_assert(!HaveCompatibleTagType<Builder<Bitset<uint64_t, Tag1>>, View<Bitse
 template<flatmemory::IsUnsignedIntegral Block, typename Tag>
 std::ostream& operator<<(std::ostream& out, ConstView<Bitset<Block, Tag>> element)
 {
-    auto formatter = Formatter(0, 4);
-    formatter.write(element, out);
     return out;
 }
 }

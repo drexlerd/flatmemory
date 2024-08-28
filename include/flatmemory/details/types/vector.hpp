@@ -25,7 +25,6 @@
 #include "flatmemory/details/layout.hpp"
 #include "flatmemory/details/types.hpp"
 #include "flatmemory/details/types/declarations.hpp"
-#include "flatmemory/details/types/formatter.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -1084,8 +1083,6 @@ static_assert(std::ranges::forward_range<ConstView<Vector<uint64_t>>>);
 template<IsTriviallyCopyableOrNonTrivialType T>
 std::ostream& operator<<(std::ostream& out, ConstView<Vector<T>> element)
 {
-    auto formatter = Formatter(0, 4);
-    formatter.write(element, out);
     return out;
 }
 }

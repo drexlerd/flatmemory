@@ -24,7 +24,6 @@
 #include "flatmemory/details/layout.hpp"
 #include "flatmemory/details/types.hpp"
 #include "flatmemory/details/types/declarations.hpp"
-#include "flatmemory/details/types/formatter.hpp"
 
 #include <algorithm>
 #include <array>
@@ -481,8 +480,6 @@ constexpr void Layout<Tuple<Ts...>>::print() const
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
 std::ostream& operator<<(std::ostream& out, ConstView<Tuple<Ts...>> element)
 {
-    auto formatter = Formatter(0, 4);
-    formatter.write(element, out);
     return out;
 }
 
