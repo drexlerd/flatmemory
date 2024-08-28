@@ -71,66 +71,65 @@ public:
 /**
  * Builder
  */
-
-template<IsTriviallyCopyableOrNonTrivialType T>
-class TupleEntry
-{
-    TupleEntry() { static_assert(std::false_type::value, "Builder<Tuple<Ts...>>::TupleEntry(...): Expected usage of overload."); }
-};
-
-template<IsTriviallyCopyable T>
-class TupleEntry<T>
-{
-public:
-    TupleEntry() : m_value() {}
-    TupleEntry(const T& value) : m_value(value) {}
-    TupleEntry(T&& value) : m_value(std::move(value)) {}
-
-    T& get() { return m_value; }
-    const T& get() const { return m_value; }
-
-    size_t finish(size_t offset_pos, size_t data_pos, ByteBuffer& out)
-    {
-        /* Write the data inline. */
-        out.write(offset_pos, m_value);
-
-        return data_pos;
-    }
-
-private:
-    T m_value;
-};
-
-template<IsNonTrivialType T>
-class TupleEntry<T>
-{
-public:
-    TupleEntry() : m_value() {}
-    TupleEntry(const Builder<T>& value) : m_value(value) {}
-    TupleEntry(Builder<T>&& value) : m_value(std::move(value)) {}
-
-    Builder<T>& get() { return m_value; }
-    const Builder<T>& get() const { return m_value; }
-
-    size_t finish(size_t offset_pos, size_t data_pos, ByteBuffer& out)
-    {
-        /* Write the distance between written data pos and offset pos at the offset pos. */
-        out.write(offset_pos, static_cast<OffsetType>(data_pos - offset_pos));
-
-        /* Write the data at offset */
-        data_pos += m_value.finish(data_pos, out);
-
-        return data_pos;
-    }
-
-private:
-    Builder<T> m_value;
-};
-
 template<IsTriviallyCopyableOrNonTrivialType... Ts>
 class Builder<Tuple<Ts...>> : public IBuilder<Builder<Tuple<Ts...>>>
 {
 private:
+    template<typename T>
+    class TupleEntry
+    {
+        static_assert(std::false_type::value, "Builder<Tuple<Ts...>>::TupleEntry(...): Expected usage of overload.");
+    };
+
+    template<IsTriviallyCopyable T>
+    class TupleEntry<T>
+    {
+    public:
+        TupleEntry() : m_value() {}
+        TupleEntry(const T& value) : m_value(value) {}
+        TupleEntry(T&& value) : m_value(std::move(value)) {}
+
+        T& get() { return m_value; }
+        const T& get() const { return m_value; }
+
+        size_t finish(size_t offset_pos, size_t data_pos, ByteBuffer& out)
+        {
+            /* Write the data inline. */
+            out.write(offset_pos, m_value);
+
+            return data_pos;
+        }
+
+    private:
+        T m_value;
+    };
+
+    template<IsNonTrivialType T>
+    class TupleEntry<T>
+    {
+    public:
+        TupleEntry() : m_value() {}
+        TupleEntry(const Builder<T>& value) : m_value(value) {}
+        TupleEntry(Builder<T>&& value) : m_value(std::move(value)) {}
+
+        Builder<T>& get() { return m_value; }
+        const Builder<T>& get() const { return m_value; }
+
+        size_t finish(size_t offset_pos, size_t data_pos, ByteBuffer& out)
+        {
+            /* Write the distance between written data pos and offset pos at the offset pos. */
+            out.write(offset_pos, static_cast<OffsetType>(data_pos - offset_pos));
+
+            /* Write the data at offset */
+            data_pos += m_value.finish(data_pos, out);
+
+            return data_pos;
+        }
+
+    private:
+        Builder<T> m_value;
+    };
+
 public:
     /**
      * Type declarations
@@ -144,7 +143,7 @@ public:
 
     // Builder(std::conditional_t<IsTriviallyCopyable<Ts>, Ts, Builder<Ts>>&&... args)
     //     requires(sizeof...(Ts) > 0)
-    //     : m_data(std::forward<Ts>(args)...), m_buffer()
+    //     : m_data(std::forward<std::conditional_t<IsTriviallyCopyable<Ts>, Ts, Builder<Ts>>>(args)...), m_buffer()
     //{
     // }
 
