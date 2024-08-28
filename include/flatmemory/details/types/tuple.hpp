@@ -127,8 +127,8 @@ private:
             /* Write the data inline. */
             out.write(offset_pos, m_value);
 
-            // data pos stays the same because data written in the offset pos.
-            return data_pos;
+            // Zero bytes were written to data pos.
+            return 0;
         }
 
     private:
@@ -151,10 +151,8 @@ private:
             /* Write the distance between written data pos and offset pos at the offset pos. */
             out.write(offset_pos, static_cast<OffsetType>(data_pos - offset_pos));
 
-            /* Write the data at offset */
-            data_pos += m_value.finish(data_pos, out);
-
-            return data_pos;
+            /* Write the data at offset, return number of bytes written. */
+            return m_value.finish(data_pos, out);
         }
 
     private:
@@ -206,14 +204,14 @@ private:
     template<size_t... Is>
     size_t finish_iterative_impl(std::index_sequence<Is...>, size_t pos, ByteBuffer& out)
     {
-        size_t data_pos = pos + Layout<Tuple<Ts...>>::offset_positions.back();
+        size_t data_pos = Layout<Tuple<Ts...>>::offset_positions.back();
 
         (
             [&]
             {
                 // std::cout << "finish_iterative_impl: offset_pos=" << pos + Layout<Tuple<Ts...>>::offset_positions[Is] << " data_pos=" << data_pos <<
                 // std::endl;
-                data_pos = std::get<Is>(m_data).finish(pos + Layout<Tuple<Ts...>>::offset_positions[Is], data_pos, out);
+                data_pos += std::get<Is>(m_data).finish(pos + Layout<Tuple<Ts...>>::offset_positions[Is], pos + data_pos, out);
             }(),
             ...);
 
