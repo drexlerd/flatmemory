@@ -137,11 +137,11 @@ public:
      * Constructors
      */
 
-    // Builder(std::conditional_t<IsTriviallyCopyable<Ts>, Ts, Builder<Ts>>&&... args)
-    //     requires(sizeof...(Ts) > 0)
-    //     : m_data(std::forward<std::conditional_t<IsTriviallyCopyable<Ts>, Ts, Builder<Ts>>>(args)...), m_buffer()
-    //{
-    // }
+    Builder(std::conditional_t<IsTriviallyCopyable<Ts>, Ts, Builder<Ts>>&&... args)
+        requires(sizeof...(Ts) > 0)
+        : m_data(std::forward<std::conditional_t<IsTriviallyCopyable<Ts>, Ts, Builder<Ts>>>(args)...), m_buffer()
+    {
+    }
 
     Builder() : m_data(), m_buffer() {}
 
