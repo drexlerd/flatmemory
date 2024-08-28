@@ -56,13 +56,13 @@ class Layout<Tuple<Ts...>>
 {
 private:
     template<size_t... Is>
-    static consteval std::array<size_t, sizeof...(Ts) + 1> calculate_data_positions(std::index_sequence<Is...> index_sequence, size_t first_pos)
+    static consteval std::array<size_t, sizeof...(Ts) + 1> calculate_offset_positions(std::index_sequence<Is...> index_sequence, size_t first_pos)
     {
-        std::array<size_t, sizeof...(Ts) + 1> data_positions {};
+        std::array<size_t, sizeof...(Ts) + 1> offset_positions {};
         (
             [&]
             {
-                data_positions[Is] = first_pos;
+                offset_positions[Is] = first_pos;
 
                 using T = std::tuple_element_t<Is, std::tuple<Ts...>>;
                 if constexpr (IsTriviallyCopyable<T>)
@@ -76,9 +76,9 @@ private:
             }(),
             ...);
 
-        data_positions[sizeof...(Ts)] = first_pos;
+        offset_positions[sizeof...(Ts)] = first_pos;
 
-        return data_positions;
+        return offset_positions;
     }
 
 public:
@@ -86,7 +86,7 @@ public:
 
     static constexpr size_t buffer_size_position = 0;
     static constexpr std::array<size_t, sizeof...(Ts) + 1> offset_positions =
-        calculate_data_positions(std::make_index_sequence<sizeof...(Ts)> {}, sizeof(BufferSizeType));
+        calculate_offset_positions(std::make_index_sequence<sizeof...(Ts)> {}, sizeof(BufferSizeType));
 
     constexpr void print() const
     {
@@ -127,6 +127,7 @@ private:
             /* Write the data inline. */
             out.write(offset_pos, m_value);
 
+            // data pos stays the same because data written in the offset pos.
             return data_pos;
         }
 
@@ -205,9 +206,16 @@ private:
     template<size_t... Is>
     size_t finish_iterative_impl(std::index_sequence<Is...>, size_t pos, ByteBuffer& out)
     {
-        size_t data_pos = Layout<Tuple<Ts...>>::offset_positions.back();
+        size_t data_pos = pos + Layout<Tuple<Ts...>>::offset_positions.back();
 
-        ([&] { data_pos = std::get<Is>(m_data).finish(Layout<Tuple<Ts...>>::offset_positions[Is], data_pos, out); }(), ...);
+        (
+            [&]
+            {
+                // std::cout << "finish_iterative_impl: offset_pos=" << pos + Layout<Tuple<Ts...>>::offset_positions[Is] << " data_pos=" << data_pos <<
+                // std::endl;
+                data_pos = std::get<Is>(m_data).finish(pos + Layout<Tuple<Ts...>>::offset_positions[Is], data_pos, out);
+            }(),
+            ...);
 
         /* Write size of the buffer to the beginning. */
         out.write(pos + Layout<Tuple<Ts...>>::buffer_size_position, static_cast<BufferSizeType>(data_pos));

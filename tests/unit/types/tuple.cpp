@@ -313,12 +313,29 @@ TEST(FlatmemoryTests, TypesTupleStructTest)
     EXPECT_EQ(view.get_buffer_size(), 36);
 }
 
-/*
 struct FlatSimpleEffect
 {
     bool is_negated;
     size_t atom_id;
 };  // __attribute__((packed));  // Pack the struct to avoid padding
+
+struct Static
+{
+};
+struct Fluent
+{
+};
+struct Derived
+{
+};
+
+template<typename Tag = void>
+using FlatBitsetLayout = flatmemory::Bitset<uint64_t, Tag>;
+template<typename Tag = void>
+using FlatBitsetBuilder = flatmemory::Builder<FlatBitsetLayout<Tag>>;
+template<typename Tag = void>
+using FlatBitset = flatmemory::ConstView<FlatBitsetLayout<Tag>>;
+using FlatIndexListLayout = flatmemory::Vector<uint32_t>;
 
 static_assert(sizeof(FlatSimpleEffect) == 16);
 
@@ -329,7 +346,19 @@ TEST(FlatmemoryTests, TypesTupleConditionalEffectTest)
     EXPECT_FALSE(effect.is_negated);
     EXPECT_EQ(effect.atom_id, 4);
 
-    using FlatIndexListLayout = flatmemory::Vector<uint32_t>;
+    using FlatStripsActionPreconditionLayout = flatmemory::Tuple<FlatBitsetLayout<Static>,  //
+                                                                 FlatBitsetLayout<Static>,
+                                                                 FlatBitsetLayout<Fluent>,
+                                                                 FlatBitsetLayout<Fluent>,
+                                                                 FlatBitsetLayout<Derived>,
+                                                                 FlatBitsetLayout<Derived>>;
+    using FlatStripsActionPreconditionBuilder = flatmemory::Builder<FlatStripsActionPreconditionLayout>;
+    using FlatStripsActionPrecondition = flatmemory::ConstView<FlatStripsActionPreconditionLayout>;
+
+    using FlatStripsActionEffectLayout = flatmemory::Tuple<FlatBitsetLayout<Fluent>,   // add effects
+                                                           FlatBitsetLayout<Fluent>>;  // delete effects
+    using FlatStripsActionEffectBuilder = flatmemory::Builder<FlatStripsActionEffectLayout>;
+    using FlatStripsActionEffect = flatmemory::ConstView<FlatStripsActionEffectLayout>;
 
     using FlatConditionalEffectLayout = flatmemory::Tuple<FlatIndexListLayout,  // Positive static atom indices
                                                           FlatIndexListLayout,  // Negative static atom indices
@@ -338,6 +367,28 @@ TEST(FlatmemoryTests, TypesTupleConditionalEffectTest)
                                                           FlatIndexListLayout,  // Positive derived atom indices
                                                           FlatIndexListLayout,  // Negative derived atom indices
                                                           FlatSimpleEffect>;    // simple add or delete effect
+    using FlatConditionalEffectBuilder = flatmemory::Builder<FlatConditionalEffectLayout>;
+    using FlatConditionalEffect = flatmemory::ConstView<FlatConditionalEffectLayout>;
+
+    using FlatConditionalEffectsLayout = flatmemory::Vector<FlatConditionalEffectLayout>;  // simple add or delete effect
+    using FlatConditionalEffectsBuilder = flatmemory::Builder<FlatConditionalEffectsLayout>;
+    using FlatConditionalEffects = flatmemory::ConstView<FlatConditionalEffectsLayout>;
+
+    using FlatSimpleEffectVectorLayout = flatmemory::Vector<FlatSimpleEffect>;
+    using FlatSimpleEffectVectorBuilder = flatmemory::Builder<FlatSimpleEffectVectorLayout>;
+    using FlatSimpleEffectVector = flatmemory::ConstView<FlatSimpleEffectVectorLayout>;
+
+    using FlatActionLayout = flatmemory::Tuple<uint32_t,  //
+                                               double,
+                                               int*,
+                                               // FlatObjectListLayout,
+                                               FlatStripsActionPreconditionLayout
+                                               // FlatStripsActionEffectLayout,
+                                               // FlatConditionalEffectsLayout
+                                               >;
+    using FlatActionBuilder = flatmemory::Builder<FlatActionLayout>;
+    using FlatAction = flatmemory::ConstView<FlatActionLayout>;
+    using FlatActionVector = flatmemory::VariableSizedTypeVector<FlatActionLayout>;
 
     Layout<FlatConditionalEffectLayout>().print();
 
@@ -355,7 +406,17 @@ TEST(FlatmemoryTests, TypesTupleConditionalEffectTest)
 
     EXPECT_FALSE(view.get<6>().is_negated);
     EXPECT_EQ(view.get<6>().atom_id, 4);
+
+    int* x = reinterpret_cast<int*>(100);
+
+    std::cout << "asd" << std::endl;
+    auto action_builder = FlatActionBuilder();
+    action_builder.get<0>() = 42;
+    action_builder.get<1>() = 0.;
+    action_builder.get<2>() = x;
+    action_builder.finish();
+    auto flat_action = FlatAction(action_builder.get_buffer().data());
+    flatmemory::print(flat_action.get_buffer(), flat_action.get_buffer_size());
 }
-*/
 
 }

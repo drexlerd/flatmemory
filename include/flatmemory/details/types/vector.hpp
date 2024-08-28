@@ -257,12 +257,10 @@ private:
         /* Write the vector size */
         out.write(pos + Layout<Vector<T>>::vector_size_position, m_data.size());
 
-        size_t data_pos = Layout<Vector<T>>::vector_data_position;
-
         /* Write the offset inline and data at offset. */
-        size_t offset_pos = data_pos;
+        size_t offset_pos = Layout<Vector<T>>::vector_data_position;
         /* Write sufficiently much padding before the data. */
-        data_pos = offset_pos + m_data.size() * sizeof(OffsetType);
+        size_t data_pos = offset_pos + m_data.size() * sizeof(OffsetType);
 
         /* Set data pos after the offset locations. */
         for (size_t i = 0; i < m_data.size(); ++i)
@@ -636,7 +634,6 @@ public:
     ConstView& operator=(const View<Vector<T>>& view)
     {
         m_buf = view.buffer();
-        assert(m_buf);
         return *this;
     }
 
@@ -675,7 +672,7 @@ public:
         ConstIterator() : m_buf(nullptr) {}
         ConstIterator(const uint8_t* buf) : m_buf(buf) {}
 
-        value_type operator*() const { return read_value<T>(m_buf); }
+        T operator*() const { return read_value<T>(m_buf); }
         ConstIterator& operator++()
         {
             m_buf += sizeof(T);

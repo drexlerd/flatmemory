@@ -291,28 +291,57 @@ TEST(FlatmemoryTests, TypesVectorVectorTest)
 
 TEST(FlatmemoryTests, TypesVectorViewIteratorTest)
 {
-    using VectorVectorUint32Layout = Vector<Vector<uint32_t>>;
-    using VectorVectorUint32Builder = Builder<VectorVectorUint32Layout>;
-    using VectorVectorUint32 = View<VectorVectorUint32Layout>;
-    using ConstVectorVectorUint32 = ConstView<VectorVectorUint32Layout>;
-
-    auto builder = VectorVectorUint32Builder();
-    builder.resize(3);
-    builder[0].resize(3);
-    builder[1].resize(4);
-    builder[2].resize(5);
-    builder.finish();
-
-    auto view = VectorVectorUint32(builder.get_buffer().data());
-    for (const auto element : view)
     {
-        EXPECT_GT(element.size(), 0);
+        // 1D
+        using VectorUint32Layout = Vector<uint32_t>;
+        using VectorUint32Builder = Builder<VectorUint32Layout>;
+        using VectorUint32 = View<VectorUint32Layout>;
+        using ConstVectorUint32 = ConstView<VectorUint32Layout>;
+
+        auto builder = VectorUint32Builder();
+        builder.resize(3);
+        builder[0] = 5;
+        builder[1] = 6;
+        builder[2] = 7;
+        builder.finish();
+
+        auto view = VectorUint32(builder.get_buffer().data());
+        for (const auto element : view)
+        {
+            EXPECT_GT(element, 0);
+        }
+
+        auto const_view = ConstVectorUint32(builder.get_buffer().data());
+        for (const auto element : const_view)
+        {
+            EXPECT_GT(element, 0);
+        }
     }
-
-    auto const_view = ConstVectorVectorUint32(builder.get_buffer().data());
-    for (const auto element : const_view)
     {
-        EXPECT_GT(element.size(), 0);
+        // 2D
+        using VectorVectorUint32Layout = Vector<Vector<uint32_t>>;
+        using VectorVectorUint32Builder = Builder<VectorVectorUint32Layout>;
+        using VectorVectorUint32 = View<VectorVectorUint32Layout>;
+        using ConstVectorVectorUint32 = ConstView<VectorVectorUint32Layout>;
+
+        auto builder = VectorVectorUint32Builder();
+        builder.resize(3);
+        builder[0].resize(3);
+        builder[1].resize(4);
+        builder[2].resize(5);
+        builder.finish();
+
+        auto view = VectorVectorUint32(builder.get_buffer().data());
+        for (const auto element : view)
+        {
+            EXPECT_GT(element.size(), 0);
+        }
+
+        auto const_view = ConstVectorVectorUint32(builder.get_buffer().data());
+        for (const auto element : const_view)
+        {
+            EXPECT_GT(element.size(), 0);
+        }
     }
 }
 
